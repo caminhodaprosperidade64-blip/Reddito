@@ -216,6 +216,11 @@
 
         async function loadClientes() {
             try {
+                if (typeof DB === 'undefined') {
+                    console.error('\u274c [Clientes] DB n\u00e3o est\u00e1 dispon\u00edvel');
+                    setTimeout(loadClientes, 500);
+                    return;
+                }
                 const search = document.getElementById('searchInput').value.toLowerCase();
                 let clientes = await DB.clientes.listar();
 
@@ -393,7 +398,20 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            loadClientes();
+            const aguardarModulos = setInterval(() => {
+                if (typeof Auth !== 'undefined' && typeof DB !== 'undefined' && window.isSupabaseReady && window.isSupabaseReady()) {
+                    clearInterval(aguardarModulos);
+                    console.log('✅ [Clientes] Módulos prontos!');
+                    loadClientes();
+                }
+            }, 100);
+            setTimeout(() => {
+                clearInterval(aguardarModulos);
+                if (typeof DB !== 'undefined') {
+                    console.warn('⚠️ [Clientes] Timeout, tentando mesmo assim...');
+                    loadClientes();
+                }
+            }, 5000);
         });
     </script>
 </body>

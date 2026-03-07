@@ -213,6 +213,8 @@
     </div>
 
     <script>
+        let profissionaisList = []; // Armazenar lista de profissionais
+
         function updateCommissionLabel() {
             const type = document.getElementById('professionalCommissionType').value;
             document.getElementById('commissionLabel').textContent = type === 'percentual' ? 'Comissão (%)' : 'Comissão (R$)';
@@ -220,9 +222,15 @@
 
         async function loadProfissionais() {
             try {
+                if (typeof DB === 'undefined') {
+                    console.error('\u274c [Profissionais] DB n\u00e3o est\u00e1 dispon\u00edvel');
+                    setTimeout(loadProfissionais, 500);
+                    return;
+                }
                 const search = document.getElementById('searchInput').value.toLowerCase();
                 let profissionais = await DB.profissionais.listar();
-
+                // Guardar na variável global
+                profissionaisList = profissionais;
                 if (search) {
                     profissionais = profissionais.filter(p => 
                         p.nome.toLowerCase().includes(search) || 
@@ -285,7 +293,7 @@
                         </td>
                         <td>
                             <div class="pro-table-actions">
-                                <button class="pro-action-btn" onclick='editProfessional(${JSON.stringify(prof)})' title="Editar"><i class="fas fa-edit"></i></button>
+                                <button class="pro-action-btn" onclick="editProfessional('${prof.id}')" title="Editar"><i class="fas fa-edit"></i></button>
                                 <button class="pro-action-btn danger" onclick="deleteProfessional('${prof.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
@@ -308,7 +316,14 @@
             ProUI.Modal.close('professionalModal');
         }
 
-        function editProfessional(prof) {
+        function editProfessional(profId) {
+            // Buscar o profissional na lista global
+            const prof = profissionaisList.find(p => p.id === profId);
+            if (!prof) {
+                alert('Profissional não encontrado');
+                return;
+            }
+
             openProfessionalModal();
             document.getElementById('modalTitle').textContent = 'Editar Profissional';
             document.getElementById('professionalId').value = prof.id;
@@ -391,7 +406,20 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            loadProfissionais();
+            const aguardarModulos = setInterval(() => {
+                if (typeof Auth !== 'undefined' && typeof DB !== 'undefined' && window.isSupabaseReady && window.isSupabaseReady()) {
+                    clearInterval(aguardarModulos);
+                    console.log('✅ [Profissionais] Módulos prontos!');
+                    loadProfissionais();
+                }
+            }, 100);
+            setTimeout(() => {
+                clearInterval(aguardarModulos);
+                if (typeof DB !== 'undefined') {
+                    console.warn('⚠️ [Profissionais] Timeout, tentando mesmo assim...');
+                    loadProfissionais();
+                }
+            }, 5000);
         });
     </script>
 </body>

@@ -904,4 +904,7 @@ const DB = {
     }
 };
 
+// Exportar para escopo global
+window.DB = DB;
+
 console.log('✅ Módulo DB carregado - v2.0 (corrigido)');

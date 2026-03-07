@@ -201,6 +201,11 @@
     <script>
         async function loadFinanceiro() {
             try {
+                if (typeof DB === 'undefined') {
+                    console.error('\u274c [Financeiro] DB n\u00e3o est\u00e1 dispon\u00edvel');
+                    setTimeout(loadFinanceiro, 500);
+                    return;
+                }
                 const report = await DB.financeiro.relatorio();
             
             document.getElementById('faturamentoHoje').textContent = ProUI.Format.currency(report.receitaDia || 0);
@@ -308,7 +313,20 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            loadFinanceiro();
+            const aguardarModulos = setInterval(() => {
+                if (typeof Auth !== 'undefined' && typeof DB !== 'undefined' && window.isSupabaseReady && window.isSupabaseReady()) {
+                    clearInterval(aguardarModulos);
+                    console.log('✅ [Financeiro] Módulos prontos!');
+                    loadFinanceiro();
+                }
+            }, 100);
+            setTimeout(() => {
+                clearInterval(aguardarModulos);
+                if (typeof DB !== 'undefined') {
+                    console.warn('⚠️ [Financeiro] Timeout, tentando mesmo assim...');
+                    loadFinanceiro();
+                }
+            }, 5000);
         });
     </script>
 </body>

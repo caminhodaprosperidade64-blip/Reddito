@@ -348,6 +348,13 @@
         // Load Dashboard Data
         async function loadDashboard() {
             try {
+                // Verificar se DB está disponível
+                if (typeof DB === 'undefined') {
+                    console.error('❌ [Dashboard] DB não está disponível');
+                    setTimeout(loadDashboard, 500); // Tentar novamente
+                    return;
+                }
+
                 const stats = await DB.dashboard.stats();
                 
                 // Update metrics
@@ -563,7 +570,23 @@
 
         // Load on init
         window.addEventListener('DOMContentLoaded', () => {
-            loadDashboard();
+            // Aguardar que todos os módulos estejam carregados
+            const aguardarModulos = setInterval(() => {
+                if (typeof Auth !== 'undefined' && typeof DB !== 'undefined' && window.isSupabaseReady && window.isSupabaseReady()) {
+                    clearInterval(aguardarModulos);
+                    console.log('✅ [Dashboard] Todos os módulos prontos!');
+                    loadDashboard();
+                }
+            }, 100);
+
+            // Timeout de segurança
+            setTimeout(() => {
+                clearInterval(aguardarModulos);
+                if (typeof DB !== 'undefined') {
+                    console.warn('⚠️ [Dashboard] Timeout na inicialização, tentando mesmo assim...');
+                    loadDashboard();
+                }
+            }, 5000);
         });
     </script>
 </body>
