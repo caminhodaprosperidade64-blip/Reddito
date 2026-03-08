@@ -6,3 +6,8 @@ node_modules/
 .DS_Store
 .vscode/
 .idea/
+
+# Arquivos de ambiente com credenciais sensíveis
+.env
+.env.local
+.env.production
