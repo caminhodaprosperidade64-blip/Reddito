@@ -223,14 +223,15 @@
                 const search = document.getElementById('searchInput').value.toLowerCase();
                 let profissionais = await DB.profissionais.listar();
 
-                if (search) {
-                    profissionais = profissionais.filter(p => 
-                        p.nome.toLowerCase().includes(search) || 
-                        (p.especialidade && p.especialidade.toLowerCase().includes(search))
-                    );
-                }
+            if (search) {
+                profissionais = profissionais.filter(p => 
+                    p.nome.toLowerCase().includes(search) || 
+                    (p.especialidade && p.especialidade.toLowerCase().includes(search))
+                );
+            }
 
-                updateStats(profissionais);
+            updateStats(profissionais);
+            renderTable(profissionais);
             } catch (error) {
                 console.error('Erro ao carregar profissionais:', error);
                 alert('Erro ao carregar profissionais');
@@ -252,14 +253,12 @@
             try {
                 const agendamentos = await DB.agendamentos.listar();
                 document.getElementById('totalAgendamentos').textContent = agendamentos.length;
-
-                renderTable(profissionais, agendamentos);
             } catch (error) {
                 console.error('Erro ao carregar agendamentos:', error);
             }
         }
 
-        function renderTable(profissionais, agendamentos) {
+        function renderTable(profissionais) {
             const tbody = document.getElementById('profissionaisTable');
             
             if (profissionais.length === 0) {
@@ -268,7 +267,6 @@
             }
 
             tbody.innerHTML = profissionais.map(prof => {
-                const agendamentosDoProfissional = agendamentos.filter(agendamento => agendamento.profissional_id === prof.id);
                 const comissaoText = `${prof.comissao_percentual || 0}%`;
                 
                 return `
@@ -277,7 +275,7 @@
                         <td><span class="pro-badge pro-badge-primary">${prof.especialidade || '—'}</span></td>
                         <td>${ProUI.Format.phone(prof.telefone || '—')}</td>
                         <td><strong>${comissaoText}</strong></td>
-                        <td>${agendamentosDoProfissional.length}</td>
+                        <td>${agendamentos.length}</td>
                         <td>
                             <span class="pro-badge pro-badge-${prof.status === 'ativo' ? 'success' : 'error'}">
                                 ${prof.status}
@@ -316,15 +314,9 @@
             document.getElementById('professionalPhone').value = prof.telefone || '';
             document.getElementById('professionalEmail').value = prof.email || '';
             document.getElementById('professionalSpecialty').value = prof.especialidade || '';
-            if (document.getElementById('professionalStatus')) {
-                document.getElementById('professionalStatus').value = prof.status || 'ativo';
-            }
-            if (document.getElementById('professionalCommissionType')) {
-                document.getElementById('professionalCommissionType').value = 'percentual';
-            }
-            if (document.getElementById('professionalCommission')) {
-                document.getElementById('professionalCommission').value = prof.comissao_percentual || 0;
-            }
+            document.getElementById('professionalStatus').value = prof.status;
+            document.getElementById('professionalCommissionType').value = prof.comissaoTipo;
+            document.getElementById('professionalCommission').value = prof.comissaoValor;
             updateCommissionLabel();
         }
 
@@ -335,11 +327,7 @@
                 const id = document.getElementById('professionalId').value;
                 const data = {
                     nome: document.getElementById('professionalName').value,
-                    comissao_percentual: parseFloat(document.getElementById('professionalCommission').value) || 0,
-                    especialidade: document.getElementById('professionalSpecialty') ? document.getElementById('professionalSpecialty').value : '',
-                    telefone: document.getElementById('professionalPhone') ? document.getElementById('professionalPhone').value : '',
-                    email: document.getElementById('professionalEmail') ? document.getElementById('professionalEmail').value : '',
-                    cor_agenda: '#667eea'
+                    comissao_percentual: parseFloat(document.getElementById('professionalCommission').value) || 0
                 };
 
                 let resultado;

@@ -167,7 +167,7 @@
             try {
                 await loadChartProfissionais();
                 await loadChartServicos();
-                await loadChartMensal();
+                loadChartMensal();
                 await loadChartDiaSemana();
                 await loadTopClientes();
             } catch (error) {
@@ -264,51 +264,36 @@
             }
         }
 
-        async function loadChartMensal() {
-            try {
-                const agora = new Date();
-                const meses = [];
-                const valores = [];
+        function loadChartMensal() {
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+            const data = months.map(() => Math.random() * 10000);
 
-                for (let i = 5; i >= 0; i--) {
-                    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
-                    const ano = d.getFullYear();
-                    const mes = d.getMonth() + 1;
-                    const nomesMes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                    meses.push(nomesMes[d.getMonth()]);
-                    const resumo = await DB.financeiro.faturamentoMes(ano, mes);
-                    valores.push(resumo.faturamentoBruto || 0);
-                }
-
-                new Chart(document.getElementById('chartMensal'), {
-                    type: 'line',
-                    data: {
-                        labels: meses,
-                        datasets: [{
-                            label: 'Receita',
-                            data: valores,
-                            borderColor: '#6366F1',
-                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: (value) => ProUI.Format.currency(value)
-                                }
+            new Chart(document.getElementById('chartMensal'), {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Receita',
+                        data: data,
+                        borderColor: '#6366F1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => ProUI.Format.currency(value)
                             }
                         }
                     }
-                });
-            } catch (error) {
-                console.error('Erro ao carregar gráfico mensal:', error);
-            }
+                }
+            });
         }
 
         async function loadChartDiaSemana() {
@@ -346,7 +331,7 @@
                 }
             });
             } catch (error) {
-                console.error('Erro ao carregar gráfico de dia da semana:', error);
+                console.error('Erro ao carregar gráfico de dia da semana:', error);\
             }
         }
 

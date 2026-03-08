@@ -11,8 +11,8 @@ const SUPABASE_CONFIG = {
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbmJpdnZxenBhcWNkaHhreXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NjQzMTEsImV4cCI6MjA4ODI0MDMxMX0.r8aeQczkDpchEKoap31QrMrSuJf7i-scjIrQZ7Sq65g'
 };
 
-console.log('✅ [Supabase] URL:', 'https://ldnbivvqzpaqcdhxkywl.supabase.co');
-console.log('✅ [Supabase] Key length:', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbmJpdnZxenBhcWNkaHhreXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NjQzMTEsImV4cCI6MjA4ODI0MDMxMX0.r8aeQczkDpchEKoap31QrMrSuJf7i-scjIrQZ7Sq65g');
+console.log('✅ [Supabase] URL:', SUPABASE_CONFIG.url);
+console.log('✅ [Supabase] Key length:', SUPABASE_CONFIG.anonKey.length);
 
 // ============================================
 // INICIALIZAÇÃO ROBUSTA

@@ -385,9 +385,9 @@
                         <div class="slot-content ${agendamentosHora.length > 0 ? 'occupied' : ''}" onclick="openNewAppointmentModal('${hora}', '${data}')">
                             ${agendamentosHora.map(a => `
                                 <div class="appointment-card" onclick="event.stopPropagation(); editAppointment('${a.id}')">
-                                    <div class="appointment-client">${a.cliente ? a.cliente.nome : (a.cliente_nome || '—')}</div>
-                                    <div class="appointment-service">${a.servico ? a.servico.nome : (a.servico_nome || '—')} - R$ ${parseFloat(a.valor || 0).toFixed(2)}</div>
-                                    <div class="appointment-professional">👤 ${a.profissional ? a.profissional.nome : (a.profissional_nome || '—')}</div>
+                                    <div class="appointment-client">${a.cliente.nome}</div>
+                                    <div class="appointment-service">${a.servico.nome} - R$ ${parseFloat(a.valor).toFixed(2)}</div>
+                                    <div class="appointment-professional">👤 ${a.profissional.nome}</div>
                                 </div>
                             `).join('')}
                         </div>

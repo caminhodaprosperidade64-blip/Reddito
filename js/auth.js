@@ -29,13 +29,6 @@ const Auth = {
         try {
             const supabase = window.getSupabase();
             const { data: { user }, error } = await supabase.auth.getUser();
-            
-            // AuthSessionMissingError é esperado quando não há sessão ativa
-            if (error && error.name === 'AuthSessionMissingError') {
-                console.log('ℹ️ [Auth] Sem sessão ativa (normal)');
-                return null;
-            }
-            
             if (error) throw error;
             return user;
         } catch (error) {
