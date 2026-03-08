@@ -271,14 +271,18 @@
         /**
          * Inicializa o sistema quando tudo estiver pronto
          */
-        function inicializarSistema() {
+        async function inicializarSistema() {
             if (sistemaInicializado) return;
             
             console.log('✅ [Login] Inicializando sistema...');
             sistemaInicializado = true;
             
             configurarEventos();
-            verificarSeJaEstaLogado();
+            
+            const confirmacaoProcessada = await processarConfirmacaoEmail();
+            if (!confirmacaoProcessada) {
+                verificarSeJaEstaLogado();
+            }
         }
         
         /**
@@ -435,6 +439,89 @@
                 }
             } catch (e) {
                 console.error('❌ [Login] Erro ao verificar:', e);
+            }
+        }
+        
+        // ============================================
+        // PROCESSAR CONFIRMAÇÃO DE EMAIL
+        // ============================================
+        
+        async function processarConfirmacaoEmail() {
+            console.log('🔍 [Confirmação] Verificando URL...');
+            
+            const hash = window.location.hash;
+            
+            if (!hash) {
+                console.log('ℹ️ [Confirmação] Sem hash na URL');
+                return false;
+            }
+            
+            const params = new URLSearchParams(hash.substring(1));
+            const accessToken = params.get('access_token');
+            const type = params.get('type');
+            const refreshToken = params.get('refresh_token');
+            
+            console.log('🔍 [Confirmação] Parâmetros:', {
+                hasAccessToken: !!accessToken,
+                type,
+                hasRefreshToken: !!refreshToken
+            });
+            
+            if (!accessToken) {
+                console.log('ℹ️ [Confirmação] Sem access token');
+                return false;
+            }
+            
+            try {
+                console.log('✅ [Confirmação] Token detectado! Processando...');
+                
+                const suc = document.getElementById('successMessage');
+                if (suc) {
+                    suc.innerHTML = '<span class="loading"></span> Confirmando seu email...';
+                    suc.style.display = 'block';
+                }
+                
+                const supabase = window.getSupabase();
+                
+                const sessionPayload = { access_token: accessToken };
+                if (refreshToken) {
+                    sessionPayload.refresh_token = refreshToken;
+                }
+                const { data, error } = await supabase.auth.setSession(sessionPayload);
+                
+                if (error) {
+                    console.error('❌ [Confirmação] Erro ao setar sessão:', error);
+                    mostrarErro('Erro ao confirmar email: ' + error.message);
+                    return false;
+                }
+                
+                console.log('✅ [Confirmação] Sessão setada:', data);
+                
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                
+                if (userError || !user) {
+                    console.error('❌ [Confirmação] Erro ao obter usuário:', userError);
+                    mostrarErro('Erro ao confirmar email. Tente fazer login manualmente.');
+                    return false;
+                }
+                
+                console.log('✅ [Confirmação] Usuário confirmado:', user.email);
+                
+                window.history.replaceState(null, '', window.location.pathname);
+                
+                mostrarSucesso('✅ Email confirmado com sucesso! Redirecionando...');
+                
+                setTimeout(() => {
+                    console.log('🚀 [Confirmação] Redirecionando para dashboard...');
+                    window.location.href = '/dashboard.html';
+                }, 2000);
+                
+                return true;
+                
+            } catch (erro) {
+                console.error('❌ [Confirmação] Erro:', erro);
+                mostrarErro('Erro ao confirmar email: ' + erro.message);
+                return false;
             }
         }
         
