@@ -19,7 +19,8 @@ const DB = {
         async listar() {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();  
+
                 const { data, error } = await supabase
                     .from('clientes')
                     .select('*')
@@ -38,7 +39,8 @@ const DB = {
         async buscar(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();  
+
                 const { data, error } = await supabase
                     .from('clientes')
                     .select('*')
@@ -57,7 +59,8 @@ const DB = {
         async criar(dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();  
+
                 const { data, error } = await supabase
                     .from('clientes')
                     .insert({
@@ -81,7 +84,8 @@ const DB = {
         async atualizar(id, dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
+
                 const { data, error } = await supabase
                     .from('clientes')
                     .update({
@@ -106,7 +110,8 @@ const DB = {
         async excluir(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
+
                 const { error } = await supabase
                     .from('clientes')
                     .delete()
