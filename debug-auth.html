@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Sistema de Autenticação</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #eee; }
+        h1 { color: #667eea; margin-bottom: 20px; }
+        #results p { margin: 4px 0; }
+        .success { color: #68d391; }
+        .error { color: #fc8181; }
+        .info { color: #63b3ed; }
+        button { margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #764ba2; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug do Sistema de Autenticação</h1>
+    <div id="results"></div>
+    <button onclick="testar()">🔄 Executar Testes Novamente</button>
+
+    <script>
+        const SUPABASE_URL = 'https://ldnbivvqzpaqcdhxkywl.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbmJpdnZxenBhcWNkaHhreXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NjQzMTEsImV4cCI6MjA4ODI0MDMxMX0.r8aeQczkDpchEKoap31QrMrSuJf7i-scjIrQZ7Sq65g';
+
+        const results = document.getElementById('results');
+
+        function log(message, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = message;
+            results.appendChild(p);
+            console.log(message);
+        }
+
+        function clear() {
+            results.innerHTML = '';
+        }
+
+        async function testar() {
+            clear();
+            log('🔍 Iniciando testes...', 'info');
+
+            // Teste 1: CDN
+            const cdnOk = typeof window.supabase !== 'undefined';
+            log('1. CDN Supabase: ' + (cdnOk ? '✅ Carregado' : '❌ Não carregado'), cdnOk ? 'success' : 'error');
+
+            if (!cdnOk) {
+                log('❌ CDN não carregou. Verifique sua conexão com a internet.', 'error');
+                return;
+            }
+
+            // Teste 2: createClient disponível
+            const createClientOk = typeof window.supabase.createClient === 'function';
+            log('2. window.supabase.createClient: ' + (createClientOk ? '✅ Disponível' : '❌ Não disponível'), createClientOk ? 'success' : 'error');
+
+            if (!createClientOk) {
+                log('❌ createClient não encontrado na biblioteca CDN.', 'error');
+                return;
+            }
+
+            // Teste 3: Criar cliente
+            log('3. Criando cliente Supabase...', 'info');
+            let client;
+            try {
+                client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                const hasAuth = !!(client && client.auth);
+                log('   Cliente criado: ' + (client ? '✅' : '❌'), client ? 'success' : 'error');
+                log('   Tem .auth: ' + (hasAuth ? '✅' : '❌'), hasAuth ? 'success' : 'error');
+            } catch (e) {
+                log('❌ Erro ao criar cliente: ' + e.message, 'error');
+                return;
+            }
+
+            // Teste 4: Validar conexão com servidor
+            log('4. Testando conexão com servidor...', 'info');
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const serverOk = response.status === 200 || response.status === 404;
+                log('   Status HTTP: ' + response.status + (serverOk ? ' ✅ Servidor online' : ' ❌ Inesperado'), serverOk ? 'success' : 'error');
+            } catch (e) {
+                log('   ❌ Erro de rede: ' + e.message, 'error');
+            }
+
+            // Teste 5: Auth.getUser
+            log('5. Testando auth.getUser()...', 'info');
+            try {
+                const { data, error } = await client.auth.getUser();
+                if (error && error.message !== 'Auth session missing!') {
+                    log('   ❌ Erro: ' + error.message, 'error');
+                } else {
+                    log('   ✅ Conexão auth OK (sem sessão ativa é normal)', 'success');
+                }
+            } catch (e) {
+                log('   ❌ Erro: ' + e.message, 'error');
+            }
+
+            log('✅ Testes concluídos!', 'success');
+        }
+
+        // Executar após 1 segundo para garantir que o CDN carregou
+        setTimeout(testar, 1000);
+    </script>
+</body>
+</html>

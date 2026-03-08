@@ -6,6 +6,26 @@
 
 console.log('🔧 [Auth] Carregando módulo...');
 
+// ============================================
+// HELPER: OBTER CLIENTE SUPABASE COM VALIDAÇÃO
+// ============================================
+
+function getSupabaseClient() {
+    if (typeof window === 'undefined') {
+        throw new Error('Window não disponível');
+    }
+
+    if (!window.supabase) {
+        throw new Error('Cliente Supabase não foi inicializado. Aguarde o carregamento.');
+    }
+
+    if (!window.supabase.auth) {
+        throw new Error('Supabase.auth não disponível. Verifique as credenciais.');
+    }
+
+    return window.supabase;
+}
+
 // Aguardar Supabase estar pronto
 function aguardarSupabase(callback) {
     if (window.isSupabaseReady && window.isSupabaseReady()) {
@@ -70,21 +90,35 @@ const Auth = {
 
     async signUp(email, password) {
         try {
-            console.log('📝 [Auth] Criando conta...');
-            const supabase = window.getSupabase();
-            
+            console.log('📝 [Auth] Iniciando cadastro...');
+            console.log('📝 [Auth] Email:', email);
+
+            const supabase = getSupabaseClient();
+
+            console.log('📝 [Auth] Cliente obtido, chamando signUp...');
+
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password
             });
-            
-            if (error) throw error;
-            
+
+            if (error) {
+                console.error('❌ [Auth] Erro do Supabase:', error);
+                throw error;
+            }
+
+            console.log('✅ [Auth] Resposta do Supabase:', data);
             console.log('✅ [Auth] Conta criada:', data.user?.email || email);
             return { success: true, user: data.user };
-            
+
         } catch (error) {
-            console.error('❌ [Auth] Erro ao criar conta:', error);
+            console.error('❌ [Auth] Erro completo:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint,
+                status: error.status
+            });
             return { success: false, error: error.message };
         }
     },
