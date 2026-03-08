@@ -328,7 +328,7 @@
                     console.error('❌ [Login] Timeout geral');
                     mostrarErroSistema();
                 }
-            }, 5000);
+            }, 10000);
         }
         
         function mostrarErroSistema() {
@@ -337,6 +337,44 @@
                 errorDiv.textContent = '❌ Erro ao carregar sistema. Recarregue a página (Ctrl+Shift+R).';
                 errorDiv.style.display = 'block';
             }
+            mostrarErroTimeout();
+        }
+        
+        function mostrarErroTimeout() {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.3);text-align:center;z-index:9999;';
+            
+            const title = document.createElement('h2');
+            title.style.cssText = 'color:#e53e3e;margin-bottom:20px;';
+            title.textContent = '⚠️ Erro de Carregamento';
+            
+            const msg = document.createElement('p');
+            msg.style.cssText = 'margin-bottom:10px;color:#666;';
+            msg.textContent = 'O sistema não conseguiu inicializar.';
+            
+            const causesLabel = document.createElement('p');
+            causesLabel.style.cssText = 'margin-bottom:5px;font-size:13px;color:#888;';
+            causesLabel.textContent = 'Possíveis causas:';
+            
+            const causes = document.createElement('ul');
+            causes.style.cssText = 'text-align:left;font-size:13px;color:#888;margin-bottom:20px;padding-left:20px;';
+            ['Conexão lenta com a internet', 'Problemas com o servidor', 'Bloqueio de firewall/antivírus'].forEach(text => {
+                const li = document.createElement('li');
+                li.textContent = text;
+                causes.appendChild(li);
+            });
+            
+            const btn = document.createElement('button');
+            btn.style.cssText = 'padding:12px 24px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:16px;';
+            btn.textContent = '🔄 Tentar Novamente';
+            btn.addEventListener('click', () => location.reload());
+            
+            overlay.appendChild(title);
+            overlay.appendChild(msg);
+            overlay.appendChild(causesLabel);
+            overlay.appendChild(causes);
+            overlay.appendChild(btn);
+            document.body.appendChild(overlay);
         }
         
         // Iniciar

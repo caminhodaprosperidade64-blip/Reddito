@@ -4,11 +4,11 @@
  * ============================================
  */
 
-console.log('🔧 [Supabase Config] Versão 3.1.0');
+console.log('🔧 [Supabase Config] Versão 3.2.0');
 
 const SUPABASE_CONFIG = {
-    url: import.meta.env.VITE_SUPABASE_URL || 'https://ldnbivvqzpaqcdhxkywl.supabase.co',
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbmJpdnZxenBhcWNkaHhreXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NjQzMTEsImV4cCI6MjA4ODI0MDMxMX0.r8aeQczkDpchEKoap31QrMrSuJf7i-scjIrQZ7Sq65g'
+    url: 'https://ldnbivvqzpaqcdhxkywl.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbmJpdnZxenBhcWNkaHhreXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NjQzMTEsImV4cCI6MjA4ODI0MDMxMX0.r8aeQczkDpchEKoap31QrMrSuJf7i-scjIrQZ7Sq65g'
 };
 
 console.log('✅ [Supabase] URL:', SUPABASE_CONFIG.url);
@@ -84,11 +84,28 @@ function inicializarClienteSupabase() {
 }
 
 // ============================================
-// RETRY COM LOGS DETALHADOS
+// VALIDAÇÃO DE CONEXÃO
 // ============================================
 
+async function validarConexao() {
+    try {
+        const response = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/`, {
+            headers: {
+                'apikey': SUPABASE_CONFIG.anonKey,
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+            }
+        });
+        return response.status === 200 || response.status === 404; // Ambos indicam servidor online
+    } catch (error) {
+        console.error('❌ [Supabase] Erro na validação:', error);
+        return false;
+    }
+}
+
+window.validarConexaoSupabase = validarConexao;
+
 let tentativas = 0;
-const MAX = 50;
+const MAX = 100;
 
 function tentar() {
     tentativas++;
@@ -160,4 +177,4 @@ window.SupabaseUtils = {
     }
 };
 
-console.log('✅ [Supabase Config] Módulo carregado - v3.1.0');
+console.log('✅ [Supabase Config] Módulo carregado - v3.2.0');
