@@ -3,68 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/onboarding.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase/1.27.0/supabase.min.js"></script>
-    <title>Onboarding Step 1</title>
+    <title>Onboarding - Etapa 1 de 3</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f3f4f6; color: #333; }
-        .container { width: 80%; max-width: 600px; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #4B0082; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        button { background-color: #4B0082; color: white; border: none; padding: 10px; margin-top: 10px; cursor: pointer; border-radius: 5px; }
-        .progress { width: 100%; height: 20px; background: #ccc; border-radius: 5px; }
-        .progress-bar { width: 33.33%; height: 100%; background: #4B0082; border-radius: 5px; }
-        @media (max-width: 600px) { .container { width: 95%; } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .onboarding-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            padding: 50px 40px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .progress-container {
+            margin-bottom: 40px;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .step-label {
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+        }
+
+        .step.active .step-label {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            width: 100%;
+            height: 3px;
+            background: #e0e0e0;
+            z-index: 1;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            border-color: #667eea;
+            background: #f7f9ff;
+        }
+
+        .time-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Onboarding - Passo 1 de 3</h1>
-        <div class="progress">
-            <div class="progress-bar"></div>
+    <div class="onboarding-container">
+        <div class="header">
+            <h1>Complete seu Cadastro</h1>
+            <p>Preencha os dados do seu estabelecimento</p>
         </div>
+
+        <div class="progress-container">
+            <div class="progress-steps">
+                <div class="step active">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Dados</div>
+                    <div class="progress-line"></div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Serviços</div>
+                    <div class="progress-line"></div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Profissionais</div>
+                </div>
+            </div>
+        </div>
+
         <form id="onboardingForm">
-            <label for="businessName">Nome da Empresa:</label>
-            <input type="text" id="businessName" required>
-
-            <label for="cpfCnpj">CPF/CNPJ:</label>
-            <input type="text" id="cpfCnpj" required>
-
-            <label for="address">Endereço:</label>
-            <input type="text" id="address" required>
-
-            <label for="phone">Telefone:</label>
-            <input type="tel" id="phone" required>
-
-            <label for="email">Email de Contato:</label>
-            <input type="email" id="email" required>
-
-            <label>Dias de Funcionamento:</label>
-            <div>
-                <input type="checkbox" id="mon" value="Mon"><label for="mon">Segunda</label>
-                <input type="checkbox" id="tue" value="Tue"><label for="tue">Terça</label>
-                <input type="checkbox" id="wed" value="Wed"><label for="wed">Quarta</label>
-                <input type="checkbox" id="thu" value="Thu"><label for="thu">Quinta</label>
-                <input type="checkbox" id="fri" value="Fri"><label for="fri">Sexta</label>
-                <input type="checkbox" id="sat" value="Sat"><label for="sat">Sábado</label>
-                <input type="checkbox" id="sun" value="Sun"><label for="sun">Domingo</label>
+            <div class="form-group">
+                <label for="businessName">Nome do Estabelecimento *</label>
+                <input type="text" id="businessName" placeholder="Ex: Barbearia do João" required>
             </div>
 
-            <label for="openingTime">Horário de Abertura:</label>
-            <input type="time" id="openingTime" required>
+            <div class="form-group">
+                <label for="cpfCnpj">CPF ou CNPJ *</label>
+                <input type="text" id="cpfCnpj" placeholder="000.000.000-00" required>
+            </div>
 
-            <label for="closingTime">Horário de Fechamento:</label>
-            <input type="time" id="closingTime" required>
+            <div class="form-group">
+                <label for="address">Endereço Completo *</label>
+                <input type="text" id="address" placeholder="Rua, número, bairro, cidade - UF" required>
+            </div>
 
-            <button type="submit">Proseguir para o Passo 2</button>
+            <div class="form-group">
+                <label for="phone">Telefone *</label>
+                <input type="tel" id="phone" placeholder="(00) 00000-0000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email de Contato *</label>
+                <input type="email" id="email" placeholder="contato@estabelecimento.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Dias de Funcionamento *</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="mon" value="seg">
+                        <label for="mon">Segunda</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="tue" value="ter">
+                        <label for="tue">Terça</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="wed" value="qua">
+                        <label for="wed">Quarta</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="thu" value="qui">
+                        <label for="thu">Quinta</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="fri" value="sex">
+                        <label for="fri">Sexta</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="sat" value="sab">
+                        <label for="sat">Sábado</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="sun" value="dom">
+                        <label for="sun">Domingo</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Horário de Funcionamento *</label>
+                <div class="time-row">
+                    <input type="time" id="openingTime" value="08:00" required>
+                    <input type="time" id="closingTime" value="18:00" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Avançar para Próxima Etapa →</button>
         </form>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const { createClient } = supabase;
-        const supabaseUrl = 'https://your-supabase-url';
-        const supabaseKey = 'your-supabase-key';
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        const supabaseClient = createClient(
+            'https://ldnbivvqzpaqcdhxkywl.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxkbmJpdnZxenBhcWNkaHhreXdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NjQzMTEsImV4cCI6MjA4ODI0MDMxMX0.r8aeQczkDpchEKoap31QrMrSuJf7i-scjIrQZ7Sq65g'
+        );
 
         document.getElementById('onboardingForm').addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -78,16 +315,61 @@
             const openingTime = document.getElementById('openingTime').value;
             const closingTime = document.getElementById('closingTime').value;
 
-            const { data, error } = await supabase
-                .from('profiles')
-                .insert([{ business_name: businessName, cpf_cnpj: cpfCnpj, address, phone, email, business_days: days, opening_time: openingTime, closing_time: closingTime }]);
-
-            if (error) {
-                console.error('Erro ao salvar os dados:', error);
-                alert('Erro ao salvar os dados. Tente novamente.');
-            } else {
-                window.location.href = 'onboarding-step2.html';
+            if (days.length === 0) {
+                alert('Selecione pelo menos um dia de funcionamento');
+                return;
             }
+
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Salvando...';
+
+            try {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+
+                if (!user) {
+                    alert('Você precisa estar logado');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .upsert({
+                        id: user.id,
+                        business_name: businessName,
+                        document: cpfCnpj,
+                        address: address,
+                        phone: phone,
+                        contact_email: email,
+                        business_days: days,
+                        business_hours: { open: openingTime, close: closingTime },
+                        onboarding_step: 1
+                    });
+
+                if (error) {
+                    console.error('Erro:', error);
+                    alert('Erro ao salvar. Tente novamente.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Avançar para Próxima Etapa →';
+                } else {
+                    window.location.href = 'onboarding-step2.html';
+                }
+            } catch (err) {
+                console.error('Erro:', err);
+                alert('Erro ao processar. Tente novamente.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Avançar para Próxima Etapa →';
+            }
+        });
+
+        document.getElementById('phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/^(\\d{2})(\\d)/g, '($1) $2');
+                value = value.replace(/(\\d)(\\d{4})$/, '$1-$2');
+            }
+            e.target.value = value;
         });
     </script>
 </body>
