@@ -29,7 +29,9 @@
             <i class="fas fa-times-circle" style="font-size:28px;color:#EF4444;"></i>
         </div>
         <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Convite inválido ou expirado</h2>
-        <p style="color:#64748B;font-size:14px;">Este link de convite não é válido ou já expirou. Solicite um novo convite ao proprietário do estabelecimento.</p>
+        <p style="color:#64748B;font-size:14px;" id="msgInvalido">
+            Este link de convite não é válido ou já expirou. Solicite um novo convite ao proprietário do estabelecimento.
+        </p>
     </div>
 
     <!-- Estado: formulário de cadastro -->
@@ -127,10 +129,10 @@
 
     <script>
         // ─── Estado global ─────────────────────────────────────────────
-        let dadosConvite = null;
+        let dadosConvite = null; // dados validados do convite (vindos do banco)
 
-        // ─── Ao carregar: lê e valida o token ─────────────────────────
-        window.addEventListener('DOMContentLoaded', () => {
+        // ─── Ao carregar: lê o token e valida no banco ─────────────────
+        window.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
             const token  = params.get('convite');
 
@@ -140,56 +142,78 @@
             }
 
             try {
-                const payload = JSON.parse(atob(token));
+                const supabase = window.getSupabase();
 
-                // Valida campos obrigatórios
-                if (!payload.tenant_id || !payload.email || !payload.expiry) {
+                // ✅ MELHORIA 1: Valida o token diretamente no banco de dados
+                // Isso impede que tokens forjados sejam aceitos
+                const { data: convite, error } = await supabase
+                    .from('convites')
+                    .select('*')
+                    .eq('id', token)
+                    .eq('usado', false)
+                    .gt('expiry', new Date().toISOString())
+                    .single();
+
+                if (error || !convite) {
+                    // Verifica se o convite existe mas já foi usado
+                    const { data: conviteUsado } = await supabase
+                        .from('convites')
+                        .select('usado')
+                        .eq('id', token)
+                        .single();
+
+                    if (conviteUsado?.usado) {
+                        document.getElementById('msgInvalido').textContent =
+                            'Este convite já foi utilizado. Solicite um novo convite ao proprietário.';
+                    }
+
                     mostrarEstado('invalido');
                     return;
                 }
 
-                // Valida expiração
-                if (Date.now() > payload.expiry) {
-                    mostrarEstado('invalido');
-                    return;
-                }
-
-                dadosConvite = payload;
-                preencherFormulario(payload);
+                dadosConvite = convite;
+                await preencherFormulario(convite);
                 mostrarEstado('formulario');
 
             } catch (err) {
-                console.error('Token inválido:', err);
+                console.error('Erro ao validar convite:', err);
                 mostrarEstado('invalido');
             }
         });
 
         // ─── Preenche o formulário com dados do convite ────────────────
-        function preencherFormulario(payload) {
-            // Preenche email e nome se vieram no token
-            if (payload.email) {
-                document.getElementById('inputEmail').value    = payload.email;
+        async function preencherFormulario(convite) {
+            // Preenche email (bloqueado para edição)
+            if (convite.email) {
+                document.getElementById('inputEmail').value    = convite.email;
                 document.getElementById('inputEmail').readOnly = true;
                 document.getElementById('inputEmail').style.opacity = '0.7';
             }
-            if (payload.nome) {
-                document.getElementById('inputNome').value = payload.nome;
-            }
 
-            // Mensagem de boas-vindas personalizada
-            if (payload.nome) {
+            // Preenche nome se veio no convite
+            if (convite.nome) {
+                document.getElementById('inputNome').value = convite.nome;
                 document.getElementById('msgBoasVindas').textContent =
-                    `Olá, ${payload.nome}! Complete seu cadastro para acessar o sistema.`;
+                    `Olá, ${convite.nome}! Complete seu cadastro para acessar o sistema.`;
             }
 
-            // Tenta mostrar nome do estabelecimento (salvo no localStorage pelo dono)
+            // ✅ MELHORIA 2: Busca nome do estabelecimento direto do Supabase
+            // Não depende mais do localStorage (que só funciona no mesmo navegador)
             try {
-                const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
-                if (cfg.nome) {
-                    document.getElementById('nomeEstabelecimento').textContent    = cfg.nome;
+                const supabase = window.getSupabase();
+                const { data: perfilDono } = await supabase
+                    .from('perfis')
+                    .select('nome')
+                    .eq('user_id', convite.tenant_id)
+                    .single();
+
+                if (perfilDono?.nome) {
+                    document.getElementById('nomeEstabelecimento').textContent     = perfilDono.nome;
                     document.getElementById('bannerEstabelecimento').style.display = 'block';
                 }
-            } catch (_) {}
+            } catch (_) {
+                // Silencioso — banner simplesmente não aparece
+            }
         }
 
         // ─── Realiza o cadastro no Supabase ───────────────────────────
@@ -203,8 +227,8 @@
             const confirma = document.getElementById('inputConfirmar').value;
 
             // Validações
-            if (!nome) { mostrarErro('Informe seu nome completo.'); return; }
-            if (senha.length < 6) { mostrarErro('A senha deve ter pelo menos 6 caracteres.'); return; }
+            if (!nome)              { mostrarErro('Informe seu nome completo.'); return; }
+            if (senha.length < 6)   { mostrarErro('A senha deve ter pelo menos 6 caracteres.'); return; }
             if (senha !== confirma) { mostrarErro('As senhas não coincidem.'); return; }
             if (email !== dadosConvite.email) {
                 mostrarErro(`Este convite é para o email ${dadosConvite.email}. Use o email correto.`);
@@ -222,9 +246,7 @@
                 const { data: authData, error: authError } = await supabase.auth.signUp({
                     email,
                     password: senha,
-                    options: {
-                        data: { nome }   // salva no user_metadata
-                    }
+                    options: { data: { nome } }
                 });
 
                 if (authError) throw authError;
@@ -233,7 +255,6 @@
                 if (!userId) throw new Error('Usuário não criado corretamente.');
 
                 // 2. Cria o perfil na tabela `perfis` como 'profissional'
-                //    vinculado ao tenant_id do dono que gerou o convite
                 const { error: perfilError } = await supabase
                     .from('perfis')
                     .insert({
@@ -245,7 +266,13 @@
 
                 if (perfilError) throw perfilError;
 
-                // 3. Sucesso!
+                // 3. ✅ Marca o convite como USADO (impede reutilização)
+                await supabase
+                    .from('convites')
+                    .update({ usado: true })
+                    .eq('id', dadosConvite.id);
+
+                // 4. Sucesso!
                 mostrarEstado('sucesso');
                 setTimeout(() => {
                     document.getElementById('barraProgresso').style.width = '100%';
@@ -259,7 +286,6 @@
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-check-circle"></i> Criar Minha Conta';
 
-                // Mensagens amigáveis para erros comuns do Supabase
                 if (err.message?.includes('already registered') || err.message?.includes('already been registered')) {
                     mostrarErro('Este email já possui uma conta. Faça login ou use outro email.');
                 } else if (err.message?.includes('Password')) {
@@ -272,10 +298,8 @@
 
         // ─── Helpers de UI ─────────────────────────────────────────────
         function mostrarEstado(estado) {
-            document.getElementById('estadoCarregando').style.display = 'none';
-            document.getElementById('estadoInvalido').style.display   = 'none';
-            document.getElementById('estadoFormulario').style.display = 'none';
-            document.getElementById('estadoSucesso').style.display    = 'none';
+            ['estadoCarregando','estadoInvalido','estadoFormulario','estadoSucesso']
+                .forEach(id => document.getElementById(id).style.display = 'none');
 
             const mapa = {
                 carregando: 'estadoCarregando',
@@ -284,12 +308,7 @@
                 sucesso:    'estadoSucesso'
             };
             if (mapa[estado]) {
-                document.getElementById(mapa[estado]).style.display =
-                    estado === 'formulario' ? 'block' : (estado === 'carregando' ? 'block' : 'flex');
-                // ajuste para flex nos estados de ícone centralizado
-                if (estado === 'invalido' || estado === 'sucesso') {
-                    document.getElementById(mapa[estado]).style.display = 'block';
-                }
+                document.getElementById(mapa[estado]).style.display = 'block';
             }
         }
 
@@ -306,10 +325,10 @@
             const input = document.getElementById(inputId);
             const icon  = document.getElementById(iconId);
             if (input.type === 'password') {
-                input.type    = 'text';
+                input.type     = 'text';
                 icon.className = 'fas fa-eye-slash';
             } else {
-                input.type    = 'password';
+                input.type     = 'password';
                 icon.className = 'fas fa-eye';
             }
         }
