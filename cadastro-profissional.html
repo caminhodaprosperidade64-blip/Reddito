@@ -75,7 +75,7 @@
                             <input type="password" class="pro-input" id="inputSenha"
                                 placeholder="Mínimo 6 caracteres" required minlength="6"
                                 style="padding-right:44px;">
-                            <button type="button" onclick="toggleSenha('inputSenha', 'iconSenha')"
+                            <button type="button" onclick="toggleSenha('inputSenha','iconSenha')"
                                 style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#64748B;">
                                 <i class="fas fa-eye" id="iconSenha"></i>
                             </button>
@@ -88,14 +88,13 @@
                             <input type="password" class="pro-input" id="inputConfirmar"
                                 placeholder="Repita a senha" required minlength="6"
                                 style="padding-right:44px;">
-                            <button type="button" onclick="toggleSenha('inputConfirmar', 'iconConfirmar')"
+                            <button type="button" onclick="toggleSenha('inputConfirmar','iconConfirmar')"
                                 style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#64748B;">
                                 <i class="fas fa-eye" id="iconConfirmar"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Mensagem de erro -->
                     <div id="msgErro" style="display:none;padding:12px 16px;background:#FEE2E2;border-radius:8px;margin-bottom:16px;font-size:13px;color:#DC2626;">
                         <i class="fas fa-exclamation-circle"></i> <span id="textoErro"></span>
                     </div>
@@ -128,24 +127,18 @@
     </div>
 
     <script>
-        // ─── Estado global ─────────────────────────────────────────────
-        let dadosConvite = null; // dados validados do convite (vindos do banco)
+        let dadosConvite = null;
 
-        // ─── Ao carregar: lê o token e valida no banco ─────────────────
         window.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
             const token  = params.get('convite');
 
-            if (!token) {
-                mostrarEstado('invalido');
-                return;
-            }
+            if (!token) { mostrarEstado('invalido'); return; }
 
             try {
                 const supabase = window.getSupabase();
 
-                // ✅ MELHORIA 1: Valida o token diretamente no banco de dados
-                // Isso impede que tokens forjados sejam aceitos
+                // ✅ Valida o token no banco (UUID seguro)
                 const { data: convite, error } = await supabase
                     .from('convites')
                     .select('*')
@@ -155,7 +148,7 @@
                     .single();
 
                 if (error || !convite) {
-                    // Verifica se o convite existe mas já foi usado
+                    // Verifica se já foi usado
                     const { data: conviteUsado } = await supabase
                         .from('convites')
                         .select('usado')
@@ -166,7 +159,6 @@
                         document.getElementById('msgInvalido').textContent =
                             'Este convite já foi utilizado. Solicite um novo convite ao proprietário.';
                     }
-
                     mostrarEstado('invalido');
                     return;
                 }
@@ -181,42 +173,34 @@
             }
         });
 
-        // ─── Preenche o formulário com dados do convite ────────────────
         async function preencherFormulario(convite) {
-            // Preenche email (bloqueado para edição)
             if (convite.email) {
                 document.getElementById('inputEmail').value    = convite.email;
                 document.getElementById('inputEmail').readOnly = true;
                 document.getElementById('inputEmail').style.opacity = '0.7';
             }
-
-            // Preenche nome se veio no convite
             if (convite.nome) {
                 document.getElementById('inputNome').value = convite.nome;
                 document.getElementById('msgBoasVindas').textContent =
                     `Olá, ${convite.nome}! Complete seu cadastro para acessar o sistema.`;
             }
 
-            // ✅ MELHORIA 2: Busca nome do estabelecimento direto do Supabase
-            // Não depende mais do localStorage (que só funciona no mesmo navegador)
+            // ✅ Busca nome do estabelecimento pelo tenant_id (coluna id da tabela perfis)
             try {
                 const supabase = window.getSupabase();
                 const { data: perfilDono } = await supabase
                     .from('perfis')
                     .select('nome')
-                    .eq('user_id', convite.tenant_id)
+                    .eq('id', convite.tenant_id) // ✅ coluna correta
                     .single();
 
                 if (perfilDono?.nome) {
                     document.getElementById('nomeEstabelecimento').textContent     = perfilDono.nome;
                     document.getElementById('bannerEstabelecimento').style.display = 'block';
                 }
-            } catch (_) {
-                // Silencioso — banner simplesmente não aparece
-            }
+            } catch (_) {}
         }
 
-        // ─── Realiza o cadastro no Supabase ───────────────────────────
         async function realizarCadastro(e) {
             e.preventDefault();
             esconderErro();
@@ -226,12 +210,11 @@
             const senha    = document.getElementById('inputSenha').value;
             const confirma = document.getElementById('inputConfirmar').value;
 
-            // Validações
             if (!nome)              { mostrarErro('Informe seu nome completo.'); return; }
             if (senha.length < 6)   { mostrarErro('A senha deve ter pelo menos 6 caracteres.'); return; }
             if (senha !== confirma) { mostrarErro('As senhas não coincidem.'); return; }
             if (email !== dadosConvite.email) {
-                mostrarErro(`Este convite é para o email ${dadosConvite.email}. Use o email correto.`);
+                mostrarErro(`Este convite é para o email ${dadosConvite.email}.`);
                 return;
             }
 
@@ -242,7 +225,7 @@
             try {
                 const supabase = window.getSupabase();
 
-                // 1. Cria o usuário no Supabase Auth
+                // 1. Cria usuário no Supabase Auth
                 const { data: authData, error: authError } = await supabase.auth.signUp({
                     email,
                     password: senha,
@@ -254,19 +237,21 @@
                 const userId = authData.user?.id;
                 if (!userId) throw new Error('Usuário não criado corretamente.');
 
-                // 2. Cria o perfil na tabela `perfis` como 'profissional'
+                // 2. Cria perfil como 'profissional'
+                // ✅ id = userId (chave primária = auth.uid())
                 const { error: perfilError } = await supabase
                     .from('perfis')
                     .insert({
-                        user_id:   userId,
+                        id:        userId,
                         tenant_id: dadosConvite.tenant_id,
                         nome:      nome,
+                        email:     email,
                         role:      'profissional'
                     });
 
                 if (perfilError) throw perfilError;
 
-                // 3. ✅ Marca o convite como USADO (impede reutilização)
+                // 3. Marca convite como usado
                 await supabase
                     .from('convites')
                     .update({ usado: true })
@@ -277,9 +262,7 @@
                 setTimeout(() => {
                     document.getElementById('barraProgresso').style.width = '100%';
                 }, 100);
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 3200);
+                setTimeout(() => { window.location.href = 'index.html'; }, 3200);
 
             } catch (err) {
                 console.error('Erro no cadastro:', err);
@@ -296,20 +279,16 @@
             }
         }
 
-        // ─── Helpers de UI ─────────────────────────────────────────────
         function mostrarEstado(estado) {
             ['estadoCarregando','estadoInvalido','estadoFormulario','estadoSucesso']
                 .forEach(id => document.getElementById(id).style.display = 'none');
-
             const mapa = {
                 carregando: 'estadoCarregando',
                 invalido:   'estadoInvalido',
                 formulario: 'estadoFormulario',
                 sucesso:    'estadoSucesso'
             };
-            if (mapa[estado]) {
-                document.getElementById(mapa[estado]).style.display = 'block';
-            }
+            if (mapa[estado]) document.getElementById(mapa[estado]).style.display = 'block';
         }
 
         function mostrarErro(msg) {
