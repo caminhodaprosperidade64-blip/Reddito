@@ -11,13 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/auth-guard.js"></script>
-    <script src="js/database.js"></script>
-    <script src="js/pro-ui.js"></script>
 </head>
 <body>
     <div class="pro-app">
@@ -84,7 +77,7 @@
                             <h1 class="pro-page-title">Clientes</h1>
                             <p class="pro-page-subtitle">Gerencie sua carteira de clientes</p>
                         </div>
-                        <button class="pro-btn pro-btn-primary" onclick="openClientModal()">
+                        <button class="pro-btn pro-btn-primary" id="btnNovoCliente">
                             <i class="fas fa-plus"></i> Novo Cliente
                         </button>
                     </div>
@@ -205,12 +198,25 @@
         </div>
     </div>
 
+    <!-- Scripts no final do body para garantir carregamento correto -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/pro-ui.js"></script>
+
     <script>
-        // ─── Estado ────────────────────────────────────────────────────
+        // ─── Estado ────
         let currentFilter = 'todos';
         let todosClientes = [];
 
-        // ─── Perfil carregado: ponto de entrada principal ──────────────
+        // ─── Bind do botão Novo Cliente ────
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('btnNovoCliente').addEventListener('click', openClientModal);
+        });
+
+        // ─── Perfil carregado: ponto de entrada principal ────
         window.addEventListener('perfilCarregado', async (e) => {
             const perfil = e.detail;
             if (!perfil) return;
@@ -223,7 +229,7 @@
             await loadClientes();
         });
 
-        // ─── Carregar clientes do banco ────────────────────────────────
+        // ─── Carregar clientes do banco ────
         async function loadClientes() {
             try {
                 todosClientes = await DB.clientes.listar();
@@ -236,7 +242,7 @@
             }
         }
 
-        // ─── Filtrar localmente ────────────────────────────────────────
+        // ─── Filtrar localmente ────
         function filtrarLocalmente() {
             const search = (document.getElementById('searchInput').value || '').toLowerCase();
             let lista = [...todosClientes];
@@ -268,7 +274,7 @@
             renderTable(lista);
         }
 
-        // ─── Atualizar métricas ────────────────────────────────────────
+        // ─── Atualizar métricas ────
         function atualizarMetricas(lista) {
             document.getElementById('totalClientes').textContent = lista.length;
 
@@ -281,12 +287,12 @@
             const vip = lista.filter(c => parseFloat(c.total_gasto || 0) > 500);
             document.getElementById('clientesVIP').textContent = vip.length;
 
-            const trintaDiasAtras = Date.now() - 30  86400000;
+            const trintaDiasAtras = Date.now() - 30 * 86400000;
             const novos = lista.filter(c => new Date(c.created_at).getTime() > trintaDiasAtras);
             document.getElementById('clientesNovos').textContent = novos.length;
         }
 
-        // ─── Renderizar tabela ─────────────────────────────────────────
+        // ─── Renderizar tabela ────
         function renderTable(clientes) {
             const tbody = document.getElementById('clientesTable');
 
@@ -345,7 +351,7 @@
             }).join('');
         }
 
-        // ─── Filtro por chip ───────────────────────────────────────────
+        // ─── Filtro por chip ────
         function setFilter(filter, btn) {
             currentFilter = filter;
             document.querySelectorAll('.pro-filter-chip').forEach(c => c.classList.remove('active'));
@@ -353,7 +359,7 @@
             filtrarLocalmente();
         }
 
-        // ─── Modal ─────────────────────────────────────────────────────
+        // ─── Modal ────
         function openClientModal() {
             document.getElementById('modalTitle').textContent = 'Novo Cliente';
             document.getElementById('clientForm').reset();
@@ -378,7 +384,7 @@
             document.getElementById('clientModal').style.display = 'flex';
         }
 
-        // ─── Salvar cliente ────────────────────────────────────────────
+        // ─── Salvar cliente ────
         async function saveClient(e) {
             e.preventDefault();
             try {
@@ -408,7 +414,7 @@
             }
         }
 
-        // ─── Excluir cliente ───────────────────────────────────────────
+        // ─── Excluir cliente ────
         async function deleteClient(id) {
             if (!confirm('Deseja realmente excluir este cliente?')) return;
             try {
@@ -425,7 +431,7 @@
             }
         }
 
-        // ─── Logout ────────────────────────────────────────────────────
+        // ─── Logout ────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
