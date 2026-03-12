@@ -49,7 +49,7 @@
                     <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item active"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
                 </div>
                 <div class="pro-nav-section">
-                    <a href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
@@ -89,8 +89,8 @@
 
                 <!-- Aviso: recurso somente para donos -->
                 <div id="avisoAcessoRestrito" style="display:none;margin-bottom:24px;">
-                    <div style="padding:16px;background:var(--warning-light,#FEF3C7);border:1px solid var(--warning);border-radius:8px;display:flex;align-items:center;gap:12px;">
-                        <i class="fas fa-lock" style="color:var(--warning);font-size:20px;"></i>
+                    <div style="padding:16px;background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;display:flex;align-items:center;gap:12px;">
+                        <i class="fas fa-lock" style="color:#F59E0B;font-size:20px;"></i>
                         <div>
                             <strong>Acesso restrito</strong>
                             <p style="font-size:13px;margin-top:2px;color:var(--text-secondary);">
@@ -121,7 +121,6 @@
                                 </span>
                             </div>
 
-                            <!-- Aviso de funcionalidade futura -->
                             <div style="max-width:480px;margin:0 auto 24px;padding:16px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;text-align:left;">
                                 <div style="display:flex;gap:10px;align-items:flex-start;">
                                     <i class="fas fa-info-circle" style="color:#3B82F6;margin-top:2px;flex-shrink:0;"></i>
@@ -333,7 +332,7 @@
         const STORAGE_KEY_WA = 'sispro_whatsapp';
 
         // ─── Perfil na sidebar + controle de acesso ────────────────────
-        document.addEventListener('perfilCarregado', (e) => {
+        window.addEventListener('perfilCarregado', (e) => { // ✅ window, não document
             const perfil = e.detail;
             if (!perfil) return;
 
@@ -342,15 +341,13 @@
             document.getElementById('userName').textContent   = perfil.nome || perfil.email;
             document.getElementById('userRole').textContent   = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
 
-            // Somente dono acessa esta página
             if (perfil.role !== 'dono') {
-                document.getElementById('secaoDono').style.display = 'none';
+                document.getElementById('secaoDono').style.display          = 'none';
                 document.getElementById('avisoAcessoRestrito').style.display = 'block';
             } else {
                 carregarConfiguracoes();
             }
 
-            // Nome do estabelecimento no header
             try {
                 const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
                 if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
@@ -362,18 +359,16 @@
             try {
                 const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || '{}');
 
-                // Automações
-                if (saved.autoConfirm   !== undefined) document.getElementById('autoConfirm').checked   = saved.autoConfirm;
-                if (saved.autoReminder  !== undefined) document.getElementById('autoReminder').checked  = saved.autoReminder;
-                if (saved.autoThanks    !== undefined) document.getElementById('autoThanks').checked    = saved.autoThanks;
+                if (saved.autoConfirm    !== undefined) document.getElementById('autoConfirm').checked    = saved.autoConfirm;
+                if (saved.autoReminder   !== undefined) document.getElementById('autoReminder').checked   = saved.autoReminder;
+                if (saved.autoThanks     !== undefined) document.getElementById('autoThanks').checked     = saved.autoThanks;
                 if (saved.autoReschedule !== undefined) document.getElementById('autoReschedule').checked = saved.autoReschedule;
-                if (saved.autoReturn    !== undefined) document.getElementById('autoReturn').checked    = saved.autoReturn;
+                if (saved.autoReturn     !== undefined) document.getElementById('autoReturn').checked     = saved.autoReturn;
 
-                // Templates
-                if (saved.tplConfirmacao)  document.getElementById('tplConfirmacao').value  = saved.tplConfirmacao;
-                if (saved.tplLembrete)     document.getElementById('tplLembrete').value     = saved.tplLembrete;
+                if (saved.tplConfirmacao)   document.getElementById('tplConfirmacao').value   = saved.tplConfirmacao;
+                if (saved.tplLembrete)      document.getElementById('tplLembrete').value      = saved.tplLembrete;
                 if (saved.tplAgradecimento) document.getElementById('tplAgradecimento').value = saved.tplAgradecimento;
-                if (saved.tplReagendar)    document.getElementById('tplReagendar').value    = saved.tplReagendar;
+                if (saved.tplReagendar)     document.getElementById('tplReagendar').value     = saved.tplReagendar;
             } catch (e) {
                 console.warn('Erro ao carregar config WhatsApp:', e);
             }
@@ -428,7 +423,7 @@
             mostrarToast('⏳ Integração WhatsApp Business em breve. Fique ligado nas atualizações!', 'info');
         }
 
-        // ─── Envio manual (placeholder) ───────────────────────────────
+        // ─── Envio manual ──────────────────────────────────────────────
         function enviarMensagemManual() {
             const numero   = document.getElementById('numeroManual').value.trim();
             const mensagem = document.getElementById('mensagemManual').value.trim();
@@ -442,7 +437,6 @@
                 return;
             }
 
-            // Abre WhatsApp Web como fallback até a API estar disponível
             const numeroLimpo = numero.replace(/\D/g, '');
             const url = `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
             window.open(url, '_blank');
