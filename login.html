@@ -402,7 +402,7 @@
             try {
                 if (await Auth.isAuthenticated()) {
                     console.log('✅ [Login] Já logado, redirecionando...');
-                    window.location.href = '/dashboard.html';
+                    window.location.href = 'dashboard.html';
                 }
             } catch (e) {
                 console.error('❌ [Login] Erro ao verificar:', e);
@@ -419,14 +419,15 @@
                 const { data: perfil } = await supabase
                     .from('perfis')
                     .select('id')
-                    .eq('user_id', user.id)
+                    .eq('id', user.id)
                     .single();
                 if (!perfil) {
                     await supabase.from('perfis').insert({
-                        user_id: user.id,
+                        id: user.id,
                         tenant_id: user.id,
                         role: 'dono',
-                        nome: user.user_metadata?.nome || user.email.split('@')[0]
+                        nome: user.user_metadata?.nome || user.email.split('@')[0],
+                        email: user.email
                     });
                     console.log('✅ [Perfil] Perfil criado como dono');
                 }
@@ -455,7 +456,7 @@
                         await garantirPerfil(user);
                         window.history.replaceState(null, '', window.location.pathname);
                         mostrarSucesso('✅ Email confirmado! Redirecionando...');
-                        setTimeout(() => { window.location.href = '/dashboard.html'; }, 2000);
+                        setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
                         return true;
                     }
                 } catch (err) {
@@ -517,7 +518,7 @@
                 await garantirPerfil(user);
                 window.history.replaceState(null, '', window.location.pathname);
                 mostrarSucesso('✅ Email confirmado com sucesso! Redirecionando...');
-                setTimeout(() => { window.location.href = '/dashboard.html'; }, 2000);
+                setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
                 return true;
 
             } catch (erro) {
@@ -550,7 +551,6 @@
                     const resultado = await Auth.signIn(email, password);
 
                     if (resultado.success) {
-                        // Garantia: criar perfil se não existir
                         try {
                             const supabase = window.getSupabase();
                             const { data: { user } } = await supabase.auth.getUser();
@@ -558,7 +558,7 @@
                         } catch(e) { console.warn('⚠️ [Login] Perfil check:', e); }
 
                         mostrarSucesso('✅ Login realizado!');
-                        setTimeout(() => window.location.href = '/dashboard.html', 1000);
+                        setTimeout(() => window.location.href = 'dashboard.html', 1000);
                     } else {
                         let erro = resultado.error || 'Erro ao fazer login';
 
@@ -608,7 +608,7 @@
                     if (resultado.success) {
                         localStorage.setItem('emailCadastro', email);
                         mostrarSucesso('✅ Conta criada! Verifique seu email.');
-                        setTimeout(() => window.location.href = '/aguardando-confirmacao.html', 2000);
+                        setTimeout(() => window.location.href = 'aguardando-confirmacao.html', 2000);
                     } else {
                         mostrarErro(resultado.error || 'Erro ao criar conta');
                         btn.disabled = false;
