@@ -141,26 +141,43 @@
                     </div>
                     <div class="pro-card-body">
                         <div class="pro-table-container">
-                            <table class="pro-table">
+                            <!-- ✅ Duas versões da tabela: dono vê todas as colunas, profissional vê versão reduzida -->
+                            <table class="pro-table" id="tabelaDono">
                                 <thead>
                                     <tr>
                                         <th>Data/Hora</th>
                                         <th>Cliente</th>
                                         <th>Serviço</th>
-                                        <th class="col-profissional">Profissional</th>
+                                        <th>Profissional</th>
                                         <th>Valor Serviço</th>
-                                        <th class="col-comissao">Comissão</th>
+                                        <th>Comissão</th>
                                         <th>Valor Líquido</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
-                                <tbody id="financeiroTable">
+                                <tbody id="financeiroTableDono">
+                                    <tr><td colspan="8" class="pro-empty-state">
+                                        <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
+                                        <p>Carregando...</p>
+                                    </td></tr>
+                                </tbody>
+                            </table>
+                            <table class="pro-table" id="tabelaProfissional" style="display:none;">
+                                <thead>
                                     <tr>
-                                        <td colspan="8" class="pro-empty-state">
-                                            <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
-                                            <p>Carregando movimentações...</p>
-                                        </td>
+                                        <th>Data/Hora</th>
+                                        <th>Cliente</th>
+                                        <th>Serviço</th>
+                                        <th>Valor Serviço</th>
+                                        <th>Valor Líquido</th>
+                                        <th>Status</th>
                                     </tr>
+                                </thead>
+                                <tbody id="financeiroTableProf">
+                                    <tr><td colspan="6" class="pro-empty-state">
+                                        <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
+                                        <p>Carregando...</p>
+                                    </td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -211,7 +228,8 @@
     <script>
         // ─── Estado ────────────────────────────────────────────────────
         let todosAgendamentos = [];
-        let perfilAtual = null;
+        let perfilAtual       = null;
+        let profissionalIdAtual = null; // ✅ ID na tabela profissionais (não o user_id)
 
         // ─── Helpers de formatação ─────────────────────────────────────
         function formatCurrency(val) {
@@ -220,13 +238,12 @@
 
         function formatDate(dateStr) {
             if (!dateStr) return '—';
-            // Suporta tanto "YYYY-MM-DD" quanto ISO completo
             const d = new Date(dateStr + (dateStr.length === 10 ? 'T00:00:00' : ''));
             return d.toLocaleDateString('pt-BR');
         }
 
         // ─── Perfil na sidebar + controle de acesso ────────────────────
-        document.addEventListener('perfilCarregado', (e) => {
+        window.addEventListener('perfilCarregado', async (e) => { // ✅ window, não document
             perfilAtual = e.detail;
             if (!perfilAtual) return;
 
@@ -235,23 +252,29 @@
             document.getElementById('userName').textContent   = perfilAtual.nome || perfilAtual.email;
             document.getElementById('userRole').textContent   = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
 
-            // Nome do estabelecimento
             try {
                 const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
                 if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
             } catch (_) {}
 
-            // Profissional: oculta elementos exclusivos do dono
             if (perfilAtual.role !== 'dono') {
-                document.getElementById('filterProfissional').style.display    = 'none';
+                // ✅ Busca o registro na tabela profissionais pelo user_id do perfil
+                try {
+                    const todos = await DB.profissionais.listar();
+                    const meu   = (todos || []).find(p => p.user_id === perfilAtual.id);
+                    profissionalIdAtual = meu ? meu.id : null;
+                } catch (_) {}
+
+                // Oculta elementos exclusivos do dono
+                document.getElementById('filterProfissional').style.display     = 'none';
                 document.getElementById('cardResumoProfissionais').style.display = 'none';
-                document.getElementById('rowComissoes').style.display           = 'none';
-                // Oculta colunas de cabeçalho
-                document.querySelectorAll('.col-profissional, .col-comissao')
-                    .forEach(el => el.style.display = 'none');
+                document.getElementById('rowComissoes').style.display            = 'none';
+
+                // ✅ Mostra tabela reduzida (sem colunas de profissional e comissão)
+                document.getElementById('tabelaDono').style.display        = 'none';
+                document.getElementById('tabelaProfissional').style.display = '';
             }
 
-            // Carrega dados após ter o perfil
             loadFinanceiro();
         });
 
@@ -263,7 +286,7 @@
 
                 const [agendamentos, profissionais] = await Promise.all([
                     DB.agendamentos.listar({ inicio, fim }),
-                    DB.profissionais.listar()
+                    perfilAtual?.role === 'dono' ? DB.profissionais.listar() : Promise.resolve([])
                 ]);
 
                 // Filtra apenas concluídos
@@ -271,10 +294,9 @@
                     (a.status || '').toLowerCase().startsWith('conclu')
                 );
 
-                // Preenche dropdown de profissionais (só útil para dono)
                 if (perfilAtual?.role === 'dono') {
                     preencherFiltrosProfissionais(profissionais);
-                    renderResumoProfissionais(profissionais);
+                    renderResumoProfissionais(profissionais); // ✅ chamado após todosAgendamentos ser preenchido
                 }
 
                 calcularMetricas();
@@ -282,11 +304,12 @@
 
             } catch (error) {
                 console.error('Erro ao carregar financeiro:', error);
-                document.getElementById('financeiroTable').innerHTML =
-                    `<tr><td colspan="8" class="pro-empty-state">
-                        <i class="fas fa-exclamation-circle pro-empty-state-icon"></i>
-                        <p>Erro ao carregar dados financeiros</p>
-                    </td></tr>`;
+                const msg = `<tr><td colspan="8" class="pro-empty-state">
+                    <i class="fas fa-exclamation-circle pro-empty-state-icon"></i>
+                    <p>Erro ao carregar dados financeiros</p>
+                </td></tr>`;
+                document.getElementById('financeiroTableDono').innerHTML = msg;
+                document.getElementById('financeiroTableProf').innerHTML = msg.replace('colspan="8"', 'colspan="6"');
             }
         }
 
@@ -334,10 +357,10 @@
 
             const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
 
-            // Para profissional, filtra apenas seus dados
+            // ✅ Para profissional, filtra pelo ID correto da tabela profissionais
             let base = [...todosAgendamentos];
-            if (perfilAtual?.role !== 'dono' && perfilAtual?.profissional_id) {
-                base = base.filter(a => a.profissional_id === perfilAtual.profissional_id);
+            if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
+                base = base.filter(a => a.profissional_id === profissionalIdAtual);
             }
 
             const somarValor    = (lista) => lista.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
@@ -363,9 +386,9 @@
 
             let lista = [...todosAgendamentos];
 
-            // Profissional só vê seus próprios dados
-            if (perfilAtual?.role !== 'dono' && perfilAtual?.profissional_id) {
-                lista = lista.filter(a => a.profissional_id === perfilAtual.profissional_id);
+            // ✅ Profissional só vê seus próprios dados (usando ID correto)
+            if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
+                lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
             }
 
             if (filterProf) {
@@ -374,33 +397,41 @@
 
             if (search) {
                 lista = lista.filter(a =>
-                    (a.cliente?.nome     || a.cliente_nome     || '').toLowerCase().includes(search) ||
-                    (a.servico?.nome     || a.servico_nome     || '').toLowerCase().includes(search) ||
+                    (a.cliente?.nome      || a.cliente_nome      || '').toLowerCase().includes(search) ||
+                    (a.servico?.nome      || a.servico_nome      || '').toLowerCase().includes(search) ||
                     (a.profissional?.nome || a.profissional_nome || '').toLowerCase().includes(search)
                 );
             }
 
             renderTable(lista);
             renderTotalizadores(lista);
+
+            // ✅ Atualiza resumo por profissional com a lista filtrada
+            if (perfilAtual?.role === 'dono') {
+                renderResumoProfissionaisFromLista(lista);
+            }
         }
 
         // ─── Renderizar tabela ─────────────────────────────────────────
         function renderTable(lista) {
-            const tbody  = document.getElementById('financeiroTable');
             const isDono = perfilAtual?.role === 'dono';
 
+            const emptyDono = `<tr><td colspan="8" class="pro-empty-state">
+                <i class="fas fa-chart-line pro-empty-state-icon"></i>
+                <p>Nenhuma movimentação encontrada</p>
+            </td></tr>`;
+            const emptyProf = `<tr><td colspan="6" class="pro-empty-state">
+                <i class="fas fa-chart-line pro-empty-state-icon"></i>
+                <p>Nenhuma movimentação encontrada</p>
+            </td></tr>`;
+
             if (lista.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="pro-empty-state">
-                            <i class="fas fa-chart-line pro-empty-state-icon"></i>
-                            <p>Nenhuma movimentação encontrada</p>
-                        </td>
-                    </tr>`;
+                document.getElementById('financeiroTableDono').innerHTML = emptyDono;
+                document.getElementById('financeiroTableProf').innerHTML = emptyProf;
                 return;
             }
 
-            tbody.innerHTML = lista.map(apt => {
+            const rowsDono = lista.map(apt => {
                 const valorServico = parseFloat(apt.valor || 0);
                 const comissao     = parseFloat(apt.comissao_valor || 0);
                 const valorLiquido = valorServico - comissao;
@@ -409,22 +440,39 @@
                 const profNome     = apt.profissional?.nome || apt.profissional_nome || '—';
                 const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
 
-                // Colunas condicionais por role
-                const colProf     = isDono ? `<td>${profNome}</td>` : '';
-                const colComissao = isDono ? `<td style="color:var(--warning);">${formatCurrency(comissao)}</td>` : '';
-
-                return `
-                    <tr>
-                        <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
-                        <td>${clienteNome}</td>
-                        <td>${servicoNome}</td>
-                        ${colProf}
-                        <td><strong>${formatCurrency(valorServico)}</strong></td>
-                        ${colComissao}
-                        <td style="color:var(--success);"><strong>${formatCurrency(valorLiquido)}</strong></td>
-                        <td><span class="pro-badge pro-badge-success">Concluído</span></td>
-                    </tr>`;
+                return `<tr>
+                    <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
+                    <td>${clienteNome}</td>
+                    <td>${servicoNome}</td>
+                    <td>${profNome}</td>
+                    <td><strong>${formatCurrency(valorServico)}</strong></td>
+                    <td style="color:var(--warning);">${formatCurrency(comissao)}</td>
+                    <td style="color:var(--success);"><strong>${formatCurrency(valorLiquido)}</strong></td>
+                    <td><span class="pro-badge pro-badge-success">Concluído</span></td>
+                </tr>`;
             }).join('');
+
+            // ✅ Tabela do profissional: sem colunas de profissional e comissão
+            const rowsProf = lista.map(apt => {
+                const valorServico = parseFloat(apt.valor || 0);
+                const comissao     = parseFloat(apt.comissao_valor || 0);
+                const valorLiquido = valorServico - comissao;
+                const clienteNome  = apt.cliente?.nome || apt.cliente_nome || '—';
+                const servicoNome  = apt.servico?.nome || apt.servico_nome || '—';
+                const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
+
+                return `<tr>
+                    <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
+                    <td>${clienteNome}</td>
+                    <td>${servicoNome}</td>
+                    <td><strong>${formatCurrency(valorServico)}</strong></td>
+                    <td style="color:var(--success);"><strong>${formatCurrency(valorLiquido)}</strong></td>
+                    <td><span class="pro-badge pro-badge-success">Concluído</span></td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('financeiroTableDono').innerHTML = isDono ? rowsDono : emptyDono;
+            document.getElementById('financeiroTableProf').innerHTML = !isDono ? rowsProf : emptyProf;
         }
 
         // ─── Totalizadores ─────────────────────────────────────────────
@@ -440,10 +488,17 @@
 
         // ─── Resumo por profissional (somente dono) ────────────────────
         function renderResumoProfissionais(profissionais) {
-            const container = document.getElementById('resumoProfissionais');
+            // Guarda lista de profissionais para uso posterior
+            window._profissionaisCache = profissionais || [];
+            renderResumoProfissionaisFromLista(todosAgendamentos);
+        }
 
-            const resumo = (profissionais || []).map(prof => {
-                const apts      = todosAgendamentos.filter(a => a.profissional_id === prof.id);
+        function renderResumoProfissionaisFromLista(agendamentos) {
+            const container    = document.getElementById('resumoProfissionais');
+            const profissionais = window._profissionaisCache || [];
+
+            const resumo = profissionais.map(prof => {
+                const apts      = agendamentos.filter(a => a.profissional_id === prof.id);
                 const total     = apts.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
                 const comissoes = apts.reduce((s, a) => s + parseFloat(a.comissao_valor || 0), 0);
                 return { nome: prof.nome, total, comissoes, atendimentos: apts.length };
@@ -482,9 +537,15 @@
                 ? ['Data', 'Hora', 'Cliente', 'Serviço', 'Profissional', 'Valor', 'Comissão', 'Líquido']
                 : ['Data', 'Hora', 'Cliente', 'Serviço', 'Valor', 'Líquido'];
 
+            // ✅ Exporta apenas os dados visíveis ao usuário
+            let lista = [...todosAgendamentos];
+            if (!isDono && profissionalIdAtual) {
+                lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
+            }
+
             const linhas = [
                 cabecalho,
-                ...todosAgendamentos.map(a => {
+                ...lista.map(a => {
                     const valor    = parseFloat(a.valor || 0);
                     const comissao = parseFloat(a.comissao_valor || 0);
                     const liquido  = (valor - comissao).toFixed(2).replace('.', ',');
@@ -494,14 +555,10 @@
                         a.cliente?.nome  || a.cliente_nome  || '',
                         a.servico?.nome  || a.servico_nome  || '',
                     ];
-                    if (isDono) {
-                        base.push(a.profissional?.nome || a.profissional_nome || '');
-                    }
-                    base.push(
-                        valor.toFixed(2).replace('.', ','),
-                        ...(isDono ? [comissao.toFixed(2).replace('.', ',')] : []),
-                        liquido
-                    );
+                    if (isDono) base.push(a.profissional?.nome || a.profissional_nome || '');
+                    base.push(valor.toFixed(2).replace('.', ','));
+                    if (isDono) base.push(comissao.toFixed(2).replace('.', ','));
+                    base.push(liquido);
                     return base;
                 })
             ];
