@@ -38,7 +38,7 @@ const Auth = {
       const { data, error } = await supabase
         .from('perfis')
         .select('*')
-        .eq('id', user.id) // ✅ coluna correta
+        .eq('id', user.id)
         .single();
 
       if (error) throw error;
@@ -89,15 +89,11 @@ const Auth = {
     try {
       const supabase = window.getSupabase();
 
-      // 1. Criar conta no Supabase Auth
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
 
       const user = data.user;
 
-      // 2. Criar perfil como DONO
-      // id = user.id (chave primária = auth.uid())
-      // tenant_id = user.id (o dono É a empresa)
       const { error: perfilError } = await supabase
         .from('perfis')
         .insert({
@@ -127,7 +123,7 @@ const Auth = {
 
       window._perfilCache = null;
       console.log('✅ [Auth] Logout realizado');
-      window.location.href = '/login.html';
+      window.location.href = 'login.html';
       return { success: true };
     } catch (error) {
       console.error('❌ [Auth] Erro no logout:', error);
@@ -138,7 +134,7 @@ const Auth = {
   async requireAuth() {
     const authenticated = await this.isAuthenticated();
     if (!authenticated) {
-      window.location.href = '/login.html';
+      window.location.href = 'login.html';
       return false;
     }
     return true;
@@ -155,7 +151,9 @@ function configurarProtecaoRotas() {
   const paginasPublicas = [
     '/', '/index.html', '/login.html',
     '/aguardando-confirmacao.html', '/agendar.html',
-    '/teste-auth.html', '/onboarding-step1.html'
+    '/teste-auth.html', '/onboarding-step1.html',
+    'index.html', 'login.html',
+    'aguardando-confirmacao.html', 'agendar.html'
   ];
 
   const paginaAtual = window.location.pathname;
@@ -167,14 +165,14 @@ function configurarProtecaoRotas() {
 
   Auth.isAuthenticated().then(async autenticado => {
     if (!autenticado) {
-      window.location.href = '/login.html';
+      window.location.href = 'login.html';
       return;
     }
 
     const perfil = await Auth.getPerfil();
     if (!perfil) {
       console.warn('⚠️ [Auth] Perfil não encontrado, redirecionando...');
-      window.location.href = '/login.html';
+      window.location.href = 'login.html';
       return;
     }
 
