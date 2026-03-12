@@ -1,11 +1,15 @@
 /* js/auth.js
-   Versão compatível com frontend que usa window.getSupabase()
-   - Funções: signUp, signIn, signOut, getPerfil, getTenantId, getRole, isDono
-   - Registra handlers de auth e emite evento 'perfilCarregado' quando o perfil está pronto
+   Compatível com frontend do projeto (usa window.getSupabase()).
+   Fornece:
+    - signUp, signIn, signOut
+    - getPerfil, getTenantId, getRole, isDono
+    - isAuthenticated (síncrono) e isAuthenticatedAsync (assíncrono)
+    - init() que popula window.__perfil e emite 'perfilCarregado'
 */
 
 (function () {
-  // helpers
+  'use strict';
+
   function sup() {
     if (typeof window.getSupabase !== 'function') {
       throw new Error('getSupabase() não está disponível. Verifique js/supabase-config.js');
@@ -140,8 +144,6 @@
           const ev = new Event('perfilCarregado');
           window.dispatchEvent(ev);
         });
-      } else if (supabase.auth.onAuthStateChange === undefined && supabase.auth.onAuthStateChange !== undefined) {
-        // fallback - não necessário na maioria das versões modernas
       }
     } catch (err) {
       console.warn('startAuthListener erro', err);
@@ -171,15 +173,29 @@
     getRole,
     isDono,
     init,
+    // Compatibilidade com código antigo que espera função sincrona
+    isAuthenticated: function() {
+      return !!window.__perfil;
+    },
+    // Versão assíncrona caso queira usar
+    isAuthenticatedAsync: async function() {
+      try {
+        const supabase = (typeof window.getSupabase === 'function') ? window.getSupabase() : null;
+        if (supabase && supabase.auth && supabase.auth.getSession) {
+          const { data } = await supabase.auth.getSession();
+          return !!data?.session;
+        }
+      } catch (e) {}
+      return !!window.__perfil;
+    }
   };
 
-  // auto-init
-  // chamamos init depois de um pequeno timeout para garantir que js/supabase-config.js já foi carregado
+  // auto-init com pequeno delay para garantir carregamento do supabase-config
   setTimeout(() => {
     try {
       init();
     } catch (e) {
       // ignore
     }
-  }, 250);
+  }, 200);
 })();
