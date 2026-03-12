@@ -205,7 +205,7 @@
                         </div>
                     </div>
 
-                    <!-- Convite de Profissional (NOVO — exclusivo do dono) -->
+                    <!-- Convite de Profissional -->
                     <div class="pro-card" style="margin-top:24px;">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title"><i class="fas fa-user-plus" style="color:var(--primary);margin-right:8px;"></i>Convidar Profissional</h3>
@@ -230,7 +230,6 @@
                                     </button>
                                 </div>
                             </div>
-                            <!-- Resultado do link -->
                             <div id="resultadoConvite" style="display:none;margin-top:16px;padding:14px;background:var(--bg-main);border-radius:8px;border:1px solid var(--border-color);">
                                 <p style="font-size:13px;font-weight:600;margin-bottom:8px;">🔗 Link de convite gerado:</p>
                                 <div style="display:flex;gap:8px;align-items:center;">
@@ -406,7 +405,7 @@
         const STORAGE_KEY_PREFS  = 'sispro_prefs';
 
         // ─── Perfil na sidebar + controle de acesso ────────────────────
-        document.addEventListener('perfilCarregado', async (e) => {
+        window.addEventListener('perfilCarregado', async (e) => { // ✅ window, não document
             perfilAtual = e.detail;
             if (!perfilAtual) return;
 
@@ -417,7 +416,6 @@
             document.getElementById('perfilNome').value        = perfilAtual.nome  || '';
             document.getElementById('perfilEmail').value       = perfilAtual.email || '';
 
-            // Nome do estabelecimento no header
             try {
                 const cfg = JSON.parse(localStorage.getItem(STORAGE_KEY_CONFIG) || '{}');
                 if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
@@ -549,12 +547,11 @@
                 return;
             }
 
-            // Gera token simples: base64 de {tenant_id, email, nome, expiry}
             const payload = {
                 tenant_id: perfilAtual.tenant_id,
                 email,
                 nome,
-                expiry: Date.now() + 7 * 24 * 60 * 60 * 1000  // 7 dias
+                expiry: Date.now() + 7 * 24 * 60 * 60 * 1000
             };
             const token = btoa(JSON.stringify(payload));
             const link  = `${window.location.origin}/cadastro-profissional.html?convite=${token}`;
@@ -625,7 +622,7 @@
                 const { error } = await supabase.auth.updateUser({ password: nova });
                 if (error) throw error;
 
-                document.getElementById('novaSenha').value     = '';
+                document.getElementById('novaSenha').value      = '';
                 document.getElementById('confirmarSenha').value = '';
                 mostrarToast('✅ Senha alterada com sucesso!', 'success');
             } catch (err) {
@@ -697,8 +694,8 @@
                     DB.agendamentos.listar()
                 ]);
 
-                for (const item of agendamentos) await DB.agendamentos.excluir(item.id);
-                for (const item of clientes)     await DB.clientes.excluir(item.id);
+                for (const item of agendamentos)  await DB.agendamentos.excluir(item.id);
+                for (const item of clientes)      await DB.clientes.excluir(item.id);
                 for (const item of profissionais) await DB.profissionais.excluir(item.id);
                 for (const item of servicos)      await DB.servicos.excluir(item.id);
 
