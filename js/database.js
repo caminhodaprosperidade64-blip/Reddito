@@ -2,13 +2,6 @@
  * ============================================
  * DATABASE MODULE - 100% SUPABASE
  * ============================================
- * APENAS TABELAS EM PORTUGUÊS:
- * - clientes
- * - servicos
- * - profissionais
- * - agendamentos
- * 
- * SEM LocalStorage, SessionStorage ou dados mockados
  */
 
 const DB = {
@@ -19,14 +12,12 @@ const DB = {
         async listar() {
             try {
                 const tenantId = await Auth.getTenantId();
-                const supabase = window.getSupabase();  
-               
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('clientes')
                     .select('*')
                     .eq('tenant_id', tenantId)
                     .order('nome', { ascending: true });
-                
                 if (error) throw error;
                 console.log('✅ Clientes carregados:', data.length);
                 return data || [];
@@ -39,15 +30,13 @@ const DB = {
         async buscar(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                const supabase = window.getSupabase();  
-
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('clientes')
                     .select('*')
                     .eq('id', id)
                     .eq('tenant_id', tenantId)
                     .single();
-                
                 if (error) throw error;
                 return data;
             } catch (error) {
@@ -59,8 +48,7 @@ const DB = {
         async criar(dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                const supabase = window.getSupabase();  
-
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('clientes')
                     .insert({
@@ -71,7 +59,6 @@ const DB = {
                     })
                     .select()
                     .single();
-                
                 if (error) throw error;
                 console.log('✅ Cliente criado:', data);
                 return { success: true, data };
@@ -85,7 +72,6 @@ const DB = {
             try {
                 const tenantId = await Auth.getTenantId();
                 const supabase = window.getSupabase();
-
                 const { data, error } = await supabase
                     .from('clientes')
                     .update({
@@ -97,7 +83,6 @@ const DB = {
                     .eq('tenant_id', tenantId)
                     .select()
                     .single();
-                
                 if (error) throw error;
                 console.log('✅ Cliente atualizado:', data);
                 return { success: true, data };
@@ -111,13 +96,11 @@ const DB = {
             try {
                 const tenantId = await Auth.getTenantId();
                 const supabase = window.getSupabase();
-
                 const { error } = await supabase
                     .from('clientes')
                     .delete()
                     .eq('id', id)
                     .eq('tenant_id', tenantId);
-                
                 if (error) throw error;
                 console.log('✅ Cliente excluído');
                 return { success: true };
@@ -135,13 +118,12 @@ const DB = {
         async listar() {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('servicos')
                     .select('*')
                     .eq('tenant_id', tenantId)
                     .order('nome', { ascending: true });
-                
                 if (error) throw error;
                 console.log('✅ Serviços carregados:', data.length);
                 return data || [];
@@ -154,14 +136,13 @@ const DB = {
         async buscar(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('servicos')
                     .select('*')
                     .eq('id', id)
                     .eq('tenant_id', tenantId)
                     .single();
-                
                 if (error) throw error;
                 return data;
             } catch (error) {
@@ -173,7 +154,7 @@ const DB = {
         async criar(dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('servicos')
                     .insert({
@@ -184,7 +165,6 @@ const DB = {
                     })
                     .select()
                     .single();
-                
                 if (error) throw error;
                 console.log('✅ Serviço criado:', data);
                 return { success: true, data };
@@ -197,7 +177,7 @@ const DB = {
         async atualizar(id, dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('servicos')
                     .update({
@@ -209,7 +189,6 @@ const DB = {
                     .eq('tenant_id', tenantId)
                     .select()
                     .single();
-                
                 if (error) throw error;
                 console.log('✅ Serviço atualizado:', data);
                 return { success: true, data };
@@ -222,13 +201,12 @@ const DB = {
         async excluir(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { error } = await supabase
                     .from('servicos')
                     .delete()
                     .eq('id', id)
                     .eq('tenant_id', tenantId);
-                
                 if (error) throw error;
                 console.log('✅ Serviço excluído');
                 return { success: true };
@@ -246,14 +224,12 @@ const DB = {
         async listar() {
             try {
                 const tenantId = await Auth.getTenantId();
-
-                const supabase = window.getSupabase ();
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('profissionais')
                     .select('*')
                     .eq('tenant_id', tenantId)
                     .order('nome', { ascending: true });
-                
                 if (error) throw error;
                 console.log('✅ Profissionais carregados:', data.length);
                 return data || [];
@@ -266,15 +242,13 @@ const DB = {
         async buscar(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-
-                const supabase = window.getSupabase ();
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('profissionais')
                     .select('*')
                     .eq('id', id)
                     .eq('tenant_id', tenantId)
                     .single();
-                
                 if (error) throw error;
                 return data;
             } catch (error) {
@@ -286,8 +260,7 @@ const DB = {
         async criar(dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-
-                const supabase = window.getSupabase ();
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('profissionais')
                     .insert({
@@ -298,7 +271,6 @@ const DB = {
                     })
                     .select()
                     .single();
-                
                 if (error) throw error;
                 console.log('✅ Profissional criado:', data);
                 return { success: true, data };
@@ -311,8 +283,7 @@ const DB = {
         async atualizar(id, dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-
-                const supabase = window.getSupabase ();
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('profissionais')
                     .update({
@@ -324,7 +295,6 @@ const DB = {
                     .eq('tenant_id', tenantId)
                     .select()
                     .single();
-                
                 if (error) throw error;
                 console.log('✅ Profissional atualizado:', data);
                 return { success: true, data };
@@ -337,13 +307,12 @@ const DB = {
         async excluir(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { error } = await supabase
                     .from('profissionais')
                     .delete()
                     .eq('id', id)
                     .eq('tenant_id', tenantId);
-                
                 if (error) throw error;
                 console.log('✅ Profissional excluído');
                 return { success: true };
@@ -361,7 +330,8 @@ const DB = {
         async listar(filtros = {}) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
+
                 let query = supabase
                     .from('agendamentos')
                     .select(`
@@ -371,23 +341,15 @@ const DB = {
                         profissional:profissionais(id, nome, comissao_percentual, cor_agenda)
                     `)
                     .eq('tenant_id', tenantId);
-                
-                if (filtros.data) {
-                    query = query.eq('data', filtros.data);
-                }
-                if (filtros.profissional_id) {
-                    query = query.eq('profissional_id', filtros.profissional_id);
-                }
-                if (filtros.status) {
-                    query = query.eq('status', filtros.status);
-                }
-                
-                query = query.order('data', { ascending: true })
-                            .order('hora', { ascending: true });
 
-                const supabase = window.getSupabase ();
+                if (filtros.data) query = query.eq('data', filtros.data);
+                if (filtros.profissional_id) query = query.eq('profissional_id', filtros.profissional_id);
+                if (filtros.status) query = query.eq('status', filtros.status);
+
+                query = query.order('data', { ascending: true })
+                             .order('hora', { ascending: true });
+
                 const { data, error } = await query;
-                
                 if (error) throw error;
                 console.log('✅ Agendamentos carregados:', data.length);
                 return data || [];
@@ -400,8 +362,7 @@ const DB = {
         async buscar(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-
-                const supabase = window.getSupabase ();
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .select(`
@@ -413,7 +374,6 @@ const DB = {
                     .eq('id', id)
                     .eq('tenant_id', tenantId)
                     .single();
-                
                 if (error) throw error;
                 return data;
             } catch (error) {
@@ -425,8 +385,7 @@ const DB = {
         async criar(dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-
-                const supabase = window.getSupabase ();
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .insert({
@@ -441,7 +400,6 @@ const DB = {
                     })
                     .select()
                     .single();
-                
                 if (error) throw error;
                 console.log('✅ Agendamento criado:', data);
                 return { success: true, data };
@@ -454,7 +412,7 @@ const DB = {
         async atualizar(id, dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const updateData = {};
                 if (dados.cliente_id) updateData.cliente_id = dados.cliente_id;
                 if (dados.servico_id) updateData.servico_id = dados.servico_id;
@@ -463,8 +421,6 @@ const DB = {
                 if (dados.hora) updateData.hora = dados.hora;
                 if (dados.valor) updateData.valor = parseFloat(dados.valor);
                 if (dados.status) updateData.status = dados.status;
-
-                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .update(updateData)
@@ -472,7 +428,6 @@ const DB = {
                     .eq('tenant_id', tenantId)
                     .select()
                     .single();
-                
                 if (error) throw error;
                 console.log('✅ Agendamento atualizado:', data);
                 return { success: true, data };
@@ -485,13 +440,12 @@ const DB = {
         async excluir(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { error } = await supabase
                     .from('agendamentos')
                     .delete()
                     .eq('id', id)
                     .eq('tenant_id', tenantId);
-                
                 if (error) throw error;
                 console.log('✅ Agendamento excluído');
                 return { success: true };
@@ -508,8 +462,7 @@ const DB = {
         async listarPorPeriodo(dataInicio, dataFim) {
             try {
                 const tenantId = await Auth.getTenantId();
-
-                const supabase = window.getSupabase ();
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .select(`
@@ -523,7 +476,6 @@ const DB = {
                     .lte('data', dataFim)
                     .order('data', { ascending: true })
                     .order('hora', { ascending: true });
-                
                 if (error) throw error;
                 return data || [];
             } catch (error) {
@@ -534,13 +486,13 @@ const DB = {
     },
 
     // ============================================
-    // FINANCEIRO (calculado dos agendamentos)
+    // FINANCEIRO
     // ============================================
     financeiro: {
         async resumo(dataInicio, dataFim) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .select(`
@@ -552,37 +504,25 @@ const DB = {
                     .gte('data', dataInicio)
                     .lte('data', dataFim)
                     .in('status', ['confirmado', 'concluido']);
-                
                 if (error) throw error;
-                
                 const agendamentos = data || [];
                 let faturamentoBruto = 0;
                 let totalComissoes = 0;
-                
                 agendamentos.forEach(ag => {
                     const valor = parseFloat(ag.valor);
                     const comissao = (valor * parseFloat(ag.profissional.comissao_percentual)) / 100;
-                    
                     faturamentoBruto += valor;
                     totalComissoes += comissao;
                 });
-                
-                const lucroLiquido = faturamentoBruto - totalComissoes;
-                
                 return {
                     faturamentoBruto,
                     totalComissoes,
-                    lucroLiquido,
+                    lucroLiquido: faturamentoBruto - totalComissoes,
                     totalAgendamentos: agendamentos.length
                 };
             } catch (error) {
                 console.error('❌ Erro ao calcular resumo:', error);
-                return {
-                    faturamentoBruto: 0,
-                    totalComissoes: 0,
-                    lucroLiquido: 0,
-                    totalAgendamentos: 0
-                };
+                return { faturamentoBruto: 0, totalComissoes: 0, lucroLiquido: 0, totalAgendamentos: 0 };
             }
         },
 
@@ -600,7 +540,7 @@ const DB = {
         async porProfissional(dataInicio, dataFim) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+                const supabase = window.getSupabase();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .select(`
@@ -612,32 +552,20 @@ const DB = {
                     .gte('data', dataInicio)
                     .lte('data', dataFim)
                     .in('status', ['confirmado', 'concluido']);
-                
                 if (error) throw error;
-                
                 const agendamentos = data || [];
                 const resultado = {};
-                
                 agendamentos.forEach(ag => {
                     const id = ag.profissional_id;
-                    
                     if (!resultado[id]) {
-                        resultado[id] = {
-                            nome: ag.profissional.nome,
-                            faturamento: 0,
-                            comissao: 0,
-                            totalAgendamentos: 0
-                        };
+                        resultado[id] = { nome: ag.profissional.nome, faturamento: 0, comissao: 0, totalAgendamentos: 0 };
                     }
-                    
                     const valor = parseFloat(ag.valor);
-                    const comissao = (valor * parseFloat(ag.profissional.comissao_percentual)) / 100;
-                    
+                    const comissao = (valor  parseFloat(ag.profissional.comissao_percentual)) / 100;
                     resultado[id].faturamento += valor;
                     resultado[id].comissao += comissao;
                     resultado[id].totalAgendamentos += 1;
                 });
-                
                 return Object.values(resultado);
             } catch (error) {
                 console.error('❌ Erro ao calcular por profissional:', error);
@@ -647,14 +575,13 @@ const DB = {
     },
 
     // ============================================
-    // DASHBOARD (estatísticas gerais)
+    // DASHBOARD
     // ============================================
     dashboard: {
         async estatisticas() {
             try {
                 const hoje = new Date().toISOString().split('T')[0];
                 const agora = new Date();
-                
                 const [clientes, servicos, profissionais, agendamentosHoje, financeiroDia, financeiroMes] = await Promise.all([
                     DB.clientes.listar(),
                     DB.servicos.listar(),
@@ -663,7 +590,6 @@ const DB = {
                     DB.financeiro.faturamentoDia(hoje),
                     DB.financeiro.faturamentoMes(agora.getFullYear(), agora.getMonth() + 1)
                 ]);
-                
                 return {
                     totalClientes: clientes.length,
                     totalServicos: servicos.length,
@@ -674,14 +600,7 @@ const DB = {
                 };
             } catch (error) {
                 console.error('❌ Erro ao obter estatísticas:', error);
-                return {
-                    totalClientes: 0,
-                    totalServicos: 0,
-                    totalProfissionais: 0,
-                    agendamentosHoje: 0,
-                    faturamentoDia: 0,
-                    faturamentoMes: 0
-                };
+                return { totalClientes: 0, totalServicos: 0, totalProfissionais: 0, agendamentosHoje: 0, faturamentoDia: 0, faturamentoMes: 0 };
             }
         }
     }
