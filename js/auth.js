@@ -1,233 +1,190 @@
-/* js/auth.js
-   Compatível com frontend do projeto (usa window.getSupabase()).
-   Fornece:
-    - signUp, signIn, signOut
-    - getPerfil, getTenantId, getRole, isDono
-    - isAuthenticated (síncrono) e isAuthenticatedAsync (assíncrono)
-    - init() que popula window.__perfil e emite 'perfilCarregado'
-*/
+/**
+ * ============================================
+ * AUTH MODULE - COM SUPORTE A ROLES
+ * ============================================
+ */
+console.log('🔧 [Auth] Carregando módulo...');
 
-(function () {
-  'use strict';
-
-  function sup() {
-    if (typeof window.getSupabase !== 'function') {
-      throw new Error('getSupabase() não está disponível. Verifique js/supabase-config.js');
-    }
-    return window.getSupabase();
+function aguardarSupabase(callback) {
+  if (window.isSupabaseReady && window.isSupabaseReady()) {
+    callback();
+  } else {
+    window.addEventListener('supabaseReady', () => callback(), { once: true });
   }
+}
 
-  async function signUp({ nome, nomeEmpresa, email, senha, plano = 'plano1' }) {
+const Auth = {
+
+  async getUser() {
     try {
-      const supabase = sup();
-
-      // 1) Criar usuário no Auth
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password: senha,
-      });
-
-      if (signUpError) throw signUpError;
-
-      // Obter user id
-      const userId = signUpData?.user?.id ?? signUpData?.id;
-      if (!userId) {
-        // Tentar obter via getUser (fallback)
-        try {
-          const resp = await supabase.auth.getUser();
-          const uid = resp?.data?.user?.id;
-          if (uid) {
-            // continue
-          } else {
-            throw new Error('Não foi possível obter o ID do usuário após o signUp.');
-          }
-        } catch (e) {
-          throw new Error('Não foi possível obter o ID do usuário após o signUp. Verifique a configuração de confirmações.');
-        }
-      }
-
-      // 2) Criar tenant (empresa) usando o mesmo id do usuário para facilitar ligação inicial
-      const tenantPayload = {
-        id: userId,
-        nome_empresa: nomeEmpresa,
-        plano,
-        trial_inicio: new Date().toISOString(),
-        trial_fim: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-        status_pagamento: 'trial',
-      };
-
-      const { data: tenantData, error: tenantError } = await supabase
-        .from('tenants')
-        .insert([tenantPayload])
-        .select()
-        .single();
-
-      if (tenantError) throw tenantError;
-
-      // 3) Criar perfil vinculado ao tenant
-      const perfilPayload = {
-        id: userId,
-        nome,
-        email,
-        tenant_id: tenantData.id,
-        role: 'dono',
-      };
-
-      const { error: perfilError } = await supabase
-        .from('perfis')
-        .insert([perfilPayload]);
-
-      if (perfilError) throw perfilError;
-
-      return { success: true, message: 'Cadastro criado. Verifique seu e-mail para confirmação (se aplicável).' };
-    } catch (err) {
-      console.error('signUp error', err);
-      // Mensagem amigável
-      return { success: false, message: err?.message ?? String(err) };
-    }
-  }
-
-  async function signIn({ email, senha }) {
-    try {
-      const supabase = sup();
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+      const supabase = window.getSupabase();
+      const { data: { user }, error } = await supabase.auth.getUser();
       if (error) throw error;
-      // carregar perfil imediatamente
-      await refreshPerfil();
-      return { success: true, data };
-    } catch (err) {
-      console.error('signIn error', err);
-      return { success: false, message: err?.message ?? String(err) };
+      return user;
+    } catch (error) {
+      console.error('❌ [Auth] Erro ao obter usuário:', error);
+      return null;
     }
-  }
+  },
 
-  async function signOut() {
+  async getPerfil() {
     try {
-      const supabase = sup();
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      // limpar perfil local
-      window.__perfil = null;
-      window.dispatchEvent(new Event('perfilCarregado'));
-      return { success: true };
-    } catch (err) {
-      console.error('signOut error', err);
-      return { success: false, message: err?.message ?? String(err) };
-    }
-  }
+      const user = await this.getUser();
+      if (!user) return null;
 
-  async function getPerfil() {
-    try {
-      // Retorna perfil já carregado em memória se existir
-      if (window.__perfil) return window.__perfil;
+      if (window._perfilCache) return window._perfilCache;
 
-      const supabase = sup();
-      const { data: userResp } = await supabase.auth.getUser();
-      const userId = userResp?.user?.id;
-      if (!userId) return null;
-
+      const supabase = window.getSupabase();
       const { data, error } = await supabase
         .from('perfis')
         .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+        .eq('id', user.id)
+        .single();
 
       if (error) throw error;
-      // armazenar localmente para acesso síncrono
-      window.__perfil = data ?? null;
+      window._perfilCache = data;
       return data;
-    } catch (err) {
-      console.error('getPerfil error', err);
+    } catch (error) {
+      console.error('❌ [Auth] Erro ao obter perfil:', error);
       return null;
     }
-  }
+  },
 
-  async function refreshPerfil() {
-    const perfil = await getPerfil();
-    window.__perfil = perfil || null;
-    window.dispatchEvent(new Event('perfilCarregado'));
-    return window.__perfil;
-  }
+  async getTenantId() {
+    const perfil = await this.getPerfil();
+    return perfil ? perfil.tenant_id : null;
+  },
 
-  async function getTenantId() {
-    const perfil = await getPerfil();
-    return perfil?.tenant_id ?? null;
-  }
+  async getRole() {
+    const perfil = await this.getPerfil();
+    return perfil ? perfil.role : null;
+  },
 
-  async function getRole() {
-    const perfil = await getPerfil();
-    return perfil?.role ?? null;
-  }
-
-  async function isDono() {
-    const role = await getRole();
+  async isDono() {
+    const role = await this.getRole();
     return role === 'dono';
-  }
+  },
 
-  // Síncrono: compatível com código legado que espera função imediata
-  function isAuthenticated() {
-    return !!window.__perfil;
-  }
+  async isAuthenticated() {
+    const user = await this.getUser();
+    return user !== null;
+  },
 
-  async function isAuthenticatedAsync() {
+  async signIn(email, password) {
     try {
-      const supabase = sup();
-      if (supabase.auth.getSession) {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session) return true;
-      }
-    } catch (e) {
-      // ignore
+      const supabase = window.getSupabase();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      window._perfilCache = null;
+      console.log('✅ [Auth] Login realizado:', data.user.email);
+      return { success: true, user: data.user };
+    } catch (error) {
+      console.error('❌ [Auth] Erro no login:', error);
+      return { success: false, error: error.message };
     }
-    return !!window.__perfil;
-  }
+  },
 
-  // Listener de alterações de autenticação
-  function startAuthListener() {
+  async signUp(email, password, nomeDaEmpresa) {
     try {
-      const supabase = sup();
-      if (supabase.auth.onAuthStateChange) {
-        supabase.auth.onAuthStateChange(async (event, session) => {
-          // sempre atualiza o perfil quando houver mudança
-          await refreshPerfil();
+      const supabase = window.getSupabase();
+
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+
+      const user = data.user;
+
+      const { error: perfilError } = await supabase
+        .from('perfis')
+        .insert({
+          id:        user.id,
+          tenant_id: user.id,
+          role:      'dono',
+          nome:      nomeDaEmpresa || email,
+          email:     email
         });
+
+      if (perfilError) {
+        console.warn('⚠️ [Auth] Perfil será criado após confirmação de email:', perfilError.message);
       }
-    } catch (err) {
-      console.warn('startAuthListener erro', err);
-    }
-  }
 
-  // Inicialização: popula window.__perfil se existir sessão ativa
-  async function init() {
+      console.log('✅ [Auth] Conta criada:', user.email);
+      return { success: true, user };
+    } catch (error) {
+      console.error('❌ [Auth] Erro no cadastro:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  async signOut() {
     try {
-      await refreshPerfil();
-      startAuthListener();
-    } catch (err) {
-      console.warn('auth init failed', err);
+      const supabase = window.getSupabase();
+      await supabase.auth.signOut();
+
+      window._perfilCache = null;
+      console.log('✅ [Auth] Logout realizado');
+      window.location.href = 'login.html';
+      return { success: true };
+    } catch (error) {
+      console.error('❌ [Auth] Erro no logout:', error);
+      return { success: false, error: error.message };
     }
+  },
+
+  async requireAuth() {
+    const authenticated = await this.isAuthenticated();
+    if (!authenticated) {
+      window.location.href = 'login.html';
+      return false;
+    }
+    return true;
   }
+};
 
-  // Expor API pública
-  window.Auth = {
-    signUp,
-    signIn,
-    signOut,
-    getPerfil,
-    getTenantId,
-    getRole,
-    isDono,
-    init,
-    // Compatibilidade
-    isAuthenticated,
-    isAuthenticatedAsync,
-  };
+window.Auth = Auth;
+console.log('✅ [Auth] Módulo exportado');
 
-  // auto-init com pequeno delay para garantir carregamento do supabase-config
-  setTimeout(() => {
-    try {
-      init();
-    } catch (e) {
-      // ignore
+// ============================================
+// PROTEÇÃO DE ROTAS
+// ============================================
+function configurarProtecaoRotas() {
+  const paginasPublicas = [
+    '/', '/index.html', '/login.html',
+    '/aguardando-confirmacao.html', '/agendar.html',
+    '/teste-auth.html', '/onboarding-step1.html',
+    'index.html', 'login.html',
+    'aguardando-confirmacao.html', 'agendar.html'
+  ];
+
+  const paginaAtual = window.location.pathname;
+  const ehPublica = paginasPublicas.some(p =>
+    paginaAtual === p || paginaAtual.endsWith(p)
+  );
+
+  if (ehPublica) return;
+
+  Auth.isAuthenticated().then(async autenticado => {
+    if (!autenticado) {
+      window.location.href = 'login.html';
+      return;
     }
-  }, 200);
-})();
+
+    const perfil = await Auth.getPerfil();
+    if (!perfil) {
+      console.warn('⚠️ [Auth] Perfil não encontrado, redirecionando...');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    window.TENANT_ID = perfil.tenant_id;
+    window.USER_ROLE = perfil.role;
+    window.USER_NOME = perfil.nome;
+
+    console.log(`✅ [Auth] Autenticado como: ${perfil.role} | Tenant: ${perfil.tenant_id}`);
+
+    window.dispatchEvent(new CustomEvent('perfilCarregado', { detail: perfil }));
+  });
+}
+
+aguardarSupabase(configurarProtecaoRotas);
+console.log('✅ [Auth] Módulo carregado completamente');
