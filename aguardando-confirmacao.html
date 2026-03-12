@@ -224,19 +224,11 @@
     </div>
 
     <script>
-        // Aguardar carregamento do Supabase
-        window.addEventListener('load', () => {
-            if (!window.supabase || typeof supabase === 'undefined') {
-                document.getElementById('errorMessage').textContent = '❌ Erro ao carregar sistema. Por favor, recarregue a página.';
-                document.getElementById('errorMessage').style.display = 'block';
-            }
-        });
-        
         // Pegar email do localStorage
         const email = localStorage.getItem('emailCadastro') || 'seu@email.com';
         document.getElementById('emailUsuario').textContent = email;
         document.getElementById('emailUsuario2').textContent = email;
-        
+
         function mostrarSucesso(mensagem) {
             const successMessage = document.getElementById('successMessage');
             const errorMessage = document.getElementById('errorMessage');
@@ -244,7 +236,7 @@
             successMessage.style.display = 'block';
             errorMessage.style.display = 'none';
         }
-        
+
         function mostrarErro(mensagem) {
             const successMessage = document.getElementById('successMessage');
             const errorMessage = document.getElementById('errorMessage');
@@ -252,52 +244,64 @@
             errorMessage.style.display = 'block';
             successMessage.style.display = 'none';
         }
-        
+
+        // ─── Garante que o perfil existe na tabela perfis ──────────────
+        async function garantirPerfil(user) {
+            const supabase = window.getSupabase();
+            const { data: perfilExistente } = await supabase
+                .from('perfis')
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+
+            if (!perfilExistente) {
+                await supabase.from('perfis').insert({
+                    user_id: user.id,
+                    tenant_id: user.id,
+                    role: 'dono',
+                    nome: user.user_metadata?.nome || user.email.split('@')[0]
+                });
+            }
+        }
+
         async function verificarConfirmacao() {
             const btn = document.getElementById('btnConfirmei');
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span>Verificando...';
-            
+
             try {
-                // Verificar se o usuário já confirmou
+                const supabase = window.getSupabase();
                 const { data: { user }, error } = await supabase.auth.getUser();
-                
+
                 if (error) throw error;
-                
+
                 if (user && user.email_confirmed_at) {
+                    await garantirPerfil(user);
                     mostrarSucesso('✅ Email confirmado! Redirecionando...');
                     localStorage.removeItem('emailCadastro');
-                    
-                    setTimeout(() => {
-                        window.location.href = '/login.html';
-                    }, 2000);
+                    setTimeout(() => { window.location.href = '/login.html'; }, 2000);
                 } else {
-                    mostrarErro('⚠️ Email ainda não foi confirmado. Por favor, verifique sua caixa de entrada e clique no link de confirmação.');
+                    mostrarErro('⚠️ Email ainda não confirmado. Verifique sua caixa de entrada e clique no link de confirmação.');
                     btn.disabled = false;
                     btn.textContent = '✅ Já Confirmei - Fazer Login';
                 }
             } catch (error) {
-                mostrarErro('Erro: ' + error.message + '. Por favor, acesse o link no email primeiro.');
+                mostrarErro('Erro: ' + error.message);
                 btn.disabled = false;
                 btn.textContent = '✅ Já Confirmei - Fazer Login';
             }
         }
-        
+
         async function reenviarEmail() {
             const btn = document.getElementById('btnReenviar');
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span>Reenviando...';
-            
+
             try {
-                const { error } = await supabase.auth.resend({
-                    type: 'signup',
-                    email: email
-                });
-                
+                const supabase = window.getSupabase();
+                const { error } = await supabase.auth.resend({ type: 'signup', email });
                 if (error) throw error;
-                
                 mostrarSucesso('✅ Email reenviado! Verifique sua caixa de entrada.');
-                
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.textContent = '📧 Não recebi - Reenviar Email';
@@ -308,44 +312,58 @@
                 btn.textContent = '📧 Não recebi - Reenviar Email';
             }
         }
-        
+
         function voltarLogin() {
             localStorage.removeItem('emailCadastro');
             window.location.href = '/login.html';
         }
-        
-        // Verificar a cada 5 segundos se o email foi confirmado
-        let intervaloVerificacao = setInterval(async () => {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                
-                if (user && user.email_confirmed_at) {
-                    clearInterval(intervaloVerificacao);
-                    mostrarSucesso('✅ Email confirmado automaticamente! Redirecionando...');
-                    localStorage.removeItem('emailCadastro');
-                    
-                    setTimeout(() => {
-                        window.location.href = 'https://rwlknmwb.gensparkspace.com/login.html';
-                    }, 2000);
-                }
-            } catch (error) {
-                // Ignorar erros silenciosamente
-            }
-        }, 5000);
-        
-        // Verificar hash da URL (quando vem do link de confirmação)
+
+        // ─── Detecta token na URL (quando vem do link do email) ────────
         window.addEventListener('load', async () => {
+            // Suporte a PKCE (query param) e implicit (hash)
+            const urlParams = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const code = urlParams.get('code');
             const accessToken = hashParams.get('access_token');
-            
-            if (accessToken) {
-                mostrarSucesso('✅ Email confirmado! Redirecionando para o login...');
-                localStorage.removeItem('emailCadastro');
-                
-                setTimeout(() => {
-                    window.location.href = 'https://rwlknmwb.gensparkspace.com/login.html';
-                }, 2000);
+            const type = urlParams.get('type') || hashParams.get('type');
+
+            if (code || accessToken) {
+                mostrarSucesso('⏳ Confirmando seu email...');
+                try {
+                    const supabase = window.getSupabase();
+
+                    // Para PKCE (code), o Supabase troca automaticamente via onAuthStateChange
+                    if (code) {
+                        await supabase.auth.exchangeCodeForSession(code);
+                    }
+
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        await garantirPerfil(user);
+                        mostrarSucesso('✅ Email confirmado com sucesso! Redirecionando...');
+                        localStorage.removeItem('emailCadastro');
+                        setTimeout(() => { window.location.href = '/login.html'; }, 2000);
+                    }
+                } catch (err) {
+                    mostrarErro('Erro ao confirmar: ' + err.message);
+                }
+                return;
             }
+
+            // ─── Polling: verifica a cada 5s se o usuário confirmou ────
+            const intervalo = setInterval(async () => {
+                try {
+                    const supabase = window.getSupabase();
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user && user.email_confirmed_at) {
+                        clearInterval(intervalo);
+                        await garantirPerfil(user);
+                        mostrarSucesso('✅ Email confirmado automaticamente! Redirecionando...');
+                        localStorage.removeItem('emailCadastro');
+                        setTimeout(() => { window.location.href = '/login.html'; }, 2000);
+                    }
+                } catch (e) { /* silencioso */ }
+            }, 5000);
         });
     </script>
 </body>
