@@ -90,7 +90,6 @@
                     </div>
                 </div>
 
-                <!-- Métricas -->
                 <div class="pro-metrics-grid">
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
@@ -122,7 +121,6 @@
                     </div>
                 </div>
 
-                <!-- Tabela -->
                 <div class="pro-card">
                     <div class="pro-card-header">
                         <h3 class="pro-card-title">Lista de Clientes</h3>
@@ -212,19 +210,17 @@
         let currentFilter = 'todos';
         let todosClientes = [];
 
-        // ─── Perfil na sidebar ─────────────────────────────────────────
-        document.addEventListener('perfilCarregado', (e) => {
+        // ─── Perfil carregado: ponto de entrada principal ──────────────
+        window.addEventListener('perfilCarregado', async (e) => {
             const perfil = e.detail;
             if (!perfil) return;
+
             const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = letra;
             document.getElementById('userName').textContent = perfil.nome || perfil.email;
             document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
-        });
 
-        // ─── Inicialização ─────────────────────────────────────────────
-        window.addEventListener('DOMContentLoaded', () => {
-            loadClientes();
+            await loadClientes();
         });
 
         // ─── Carregar clientes do banco ────────────────────────────────
@@ -240,7 +236,7 @@
             }
         }
 
-        // ─── Filtrar localmente (sem nova query) ───────────────────────
+        // ─── Filtrar localmente ────────────────────────────────────────
         function filtrarLocalmente() {
             const search = (document.getElementById('searchInput').value || '').toLowerCase();
             let lista = [...todosClientes];
@@ -285,7 +281,7 @@
             const vip = lista.filter(c => parseFloat(c.total_gasto || 0) > 500);
             document.getElementById('clientesVIP').textContent = vip.length;
 
-            const trintaDiasAtras = Date.now() - 30 * 86400000;
+            const trintaDiasAtras = Date.now() - 30  86400000;
             const novos = lista.filter(c => new Date(c.created_at).getTime() > trintaDiasAtras);
             document.getElementById('clientesNovos').textContent = novos.length;
         }
@@ -314,9 +310,6 @@
                 const ultimaVisita = c.ultima_visita
                     ? new Date(c.ultima_visita).toLocaleDateString('pt-BR')
                     : '—';
-
-                // Serializar com segurança para o onclick
-                const clienteJson = JSON.stringify(c).replace(/'/g, "\\'");
 
                 return `
                     <tr>
