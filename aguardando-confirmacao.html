@@ -200,14 +200,14 @@
     </div>
 
     <script>
-        // ─── Email do localStorage ─────────────────────────────────────
+        // Email do localStorage
         const email = localStorage.getItem('emailCadastro') || 'seu@email.com';
         document.getElementById('emailUsuario').textContent  = email;
         document.getElementById('emailUsuario2').textContent = email;
 
         let pollingIntervalo = null;
 
-        // ─── Helpers de mensagem ───────────────────────────────────────
+        // Helpers de mensagem
         function mostrarSucesso(msg) {
             document.getElementById('successMessage').textContent = msg;
             document.getElementById('successMessage').style.display = 'block';
@@ -220,11 +220,10 @@
             document.getElementById('successMessage').style.display = 'none';
         }
 
-        // ─── Garante perfil na tabela perfis (alinhado ao SQL do projeto) ─
+        // Garante perfil na tabela perfis
         async function garantirPerfil(user) {
             const supabase = window.getSupabase();
 
-            // ✅ Chave primária é 'id' = auth.uid() (conforme SQL do projeto)
             const { data: perfilExistente } = await supabase
                 .from('perfis')
                 .select('id')
@@ -233,8 +232,8 @@
 
             if (!perfilExistente) {
                 await supabase.from('perfis').insert({
-                    id:        user.id,          // ✅ PK = auth.uid()
-                    tenant_id: user.id,          // dono: tenant_id = próprio id
+                    id:        user.id,
+                    tenant_id: user.id,
                     role:      'dono',
                     nome:      user.user_metadata?.nome || user.email.split('@')[0],
                     email:     user.email
@@ -242,13 +241,13 @@
             }
         }
 
-        // ─── Redireciona para login ────────────────────────────────────
+        // Redireciona para login
         function irParaLogin() {
             localStorage.removeItem('emailCadastro');
-            window.location.href = 'index.html'; // ✅ sem barra inicial
+            window.location.href = 'login.html';
         }
 
-        // ─── Botão "Já Confirmei" ──────────────────────────────────────
+        // Botão "Já Confirmei"
         async function verificarConfirmacao() {
             const btn = document.getElementById('btnConfirmei');
             btn.disabled = true;
@@ -277,7 +276,7 @@
             }
         }
 
-        // ─── Botão "Reenviar Email" ────────────────────────────────────
+        // Botão "Reenviar Email"
         async function reenviarEmail() {
             const btn = document.getElementById('btnReenviar');
             btn.disabled = true;
@@ -291,26 +290,25 @@
             } catch (err) {
                 mostrarErro('Erro ao reenviar: ' + err.message);
             } finally {
-                // ✅ Reabilita após 5s para evitar spam
-                setTimeout(() => {
+                setTimeout(function() {
                     btn.disabled = false;
                     btn.textContent = '📧 Não recebi - Reenviar Email';
                 }, 5000);
             }
         }
 
-        // ─── Voltar para login ─────────────────────────────────────────
+        // Voltar para login
         function voltarLogin() {
             pararPolling();
             irParaLogin();
         }
 
-        // ─── Polling com timeout máximo de 10 minutos ──────────────────
+        // Polling com timeout máximo de 10 minutos
         function iniciarPolling() {
-            let tentativas = 0;
-            const MAX_TENTATIVAS = 120; // 120 × 5s = 10 minutos
+            var tentativas = 0;
+            var MAX_TENTATIVAS = 120;
 
-            pollingIntervalo = setInterval(async () => {
+            pollingIntervalo = setInterval(async function() {
                 tentativas++;
                 if (tentativas >= MAX_TENTATIVAS) {
                     pararPolling();
@@ -325,7 +323,9 @@
                         mostrarSucesso('✅ Email confirmado automaticamente! Redirecionando...');
                         setTimeout(irParaLogin, 2000);
                     }
-                } catch (_) { /* silencioso / }
+                } catch (e) {
+                    // silencioso
+                }
             }, 5000);
         }
 
@@ -336,8 +336,8 @@
             }
         }
 
-        // ─── Detecta token na URL (link do email de confirmação) ───────
-        window.addEventListener('load', async () => {
+        // Detecta token na URL (link do email de confirmação)
+        window.addEventListener('load', async function() {
             const urlParams  = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             const code        = urlParams.get('code');
@@ -349,7 +349,6 @@
                     const supabase = window.getSupabase();
 
                     if (code) {
-                        // ✅ PKCE flow: troca code por sessão
                         await supabase.auth.exchangeCodeForSession(code);
                     }
 
@@ -362,7 +361,7 @@
                 } catch (err) {
                     mostrarErro('Erro ao confirmar: ' + err.message);
                 }
-                return; // ✅ Não inicia polling se veio pelo link
+                return;
             }
 
             // Inicia polling apenas se não veio pelo link do email
