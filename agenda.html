@@ -21,18 +21,15 @@
     
     <style>
         .agenda-container { padding: 24px; }
-        
         .agenda-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 32px;
         }
-        
         .agenda-title h1 { margin: 0; font-size: 28px; color: var(--text-primary); }
         .agenda-subtitle { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
         .agenda-toolbar { display: flex; gap: 12px; }
-        
         .date-selector {
             display: flex;
             align-items: center;
@@ -42,25 +39,20 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
         }
-        
         .date-selector input { border: none; outline: none; font-size: 16px; font-weight: 600; }
-        
         .agenda-grid {
             background: white;
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--border-color);
         }
-        
         .time-slot {
             display: grid;
             grid-template-columns: 100px 1fr;
             border-bottom: 1px solid var(--border-color);
             min-height: 60px;
         }
-        
         .time-slot:last-child { border-bottom: none; }
-        
         .time-label {
             display: flex;
             align-items: center;
@@ -71,16 +63,13 @@
             color: var(--text-secondary);
             border-right: 1px solid var(--border-color);
         }
-        
         .slot-content {
             padding: 8px;
             position: relative;
             cursor: pointer;
             transition: background 0.2s;
         }
-        
         .slot-content:hover:not(.occupied) { background: var(--primary-light); }
-        
         .appointment-card {
             background: var(--primary);
             color: white;
@@ -91,24 +80,19 @@
             transition: transform 0.2s;
             margin-bottom: 4px;
         }
-        
         .appointment-card:hover { transform: translateX(4px); }
         .appointment-client { font-weight: 600; margin-bottom: 4px; }
         .appointment-service { font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
         .appointment-professional { font-size: 12px; opacity: 0.85; }
-        
         .empty-state { padding: 60px 20px; text-align: center; color: var(--text-secondary); }
         .empty-state i { font-size: 48px; opacity: 0.3; margin-bottom: 16px; display: block; }
-        
         .loading-spinner { text-align: center; padding: 60px; color: var(--text-secondary); }
         .loading-spinner i { font-size: 36px; animation: spin 1s linear infinite; display: block; margin-bottom: 12px; }
-        
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="pro-app">
-        <!-- Sidebar -->
         <aside class="pro-sidebar">
             <div class="pro-sidebar-logo">
                 <a href="dashboard.html" class="pro-logo">
@@ -154,7 +138,6 @@
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="pro-main">
             <div class="agenda-container">
                 <div class="agenda-header">
@@ -200,44 +183,38 @@
             <div class="pro-modal-body">
                 <form id="appointmentForm" onsubmit="saveAppointment(event)">
                     <input type="hidden" id="appointmentId">
-                    
                     <div class="pro-form-group">
                         <label class="pro-label">Cliente *</label>
                         <select id="appointmentClient" required class="pro-select">
                             <option value="">Selecione um cliente</option>
                         </select>
                     </div>
-                    
                     <div class="pro-form-group">
                         <label class="pro-label">Serviço *</label>
                         <select id="appointmentService" required class="pro-select" onchange="updateValor()">
                             <option value="">Selecione um serviço</option>
                         </select>
                     </div>
-                    
                     <div class="pro-form-group">
                         <label class="pro-label">Profissional *</label>
                         <select id="appointmentProfessional" required class="pro-select">
                             <option value="">Selecione um profissional</option>
                         </select>
                     </div>
-                    
                     <div class="pro-form-row">
                         <div class="pro-form-group">
                             <label class="pro-label">Data *</label>
                             <input type="date" id="appointmentDate" required class="pro-input">
                         </div>
                         <div class="pro-form-group">
-                            <label class="pro-label">Horário *</label>
+                            <label class="pro-label">Horário </label>
                             <input type="time" id="appointmentTime" required class="pro-input">
                         </div>
                     </div>
-                    
                     <div class="pro-form-group">
                         <label class="pro-label">Valor (R$)</label>
                         <input type="number" id="appointmentValor" class="pro-input" step="0.01" min="0" readonly>
                     </div>
-                    
                     <div class="pro-form-group">
                         <label class="pro-label">Status</label>
                         <select id="appointmentStatus" class="pro-select">
@@ -249,9 +226,7 @@
                 </form>
             </div>
             <div class="pro-modal-footer">
-                <button type="button" class="pro-btn pro-btn-secondary" onclick="closeAppointmentModal()">
-                    Cancelar
-                </button>
+                <button type="button" class="pro-btn pro-btn-secondary" onclick="closeAppointmentModal()">Cancelar</button>
                 <button type="button" class="pro-btn pro-btn-primary" onclick="document.getElementById('appointmentForm').requestSubmit()">
                     <i class="fas fa-save"></i> Salvar
                 </button>
@@ -268,19 +243,21 @@
         let allAgendamentos = [];
         let perfilAtual = null;
 
-        // ─── Perfil do usuário na sidebar ─────────────────────────────
-        document.addEventListener('perfilCarregado', (e) => {
+        // ─── Inicialização da data ─────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('selectedDate').valueAsDate = currentDate;
+        });
+
+        // ─── Perfil carregado: ponto de entrada principal ──────────────
+        window.addEventListener('perfilCarregado', async (e) => {
             perfilAtual = e.detail;
             if (!perfilAtual) return;
+
             const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = letra;
             document.getElementById('userName').textContent = perfilAtual.nome || perfilAtual.email;
             document.getElementById('userRole').textContent = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
-        });
 
-        // ─── Inicialização ─────────────────────────────────────────────
-        document.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('selectedDate').valueAsDate = currentDate;
             await loadAllData();
             await loadAgenda();
         });
@@ -303,9 +280,8 @@
             const dataStr = document.getElementById('selectedDate').value;
             const container = document.getElementById('agendaContent');
             container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i><p>Carregando...</p></div>';
-            
+
             try {
-                // Se for profissional, filtra só os agendamentos dele
                 let filtros = { data: dataStr };
                 if (perfilAtual && perfilAtual.role === 'profissional' && perfilAtual.profissional_id) {
                     filtros.profissional_id = perfilAtual.profissional_id;
@@ -356,12 +332,9 @@
             document.getElementById('modalTitle').textContent = 'Novo Agendamento';
             document.getElementById('appointmentForm').reset();
             document.getElementById('appointmentId').value = '';
-
             preencherDropdowns();
-
             document.getElementById('appointmentDate').value = data || document.getElementById('selectedDate').value;
             if (hora) document.getElementById('appointmentTime').value = hora;
-
             document.getElementById('appointmentModal').style.display = 'flex';
         }
 
@@ -387,9 +360,7 @@
 
             document.getElementById('modalTitle').textContent = 'Editar Agendamento';
             document.getElementById('appointmentId').value = ag.id;
-
             preencherDropdowns();
-
             document.getElementById('appointmentClient').value = ag.cliente_id;
             document.getElementById('appointmentService').value = ag.servico_id;
             document.getElementById('appointmentProfessional').value = ag.profissional_id;
@@ -397,7 +368,6 @@
             document.getElementById('appointmentTime').value = ag.hora ? ag.hora.substring(0, 5) : '';
             document.getElementById('appointmentValor').value = parseFloat(ag.valor || 0).toFixed(2);
             document.getElementById('appointmentStatus').value = ag.status;
-
             document.getElementById('appointmentModal').style.display = 'flex';
         }
 
