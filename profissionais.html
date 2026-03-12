@@ -9,16 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
-    
-    <!-- Supabase Client CDN -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Scripts do Sistema -->
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
 </head>
@@ -38,29 +35,29 @@
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
-                    <a href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
+                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
                     <a href="profissionais.html" class="pro-nav-item active"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
-                    <a href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
+                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
-                    <a href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
                 </div>
                 <div class="pro-nav-section">
-                    <a href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
                 <div class="pro-user-profile">
-                    <div class="pro-user-avatar">A</div>
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
-                        <div class="pro-user-name">Admin</div>
-                        <div class="pro-user-role">Proprietário</div>
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
                     </div>
                     <button class="pro-user-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -71,12 +68,12 @@
             <header class="pro-header">
                 <div class="pro-search">
                     <i class="fas fa-search pro-search-icon"></i>
-                    <input type="text" class="pro-search-input" placeholder="Buscar profissionais..." id="searchInput" oninput="loadProfissionais()">
+                    <input type="text" class="pro-search-input" placeholder="Buscar profissionais..." id="searchInput" oninput="filtrarLocalmente()">
                 </div>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn"><i class="fas fa-bell"></i><span class="badge">3</span></button>
+                    <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
                     <div class="pro-header-divider"></div>
-                    <span class="pro-tenant-name">Meu Estabelecimento</span>
+                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
                 </div>
             </header>
 
@@ -93,6 +90,7 @@
                     </div>
                 </div>
 
+                <!-- Métricas -->
                 <div class="pro-metrics-grid">
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
@@ -117,16 +115,22 @@
                     </div>
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
-                            <span class="pro-metric-label">Total Agendamentos</span>
+                            <span class="pro-metric-label">Agendamentos (mês)</span>
                             <div class="pro-metric-icon primary"><i class="fas fa-calendar-check"></i></div>
                         </div>
                         <div class="pro-metric-value" id="totalAgendamentos">0</div>
                     </div>
                 </div>
 
+                <!-- Tabela -->
                 <div class="pro-card">
                     <div class="pro-card-header">
                         <h3 class="pro-card-title">Lista de Profissionais</h3>
+                        <div class="pro-filters">
+                            <button class="pro-filter-chip active" onclick="setFilter('todos', this)">Todos</button>
+                            <button class="pro-filter-chip" onclick="setFilter('ativo', this)">Ativos</button>
+                            <button class="pro-filter-chip" onclick="setFilter('inativo', this)">Inativos</button>
+                        </div>
                     </div>
                     <div class="pro-card-body">
                         <div class="pro-table-container">
@@ -142,7 +146,14 @@
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody id="profissionaisTable"></tbody>
+                                <tbody id="profissionaisTable">
+                                    <tr>
+                                        <td colspan="7" class="pro-empty-state">
+                                            <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
+                                            <p>Carregando profissionais...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -151,7 +162,8 @@
         </main>
     </div>
 
-    <div class="pro-modal" id="professionalModal">
+    <!-- Modal Profissional -->
+    <div class="pro-modal" id="professionalModal" style="display:none;">
         <div class="pro-modal-overlay" onclick="closeProfessionalModal()"></div>
         <div class="pro-modal-content">
             <div class="pro-modal-header">
@@ -162,7 +174,7 @@
                 <form id="professionalForm" onsubmit="saveProfessional(event)">
                     <input type="hidden" id="professionalId">
                     <div class="pro-form-group">
-                        <label class="pro-label">Nome Completo</label>
+                        <label class="pro-label">Nome Completo *</label>
                         <input type="text" class="pro-input" id="professionalName" required>
                     </div>
                     <div class="pro-form-row">
@@ -177,7 +189,7 @@
                     </div>
                     <div class="pro-form-row">
                         <div class="pro-form-group">
-                            <label class="pro-label">Especialidade</label>
+                            <label class="pro-label">Especialidade *</label>
                             <input type="text" class="pro-input" id="professionalSpecialty" required>
                         </div>
                         <div class="pro-form-group">
@@ -213,137 +225,208 @@
     </div>
 
     <script>
-        function updateCommissionLabel() {
-            const type = document.getElementById('professionalCommissionType').value;
-            document.getElementById('commissionLabel').textContent = type === 'percentual' ? 'Comissão (%)' : 'Comissão (R$)';
-        }
+        // ─── Estado ────────────────────────────────────────────────────
+        let currentFilter = 'todos';
+        let todosProfissionais = [];
+        let totalAgendamentosMes = 0;
 
+        // ─── Perfil na sidebar ─────────────────────────────────────────
+        document.addEventListener('perfilCarregado', (e) => {
+            const perfil = e.detail;
+            if (!perfil) return;
+            const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = letra;
+            document.getElementById('userName').textContent = perfil.nome || perfil.email;
+            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+        });
+
+        // ─── Inicialização ─────────────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            loadProfissionais();
+        });
+
+        // ─── Carregar dados do banco ───────────────────────────────────
         async function loadProfissionais() {
             try {
-                const search = document.getElementById('searchInput').value.toLowerCase();
-                let profissionais = await DB.profissionais.listar();
+                // Carrega profissionais e agendamentos do mês em paralelo
+                const agora = new Date();
+                const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
+                const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+                const [profissionais, agendamentos] = await Promise.all([
+                    DB.profissionais.listar(),
+                    DB.agendamentos.listar({ inicio: inicioMes, fim: fimMes })
+                ]);
+
+                todosProfissionais = profissionais;
+                totalAgendamentosMes = Array.isArray(agendamentos) ? agendamentos.length : 0;
+
+                atualizarMetricas(todosProfissionais);
+                filtrarLocalmente();
+            } catch (error) {
+                console.error('Erro ao carregar profissionais:', error);
+                document.getElementById('profissionaisTable').innerHTML =
+                    '<tr><td colspan="7" class="pro-empty-state"><i class="fas fa-exclamation-circle pro-empty-state-icon"></i><p>Erro ao carregar profissionais</p></td></tr>';
+            }
+        }
+
+        // ─── Filtrar localmente ────────────────────────────────────────
+        function filtrarLocalmente() {
+            const search = (document.getElementById('searchInput').value || '').toLowerCase();
+            let lista = [...todosProfissionais];
+
+            if (currentFilter !== 'todos') {
+                lista = lista.filter(p => p.status === currentFilter);
+            }
 
             if (search) {
-                profissionais = profissionais.filter(p => 
-                    p.nome.toLowerCase().includes(search) || 
-                    (p.especialidade && p.especialidade.toLowerCase().includes(search))
+                lista = lista.filter(p =>
+                    (p.nome || '').toLowerCase().includes(search) ||
+                    (p.especialidade || '').toLowerCase().includes(search)
                 );
             }
 
-            updateStats(profissionais);
-            renderTable(profissionais);
-            } catch (error) {
-                console.error('Erro ao carregar profissionais:', error);
-                alert('Erro ao carregar profissionais');
-            }
+            renderTable(lista);
         }
 
-        async function updateStats(profissionais) {
-            const all = profissionais;
-            document.getElementById('totalProfissionais').textContent = all.length;
-            
-            const ativos = all.filter(p => p.status === 'ativo');
+        // ─── Métricas ──────────────────────────────────────────────────
+        function atualizarMetricas(lista) {
+            document.getElementById('totalProfissionais').textContent = lista.length;
+
+            const ativos = lista.filter(p => p.status === 'ativo');
             document.getElementById('profissionaisAtivos').textContent = ativos.length;
-            
-            const avgComissao = all.length > 0 
-                ? all.reduce((sum, p) => sum + (p.comissao_percentual || 0), 0) / all.length 
+
+            const avgComissao = lista.length > 0
+                ? lista.reduce((sum, p) => sum + parseFloat(p.comissao_percentual || 0), 0) / lista.length
                 : 0;
-            document.getElementById('comissaoMedia').textContent = avgComissao.toFixed(0) + '%';
-            
-            try {
-                const agendamentos = await DB.agendamentos.listar();
-                document.getElementById('totalAgendamentos').textContent = agendamentos.length;
-            } catch (error) {
-                console.error('Erro ao carregar agendamentos:', error);
-            }
+            document.getElementById('comissaoMedia').textContent = avgComissao.toFixed(1) + '%';
+
+            document.getElementById('totalAgendamentos').textContent = totalAgendamentosMes;
         }
 
-        function renderTable(profissionais) {
+        // ─── Renderizar tabela ─────────────────────────────────────────
+        function renderTable(lista) {
             const tbody = document.getElementById('profissionaisTable');
-            
-            if (profissionais.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="pro-empty-state"><i class="fas fa-user-tie pro-empty-state-icon"></i><p>Nenhum profissional encontrado</p></td></tr>';
+
+            if (lista.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="pro-empty-state">
+                            <i class="fas fa-user-tie pro-empty-state-icon"></i>
+                            <p>Nenhum profissional encontrado</p>
+                        </td>
+                    </tr>`;
                 return;
             }
 
-            tbody.innerHTML = profissionais.map(prof => {
-                const comissaoText = `${prof.comissao_percentual || 0}%`;
-                
+            tbody.innerHTML = lista.map(prof => {
+                const comissaoText = prof.comissao_percentual
+                    ? parseFloat(prof.comissao_percentual).toFixed(1) + '%'
+                    : '—';
+                const statusClass = prof.status === 'ativo' ? 'success' : 'error';
+                const telefone = prof.telefone || '—';
+
                 return `
                     <tr>
-                        <td><strong>${prof.nome}</strong></td>
-                        <td><span class="pro-badge pro-badge-primary">${prof.especialidade || '—'}</span></td>
-                        <td>${ProUI.Format.phone(prof.telefone || '—')}</td>
-                        <td><strong>${comissaoText}</strong></td>
-                        <td>${agendamentos.length}</td>
                         <td>
-                            <span class="pro-badge pro-badge-${prof.status === 'ativo' ? 'success' : 'error'}">
-                                ${prof.status}
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div class="pro-user-avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0;">
+                                    ${(prof.nome || 'P')[0].toUpperCase()}
+                                </div>
+                                <strong>${prof.nome}</strong>
+                            </div>
+                        </td>
+                        <td><span class="pro-badge pro-badge-primary">${prof.especialidade || '—'}</span></td>
+                        <td>${telefone}</td>
+                        <td><strong>${comissaoText}</strong></td>
+                        <td>${totalAgendamentosMes}</td>
+                        <td>
+                            <span class="pro-badge pro-badge-${statusClass}">
+                                ${prof.status === 'ativo' ? 'Ativo' : 'Inativo'}
                             </span>
                         </td>
                         <td>
                             <div class="pro-table-actions">
-                                <button class="pro-action-btn" onclick='editProfessional(${JSON.stringify(prof)})' title="Editar"><i class="fas fa-edit"></i></button>
-                                <button class="pro-action-btn danger" onclick="deleteProfessional('${prof.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
+                                <button class="pro-action-btn" title="Editar"
+                                    onclick="editProfessional('${prof.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="pro-action-btn danger" title="Excluir"
+                                    onclick="deleteProfessional('${prof.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
             }).join('');
         }
 
+        // ─── Filtro por chip ───────────────────────────────────────────
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.pro-filter-chip').forEach(c => c.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            filtrarLocalmente();
+        }
+
+        // ─── Modal ─────────────────────────────────────────────────────
         function openProfessionalModal() {
-            ProUI.Modal.open('professionalModal');
             document.getElementById('modalTitle').textContent = 'Novo Profissional';
             document.getElementById('professionalForm').reset();
             document.getElementById('professionalId').value = '';
             document.getElementById('professionalStatus').value = 'ativo';
             document.getElementById('professionalCommissionType').value = 'percentual';
             updateCommissionLabel();
+            document.getElementById('professionalModal').style.display = 'flex';
         }
 
         function closeProfessionalModal() {
-            ProUI.Modal.close('professionalModal');
+            document.getElementById('professionalModal').style.display = 'none';
         }
 
-        function editProfessional(prof) {
-            openProfessionalModal();
+        function updateCommissionLabel() {
+            const type = document.getElementById('professionalCommissionType').value;
+            document.getElementById('commissionLabel').textContent =
+                type === 'percentual' ? 'Comissão (%)' : 'Comissão (R$)';
+        }
+
+        function editProfessional(id) {
+            const prof = todosProfissionais.find(p => p.id === id);
+            if (!prof) return;
             document.getElementById('modalTitle').textContent = 'Editar Profissional';
             document.getElementById('professionalId').value = prof.id;
-            document.getElementById('professionalName').value = prof.nome;
+            document.getElementById('professionalName').value = prof.nome || '';
             document.getElementById('professionalPhone').value = prof.telefone || '';
             document.getElementById('professionalEmail').value = prof.email || '';
             document.getElementById('professionalSpecialty').value = prof.especialidade || '';
-            document.getElementById('professionalStatus').value = prof.status;
-            document.getElementById('professionalCommissionType').value = prof.comissaoTipo;
-            document.getElementById('professionalCommission').value = prof.comissaoValor;
+            document.getElementById('professionalStatus').value = prof.status || 'ativo';
+            document.getElementById('professionalCommissionType').value = prof.comissao_tipo || 'percentual';
+            document.getElementById('professionalCommission').value = prof.comissao_percentual || '';
             updateCommissionLabel();
+            document.getElementById('professionalModal').style.display = 'flex';
         }
 
+        // ─── Salvar profissional ───────────────────────────────────────
         async function saveProfessional(e) {
             e.preventDefault();
-            
             try {
                 const id = document.getElementById('professionalId').value;
-                const data = {
-                    nome: document.getElementById('professionalName').value,
+                const dados = {
+                    nome: document.getElementById('professionalName').value.trim(),
+                    telefone: document.getElementById('professionalPhone').value.trim(),
+                    email: document.getElementById('professionalEmail').value.trim(),
+                    especialidade: document.getElementById('professionalSpecialty').value.trim(),
+                    status: document.getElementById('professionalStatus').value,
+                    comissao_tipo: document.getElementById('professionalCommissionType').value,
                     comissao_percentual: parseFloat(document.getElementById('professionalCommission').value) || 0
                 };
 
-                let resultado;
-                if (id) {
-                    resultado = await DB.profissionais.atualizar(id, data);
-                    if (resultado.success) {
-                        alert('✅ Profissional atualizado!');
-                    }
-                } else {
-                    resultado = await DB.profissionais.criar(data);
-                    if (resultado.success) {
-                        alert('✅ Profissional criado!');
-                    }
-                }
+                const resultado = id
+                    ? await DB.profissionais.atualizar(id, dados)
+                    : await DB.profissionais.criar(dados);
 
                 if (resultado.success) {
+                    alert(id ? '✅ Profissional atualizado!' : '✅ Profissional criado!');
                     closeProfessionalModal();
                     await loadProfissionais();
                 } else {
@@ -355,32 +438,29 @@
             }
         }
 
+        // ─── Excluir profissional ──────────────────────────────────────
         async function deleteProfessional(id) {
-            if (confirm('Deseja realmente excluir este profissional?')) {
-                try {
-                    const resultado = await DB.profissionais.excluir(id);
-                    if (resultado.success) {
-                        alert('✅ Profissional excluído!');
-                        await loadProfissionais();
-                    } else {
-                        alert('❌ Erro: ' + resultado.error);
-                    }
-                } catch (error) {
-                    console.error('Erro ao excluir profissional:', error);
-                    alert('❌ Erro ao excluir profissional');
+            if (!confirm('Deseja realmente excluir este profissional?')) return;
+            try {
+                const resultado = await DB.profissionais.excluir(id);
+                if (resultado.success) {
+                    alert('✅ Profissional excluído!');
+                    await loadProfissionais();
+                } else {
+                    alert('❌ Erro: ' + resultado.error);
                 }
+            } catch (error) {
+                console.error('Erro ao excluir profissional:', error);
+                alert('❌ Erro ao excluir profissional');
             }
         }
 
+        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
             }
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadProfissionais();
-        });
     </script>
 </body>
 </html>
