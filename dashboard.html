@@ -5,27 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Sistema Profissional</title>
     
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Professional Styles -->
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
-    
-    <!-- Supabase Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Scripts do Sistema -->
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
 </head>
@@ -56,15 +46,15 @@
 
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a href="clientes.html" class="pro-nav-item">
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item">
                         <i class="fas fa-users"></i>
                         <span>Clientes</span>
                     </a>
-                    <a href="servicos.html" class="pro-nav-item">
+                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item">
                         <i class="fas fa-cut"></i>
                         <span>Serviços</span>
                     </a>
-                    <a href="profissionais.html" class="pro-nav-item">
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item">
                         <i class="fas fa-user-tie"></i>
                         <span>Profissionais</span>
                     </a>
@@ -72,11 +62,11 @@
 
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
-                    <a href="financeiro.html" class="pro-nav-item">
+                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item">
                         <i class="fas fa-chart-line"></i>
                         <span>Financeiro</span>
                     </a>
-                    <a href="relatorios.html" class="pro-nav-item">
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item">
                         <i class="fas fa-chart-bar"></i>
                         <span>Relatórios</span>
                     </a>
@@ -84,14 +74,14 @@
 
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
-                    <a href="whatsapp.html" class="pro-nav-item">
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item">
                         <i class="fab fa-whatsapp"></i>
                         <span>Conectar WhatsApp</span>
                     </a>
                 </div>
 
                 <div class="pro-nav-section">
-                    <a href="configuracoes.html" class="pro-nav-item">
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item">
                         <i class="fas fa-cog"></i>
                         <span>Configurações</span>
                     </a>
@@ -100,10 +90,10 @@
 
             <div class="pro-sidebar-footer">
                 <div class="pro-user-profile">
-                    <div class="pro-user-avatar">A</div>
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
-                        <div class="pro-user-name">Admin</div>
-                        <div class="pro-user-role">Proprietário</div>
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
                     </div>
                     <button class="pro-user-logout" onclick="logout()">
                         <i class="fas fa-sign-out-alt"></i>
@@ -114,7 +104,6 @@
 
         <!-- Main Content -->
         <main class="pro-main">
-            <!-- Header -->
             <header class="pro-header">
                 <div class="pro-search">
                     <i class="fas fa-search pro-search-icon"></i>
@@ -125,20 +114,15 @@
                         id="globalSearch"
                     >
                 </div>
-
                 <div class="pro-header-actions">
                     <button class="pro-header-btn" onclick="ProUI.Toast.info('Sem notificações')">
                         <i class="fas fa-bell"></i>
-                        <span class="badge">3</span>
                     </button>
-
                     <div class="pro-header-divider"></div>
-
                     <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
                 </div>
             </header>
 
-            <!-- Content Area -->
             <div class="pro-content">
                 <div class="pro-page-header">
                     <div class="pro-page-header-top">
@@ -163,10 +147,6 @@
                             </div>
                         </div>
                         <div class="pro-metric-value" id="appointmentsToday">0</div>
-                        <div class="pro-metric-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span id="appointmentsTodayChange">0%</span> vs ontem
-                        </div>
                     </div>
 
                     <div class="pro-metric-card">
@@ -177,9 +157,6 @@
                             </div>
                         </div>
                         <div class="pro-metric-value" id="appointmentsTomorrow">0</div>
-                        <div class="pro-metric-change">
-                            <span id="appointmentsTomorrowSlots">0 horários disponíveis</span>
-                        </div>
                     </div>
 
                     <div class="pro-metric-card">
@@ -190,10 +167,6 @@
                             </div>
                         </div>
                         <div class="pro-metric-value" id="revenueToday">R$ 0</div>
-                        <div class="pro-metric-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span id="revenueTodayChange">0%</span> vs ontem
-                        </div>
                     </div>
 
                     <div class="pro-metric-card">
@@ -204,24 +177,14 @@
                             </div>
                         </div>
                         <div class="pro-metric-value" id="revenueMonth">R$ 0</div>
-                        <div class="pro-metric-change positive">
-                            <i class="fas fa-arrow-up"></i>
-                            <span id="revenueMonthChange">0%</span> vs mês anterior
-                        </div>
                     </div>
                 </div>
 
                 <!-- Charts Grid -->
                 <div class="pro-grid-2">
-                    <!-- Revenue Chart -->
                     <div class="pro-card">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Faturamento (Últimos 7 Dias)</h3>
-                            <div class="pro-filters">
-                                <button class="pro-filter-chip active">7 dias</button>
-                                <button class="pro-filter-chip">30 dias</button>
-                                <button class="pro-filter-chip">90 dias</button>
-                            </div>
                         </div>
                         <div class="pro-card-body">
                             <div style="height: 300px;">
@@ -230,7 +193,6 @@
                         </div>
                     </div>
 
-                    <!-- Appointments Chart -->
                     <div class="pro-card">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Agendamentos por Dia</h3>
@@ -248,8 +210,7 @@
                     <div class="pro-card-header">
                         <h3 class="pro-card-title">Próximos Agendamentos</h3>
                         <a href="agenda.html" class="pro-btn pro-btn-ghost pro-btn-sm">
-                            Ver todos
-                            <i class="fas fa-arrow-right"></i>
+                            Ver todos <i class="fas fa-arrow-right"></i>
                         </a>
                     </div>
                     <div class="pro-card-body">
@@ -299,33 +260,28 @@
                             <option value="">Selecione um cliente</option>
                         </select>
                     </div>
-
                     <div class="pro-form-group">
                         <label class="pro-label">Serviço</label>
                         <select class="pro-select" id="appointmentService" required>
                             <option value="">Selecione um serviço</option>
                         </select>
                     </div>
-
                     <div class="pro-form-group">
                         <label class="pro-label">Profissional</label>
                         <select class="pro-select" id="appointmentProfessional" required>
                             <option value="">Selecione um profissional</option>
                         </select>
                     </div>
-
                     <div class="pro-form-row">
                         <div class="pro-form-group">
                             <label class="pro-label">Data</label>
                             <input type="date" class="pro-input" id="appointmentDate" required>
                         </div>
-
                         <div class="pro-form-group">
                             <label class="pro-label">Horário</label>
                             <input type="time" class="pro-input" id="appointmentTime" required>
                         </div>
                     </div>
-
                     <div class="pro-form-group">
                         <label class="pro-label">Observações</label>
                         <textarea class="pro-textarea" id="appointmentNotes" rows="3"></textarea>
@@ -345,114 +301,135 @@
     </div>
 
     <script>
-        // Load Dashboard Data
+        // ─── Carregar info do usuário na sidebar ───────────────────────
+        document.addEventListener('perfilCarregado', async (e) => {
+            const perfil = e.detail;
+            if (!perfil) return;
+
+            const primeiraLetra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = primeiraLetra;
+            document.getElementById('userName').textContent = perfil.nome || perfil.email;
+            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+        });
+
+        // ─── Carregar Dashboard ────────────────────────────────────────
         async function loadDashboard() {
             try {
-                const stats = await DB.dashboard.stats();
-                
-                // Update metrics
-                document.getElementById('appointmentsToday').textContent = stats.agendamentosHoje || 0;
-                document.getElementById('appointmentsTomorrow').textContent = stats.agendamentosAmanha || 0;
-                document.getElementById('revenueToday').textContent = ProUI.Format.currency(stats.receitaDia || 0);
-                document.getElementById('revenueMonth').textContent = ProUI.Format.currency(stats.receitaMes || 0);
+                const hoje = new Date().toISOString().split('T')[0];
+                const agora = new Date();
 
-                // Load charts
-                await loadRevenueChart();
-                await loadAppointmentsChart();
-                
-                // Load upcoming appointments
+                const [agendamentosHoje, financeiroHoje, financeiroMes] = await Promise.all([
+                    DB.agendamentos.listarPorData(hoje),
+                    DB.financeiro.faturamentoDia(hoje),
+                    DB.financeiro.faturamentoMes(agora.getFullYear(), agora.getMonth() + 1)
+                ]);
+
+                // Amanhã
+                const amanha = new Date();
+                amanha.setDate(amanha.getDate() + 1);
+                const amanhaStr = amanha.toISOString().split('T')[0];
+                const agendamentosAmanha = await DB.agendamentos.listarPorData(amanhaStr);
+
+                document.getElementById('appointmentsToday').textContent = agendamentosHoje.length;
+                document.getElementById('appointmentsTomorrow').textContent = agendamentosAmanha.length;
+                document.getElementById('revenueToday').textContent =
+                    'R$ ' + financeiroHoje.faturamentoBruto.toFixed(2).replace('.', ',');
+                document.getElementById('revenueMonth').textContent =
+                    'R$ ' + financeiroMes.faturamentoBruto.toFixed(2).replace('.', ',');
+
+                await loadCharts();
                 await loadUpcomingAppointments();
-
-                // Load dropdowns
                 await loadFormOptions();
+
             } catch (error) {
                 console.error('Erro ao carregar dashboard:', error);
-                alert('Erro ao carregar dados do dashboard');
             }
         }
 
-        // Revenue Chart
+        // ─── Gráficos ──────────────────────────────────────────────────
         let revenueChart = null;
-        async function loadRevenueChart() {
-            try {
-                const data = await DB.dashboard.receitaUltimos7Dias();
-            
-            if (revenueChart) revenueChart.destroy();
-
-            revenueChart = ProUI.Chart.createLine('revenueChart', {
-                labels: data.map(d => ProUI.Date.formatWeekday(d.data)),
-                datasets: [{
-                    label: 'Faturamento',
-                    data: data.map(d => d.valor),
-                    borderColor: '#6366F1',
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            }, {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: (value) => ProUI.Format.currency(value)
-                        }
-                    }
-                }
-            });
-            } catch (error) {
-                console.error('Erro ao carregar gráfico de receita:', error);
-            }
-        }
-
-        // Appointments Chart
         let appointmentsChart = null;
-        async function loadAppointmentsChart() {
-            try {
-                const data = await DB.dashboard.receitaUltimos7Dias();
-            
-            if (appointmentsChart) appointmentsChart.destroy();
 
-            appointmentsChart = ProUI.Chart.createBar('appointmentsChart', {
-                labels: data.map(d => ProUI.Date.formatWeekday(d.data)),
-                datasets: [{
-                    label: 'Agendamentos',
-                    data: data.map(d => d.quantidade || 0),
-                    backgroundColor: '#10B981'
-                }]
-            }, {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
+        async function loadCharts() {
+            try {
+                // Gerar últimos 7 dias
+                const dias = [];
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dias.push(d.toISOString().split('T')[0]);
                 }
-            });
+
+                const resultados = await Promise.all(
+                    dias.map(d => DB.agendamentos.listarPorData(d))
+                );
+
+                const labels = dias.map(d => {
+                    const [ano, mes, dia] = d.split('-');
+                    return `${dia}/${mes}`;
+                });
+
+                const valores = resultados.map(lista =>
+                    lista.reduce((acc, ag) => acc + parseFloat(ag.valor || 0), 0)
+                );
+
+                const quantidades = resultados.map(lista => lista.length);
+
+                // Gráfico de faturamento
+                if (revenueChart) revenueChart.destroy();
+                revenueChart = new Chart(document.getElementById('revenueChart'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Faturamento (R$)',
+                            data: valores,
+                            borderColor: '#6366F1',
+                            backgroundColor: 'rgba(99,102,241,0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+
+                // Gráfico de agendamentos
+                if (appointmentsChart) appointmentsChart.destroy();
+                appointmentsChart = new Chart(document.getElementById('appointmentsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Agendamentos',
+                            data: quantidades,
+                            backgroundColor: '#10B981'
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+
             } catch (error) {
-                console.error('Erro ao carregar gráfico de agendamentos:', error);
+                console.error('Erro ao carregar gráficos:', error);
             }
         }
 
-        // Load Upcoming Appointments
+        // ─── Próximos Agendamentos ─────────────────────────────────────
         async function loadUpcomingAppointments() {
             try {
-                const appointments = await DB.agendamentos.proximos(5);
-            const tbody = document.getElementById('upcomingAppointments');
+                const hoje = new Date().toISOString().split('T')[0];
+                const agendamentos = await DB.agendamentos.listar({ data: hoje });
+                const tbody = document.getElementById('upcomingAppointments');
 
-            if (appointments.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="pro-empty-state">
-                            <i class="fas fa-calendar-times pro-empty-state-icon"></i>
-                            <p>Nenhum agendamento próximo</p>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = appointments.map(apt => {
+                if (!agendamentos || agendamentos.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="pro-empty-state">
+                                <i class="fas fa-calendar-times pro-empty-state-icon"></i>
+                                <p>Nenhum agendamento hoje</p>
+                            </td>
+                        </tr>`;
+                    return;
+                }
 
                 const statusColors = {
                     agendado: 'primary',
@@ -462,14 +439,14 @@
                     cancelado: 'error'
                 };
 
-                return `
+                tbody.innerHTML = agendamentos.slice(0, 5).map(apt => `
                     <tr>
-                        <td>${apt.cliente_nome || '—'}</td>
-                        <td>${apt.servico_nome || '—'}</td>
-                        <td>${apt.profissional_nome || '—'}</td>
-                        <td>${ProUI.Format.date(apt.data)} ${apt.hora}</td>
+                        <td>${apt.cliente?.nome || '—'}</td>
+                        <td>${apt.servico?.nome || '—'}</td>
+                        <td>${apt.profissional?.nome || '—'}</td>
+                        <td>${apt.data} ${apt.hora}</td>
                         <td>
-                            <span class="pro-badge pro-badge-${statusColors[apt.status]}">
+                            <span class="pro-badge pro-badge-${statusColors[apt.status] || 'primary'}">
                                 ${apt.status}
                             </span>
                         </td>
@@ -478,90 +455,86 @@
                                 <button class="pro-action-btn" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="pro-action-btn danger" title="Cancelar">
-                                    <i class="fas fa-times"></i>
-                                </button>
                             </div>
                         </td>
                     </tr>
-                `;
-            }).join('');
+                `).join('');
+
             } catch (error) {
                 console.error('Erro ao carregar próximos agendamentos:', error);
             }
         }
 
-        // Load Form Options
+        // ─── Opções do Formulário ──────────────────────────────────────
         async function loadFormOptions() {
             try {
-                const clientes = await DB.clientes.listar();
-                const servicos = await DB.servicos.listar();
-                const profissionais = await DB.profissionais.listar();
+                const [clientes, servicos, profissionais] = await Promise.all([
+                    DB.clientes.listar(),
+                    DB.servicos.listar(),
+                    DB.profissionais.listar()
+                ]);
 
-            document.getElementById('appointmentClient').innerHTML = 
-                '<option value="">Selecione um cliente</option>' +
-                clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+                document.getElementById('appointmentClient').innerHTML =
+                    '<option value="">Selecione um cliente</option>' +
+                    clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
 
-            document.getElementById('appointmentService').innerHTML = 
-                '<option value="">Selecione um serviço</option>' +
-                servicos.map(s => `<option value="${s.id}">${s.nome} - ${ProUI.Format.currency(s.preco)}</option>`).join('');
+                document.getElementById('appointmentService').innerHTML =
+                    '<option value="">Selecione um serviço</option>' +
+                    servicos.map(s => `<option value="${s.id}">${s.nome} - R$ ${parseFloat(s.preco).toFixed(2)}</option>`).join('');
 
-            document.getElementById('appointmentProfessional').innerHTML = 
-                '<option value="">Selecione um profissional</option>' +
-                profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+                document.getElementById('appointmentProfessional').innerHTML =
+                    '<option value="">Selecione um profissional</option>' +
+                    profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
 
-            // Set default date
-            document.getElementById('appointmentDate').value = ProUI.Date.today();
+                // Data padrão = hoje
+                document.getElementById('appointmentDate').value = new Date().toISOString().split('T')[0];
+
             } catch (error) {
                 console.error('Erro ao carregar opções do formulário:', error);
             }
         }
 
-        // Save Appointment
+        // ─── Salvar Agendamento ────────────────────────────────────────
         async function saveAppointment(e) {
             e.preventDefault();
-
             try {
+                const servicoId = document.getElementById('appointmentService').value;
+                const servico = await DB.servicos.buscar(servicoId);
 
-            const data = {
-                cliente_id: document.getElementById('appointmentClient').value,
-                servico_id: document.getElementById('appointmentService').value,
-                profissional_id: document.getElementById('appointmentProfessional').value,
-                data: document.getElementById('appointmentDate').value,
-                hora: document.getElementById('appointmentTime').value,
-                status: 'agendado',
-                observacoes: document.getElementById('appointmentNotes').value
-            };
+                const dados = {
+                    cliente_id: document.getElementById('appointmentClient').value,
+                    servico_id: servicoId,
+                    profissional_id: document.getElementById('appointmentProfessional').value,
+                    data: document.getElementById('appointmentDate').value,
+                    hora: document.getElementById('appointmentTime').value,
+                    status: 'confirmado',
+                    valor: servico ? servico.preco : 0,
+                    observacoes: document.getElementById('appointmentNotes').value
+                };
 
-            // Buscar preço do serviço
-            const servico = await DB.servicos.buscar(data.servico_id);
-            if (servico) {
-                data.valor = servico.preco;
-            }
+                const resultado = await DB.agendamentos.criar(dados);
 
-            const resultado = await DB.agendamentos.criar(data);
-            
-            if (resultado.success) {
-                alert('✅ Agendamento criado com sucesso!');
-                ProUI.Modal.close('newAppointmentModal');
-                await loadDashboard();
-            } else {
-                alert('❌ Erro ao criar agendamento: ' + resultado.error);
-            }
+                if (resultado.success) {
+                    alert('✅ Agendamento criado com sucesso!');
+                    ProUI.Modal.close('newAppointmentModal');
+                    await loadDashboard();
+                } else {
+                    alert('❌ Erro: ' + resultado.error);
+                }
             } catch (error) {
                 console.error('Erro ao salvar agendamento:', error);
                 alert('❌ Erro ao salvar agendamento');
             }
         }
 
-        // Logout
+        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
-            if (confirm('Deseja realmente sair do sistema?')) {
+            if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
             }
         }
 
-        // Load on init
+        // ─── Iniciar ───────────────────────────────────────────────────
         window.addEventListener('DOMContentLoaded', () => {
             loadDashboard();
         });
