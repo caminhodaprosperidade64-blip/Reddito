@@ -4,7 +4,7 @@
  * ============================================
  * Inclua este script em TODAS as páginas privadas,
  * APÓS o auth.js:
- * <script src="/js/auth-guard.js"></script>
+ * <script src="js/auth-guard.js"></script>
  */
 
 console.log('🛡️ [AuthGuard] Carregando...');
@@ -21,19 +21,19 @@ const MENUS_APENAS_DONO = [
 
 // Páginas que o profissional NÃO pode acessar (redireciona para agenda)
 const PAGINAS_BLOQUEADAS_PROFISSIONAL = [
-    '/clientes.html',
-    '/servicos.html',
-    '/profissionais.html',
-    '/relatorios.html',
-    '/configuracoes.html',
-    '/whatsapp.html',
-    '/dashboard.html'
+    'clientes.html',
+    'servicos.html',
+    'profissionais.html',
+    'relatorios.html',
+    'configuracoes.html',
+    'whatsapp.html',
+    'dashboard.html'
 ];
 
 function aplicarControleDeMenu(perfil) {
     if (perfil.role === 'dono') {
         console.log('✅ [AuthGuard] Dono — acesso total liberado');
-        return; // Dono vê tudo
+        return;
     }
 
     if (perfil.role === 'profissional') {
@@ -47,7 +47,7 @@ function aplicarControleDeMenu(perfil) {
 
         if (bloqueada) {
             console.warn('⛔ [AuthGuard] Página bloqueada para profissional, redirecionando...');
-            window.location.href = '/agenda.html';
+            window.location.href = 'agenda.html';
             return;
         }
 
