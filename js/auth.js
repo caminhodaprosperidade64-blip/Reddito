@@ -1,15 +1,11 @@
 /* js/auth.js
-   Compatível com frontend do projeto (usa window.getSupabase()).
-   Fornece:
-    - signUp, signIn, signOut
-    - getPerfil, getTenantId, getRole, isDono
-    - isAuthenticated (síncrono) e isAuthenticatedAsync (assíncrono)
-    - init() que popula window.__perfil e emite 'perfilCarregado'
+   Versão compatível com frontend que usa window.getSupabase()
+   - Funções: signUp, signIn, signOut, getPerfil, getTenantId, getRole, isDono
+   - Registra handlers de auth e emite evento 'perfilCarregado' quando o perfil está pronto
 */
 
 (function () {
-  'use strict';
-
+  // helpers
   function sup() {
     if (typeof window.getSupabase !== 'function') {
       throw new Error('getSupabase() não está disponível. Verifique js/supabase-config.js');
@@ -17,7 +13,7 @@
     return window.getSupabase();
   }
 
-  async function signUp({ nome, nomeEmpresa, email, senha, plano = 'plano1' }) {
+  async function signUp({ nome, nomeEmpresa, email, senha, plano }) {
     try {
       const supabase = sup();
 
@@ -29,61 +25,44 @@
 
       if (signUpError) throw signUpError;
 
-      // Obter user id
-      const userId = signUpData?.user?.id ?? signUpData?.id;
-      if (!userId) {
-        // Tentar obter via getUser (fallback)
-        try {
-          const resp = await supabase.auth.getUser();
-          const uid = resp?.data?.user?.id;
-          if (uid) {
-            // continue
-          } else {
-            throw new Error('Não foi possível obter o ID do usuário após o signUp.');
-          }
-        } catch (e) {
-          throw new Error('Não foi possível obter o ID do usuário após o signUp. Verifique a configuração de confirmações.');
-        }
-      }
+      const userId = signUpData.user.id;
 
-      // 2) Criar tenant (empresa) usando o mesmo id do usuário para facilitar ligação inicial
-      const tenantPayload = {
-        id: userId,
-        nome_empresa: nomeEmpresa,
-        plano,
-        trial_inicio: new Date().toISOString(),
-        trial_fim: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-        status_pagamento: 'trial',
-      };
-
+      // 2) Criar tenant (empresa) com o plano escolhido
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
-        .insert([tenantPayload])
+        .insert([
+          {
+            id: userId, // usar o mesmo UUID do usuário para facilitar
+            nome_empresa: nomeEmpresa,
+            plano,
+            trial_inicio: new Date(),
+            trial_fim: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 dias depois
+            status_pagamento: 'trial',
+          },
+        ])
         .select()
         .single();
 
       if (tenantError) throw tenantError;
 
-      // 3) Criar perfil vinculado ao tenant
-      const perfilPayload = {
-        id: userId,
-        nome,
-        email,
-        tenant_id: tenantData.id,
-        role: 'dono',
-      };
-
-      const { error: perfilError } = await supabase
+      // 3) Criar perfil do usuário vinculado ao tenant
+      const { data: perfilData, error: perfilError } = await supabase
         .from('perfis')
-        .insert([perfilPayload]);
+        .insert([
+          {
+            id: userId,
+            nome,
+            email,
+            tenant_id: tenantData.id,
+            role: 'dono', // dono da empresa
+          },
+        ]);
 
       if (perfilError) throw perfilError;
 
-      return { success: true, message: 'Cadastro criado. Verifique seu e-mail para confirmação (se aplicável).' };
-    } catch (err) {
-      console.error('signUp error', err);
-      // Mensagem amigável
-      return { success: false, message: err?.message ?? String(err) };
+      return { success: true, message: 'Usuário criado com sucesso! Verifique seu e-mail para confirmar.' };
+    } catch (error) {
+      return { success: false, message: error.message };
     }
   }
 
@@ -92,8 +71,6 @@
       const supabase = sup();
       const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
       if (error) throw error;
-      // carregar perfil imediatamente
-      await refreshPerfil();
       return { success: true, data };
     } catch (err) {
       console.error('signIn error', err);
@@ -106,9 +83,6 @@
       const supabase = sup();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      // limpar perfil local
-      window.__perfil = null;
-      window.dispatchEvent(new Event('perfilCarregado'));
       return { success: true };
     } catch (err) {
       console.error('signOut error', err);
@@ -118,12 +92,9 @@
 
   async function getPerfil() {
     try {
-      // Retorna perfil já carregado em memória se existir
-      if (window.__perfil) return window.__perfil;
-
       const supabase = sup();
-      const { data: userResp } = await supabase.auth.getUser();
-      const userId = userResp?.user?.id;
+      const user = supabase.auth.getUser ? (await supabase.auth.getUser()).data?.user : supabase.auth.user?.();
+      const userId = user?.id;
       if (!userId) return null;
 
       const { data, error } = await supabase
@@ -133,20 +104,11 @@
         .maybeSingle();
 
       if (error) throw error;
-      // armazenar localmente para acesso síncrono
-      window.__perfil = data ?? null;
       return data;
     } catch (err) {
       console.error('getPerfil error', err);
       return null;
     }
-  }
-
-  async function refreshPerfil() {
-    const perfil = await getPerfil();
-    window.__perfil = perfil || null;
-    window.dispatchEvent(new Event('perfilCarregado'));
-    return window.__perfil;
   }
 
   async function getTenantId() {
@@ -164,50 +126,42 @@
     return role === 'dono';
   }
 
-  // Síncrono: compatível com código legado que espera função imediata
-  function isAuthenticated() {
-    return !!window.__perfil;
-  }
-
-  async function isAuthenticatedAsync() {
-    try {
-      const supabase = sup();
-      if (supabase.auth.getSession) {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session) return true;
-      }
-    } catch (e) {
-      // ignore
-    }
-    return !!window.__perfil;
-  }
-
-  // Listener de alterações de autenticação
+  // Observador de auth para carregar perfil automaticamente
   function startAuthListener() {
     try {
       const supabase = sup();
       if (supabase.auth.onAuthStateChange) {
         supabase.auth.onAuthStateChange(async (event, session) => {
-          // sempre atualiza o perfil quando houver mudança
-          await refreshPerfil();
+          // Quando ocorrer mudança, tentamos carregar o perfil e emitimos evento global
+          const perfil = await getPerfil();
+          // armazenar no window para fácil acesso
+          window.__perfil = perfil || null;
+          // emitir evento para a app
+          const ev = new Event('perfilCarregado');
+          window.dispatchEvent(ev);
         });
+      } else if (supabase.auth.onAuthStateChange === undefined && supabase.auth.onAuthStateChange !== undefined) {
+        // fallback - não necessário na maioria das versões modernas
       }
     } catch (err) {
       console.warn('startAuthListener erro', err);
     }
   }
 
-  // Inicialização: popula window.__perfil se existir sessão ativa
+  // Inicializa carregando perfil se já logado
   async function init() {
     try {
-      await refreshPerfil();
+      // tenta popular window.__perfil se já existir sessão
+      const perfil = await getPerfil();
+      window.__perfil = perfil || null;
+      window.dispatchEvent(new Event('perfilCarregado'));
       startAuthListener();
     } catch (err) {
       console.warn('auth init failed', err);
     }
   }
 
-  // Expor API pública
+  // Expor API global para que o resto do projeto (HTML/JS) possa usar
   window.Auth = {
     signUp,
     signIn,
@@ -217,17 +171,15 @@
     getRole,
     isDono,
     init,
-    // Compatibilidade
-    isAuthenticated,
-    isAuthenticatedAsync,
   };
 
-  // auto-init com pequeno delay para garantir carregamento do supabase-config
+  // auto-init
+  // chamamos init depois de um pequeno timeout para garantir que js/supabase-config.js já foi carregado
   setTimeout(() => {
     try {
       init();
     } catch (e) {
       // ignore
     }
-  }, 200);
+  }, 250);
 })();
