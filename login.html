@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sistema de Agendamento</title>
-    
+
     <!-- Supabase - ORDEM CRÍTICA -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
-    
+
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -26,7 +26,7 @@
             justify-content: center;
             padding: 20px;
         }
-        
+
         .login-container {
             background: white;
             border-radius: 20px;
@@ -35,12 +35,12 @@
             max-width: 450px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        
+
         .logo {
             text-align: center;
             margin-bottom: 40px;
         }
-        
+
         .logo-icon {
             width: 80px;
             height: 80px;
@@ -53,25 +53,25 @@
             font-size: 36px;
             margin-bottom: 15px;
         }
-        
+
         h1 {
             color: #2d3748;
             font-size: 28px;
             text-align: center;
             margin-bottom: 10px;
         }
-        
+
         .subtitle {
             color: #718096;
             text-align: center;
             margin-bottom: 35px;
             font-size: 14px;
         }
-        
+
         .form-group {
             margin-bottom: 20px;
         }
-        
+
         label {
             display: block;
             color: #4a5568;
@@ -79,7 +79,7 @@
             margin-bottom: 8px;
             font-size: 14px;
         }
-        
+
         input {
             width: 100%;
             padding: 14px 16px;
@@ -89,13 +89,13 @@
             transition: all 0.3s;
             font-family: inherit;
         }
-        
+
         input:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        
+
         button {
             width: 100%;
             padding: 16px;
@@ -109,24 +109,24 @@
             transition: transform 0.2s, box-shadow 0.2s;
             margin-bottom: 15px;
         }
-        
+
         button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
         }
-        
+
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
-        
+
         .divider {
             text-align: center;
             margin: 30px 0;
             color: #a0aec0;
             position: relative;
         }
-        
+
         .divider::before,
         .divider::after {
             content: '';
@@ -136,22 +136,22 @@
             height: 1px;
             background: #e2e8f0;
         }
-        
+
         .divider::before { left: 0; }
         .divider::after { right: 0; }
-        
+
         .link-button {
             background: #f7fafc;
             color: #667eea;
             font-weight: 600;
         }
-        
+
         .link-button:hover {
             background: #edf2f7;
             transform: none;
             box-shadow: none;
         }
-        
+
         .error-message {
             background: #fed7d7;
             color: #742a2a;
@@ -161,7 +161,7 @@
             font-size: 14px;
             display: none;
         }
-        
+
         .success-message {
             background: #c6f6d5;
             color: #22543d;
@@ -171,7 +171,7 @@
             font-size: 14px;
             display: none;
         }
-        
+
         .loading {
             display: inline-block;
             width: 14px;
@@ -182,11 +182,11 @@
             animation: spin 0.6s linear infinite;
             margin-right: 8px;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
+
         #cadastroForm {
             display: none;
         }
@@ -199,50 +199,50 @@
             <h1>Sistema de Agendamento</h1>
             <p class="subtitle">Gestão profissional para seu negócio</p>
         </div>
-        
+
         <div id="errorMessage" class="error-message"></div>
         <div id="successMessage" class="success-message"></div>
-        
+
         <!-- FORM LOGIN -->
         <form id="loginForm">
             <div class="form-group">
                 <label for="loginEmail">Email</label>
                 <input type="email" id="loginEmail" required placeholder="seu@email.com">
             </div>
-            
+
             <div class="form-group">
                 <label for="loginPassword">Senha</label>
                 <input type="password" id="loginPassword" required placeholder="••••••••">
             </div>
-            
+
             <button type="submit" id="loginBtn">Entrar</button>
-            
+
             <div class="divider">ou</div>
-            
+
             <button type="button" class="link-button" onclick="mostrarCadastro()">
                 Criar nova conta
             </button>
         </form>
-        
+
         <!-- FORM CADASTRO -->
         <form id="cadastroForm">
             <div class="form-group">
                 <label for="cadastroEmail">Email</label>
                 <input type="email" id="cadastroEmail" required placeholder="seu@email.com">
             </div>
-            
+
             <div class="form-group">
                 <label for="cadastroPassword">Senha</label>
                 <input type="password" id="cadastroPassword" required placeholder="Mínimo 6 caracteres">
             </div>
-            
+
             <div class="form-group">
                 <label for="cadastroPasswordConfirm">Confirmar Senha</label>
                 <input type="password" id="cadastroPasswordConfirm" required placeholder="Digite a senha novamente">
             </div>
-            
+
             <button type="submit" id="cadastroBtn">Criar Conta</button>
-            
+
             <button type="button" class="link-button" onclick="mostrarLogin()">
                 Já tenho conta
             </button>
@@ -253,56 +253,39 @@
         // ============================================
         // SISTEMA DE INICIALIZAÇÃO
         // ============================================
-        
+
         console.log('🚀 [Login] Página carregada');
-        
+
         let sistemaInicializado = false;
-        
-        /**
-         * Verifica se tudo está pronto
-         */
+
         function verificarSistema() {
             const supabaseOk = window.isSupabaseReady && window.isSupabaseReady();
             const authOk = typeof Auth !== 'undefined';
-            
             return supabaseOk && authOk;
         }
-        
-        /**
-         * Inicializa o sistema quando tudo estiver pronto
-         */
+
         async function inicializarSistema() {
             if (sistemaInicializado) return;
-            
             console.log('✅ [Login] Inicializando sistema...');
             sistemaInicializado = true;
-            
             configurarEventos();
-            
             const confirmacaoProcessada = await processarConfirmacaoEmail();
             if (!confirmacaoProcessada) {
                 verificarSeJaEstaLogado();
             }
         }
-        
-        /**
-         * Aguarda sistema estar pronto
-         */
+
         function aguardarSistema() {
             console.log('⏳ [Login] Aguardando sistema...');
-            
-            // Se já estiver pronto
+
             if (verificarSistema()) {
                 console.log('✅ [Login] Sistema já está pronto!');
                 inicializarSistema();
                 return;
             }
-            
-            // Aguardar evento
+
             window.addEventListener('supabaseReady', () => {
                 console.log('✅ [Login] Supabase pronto!');
-                
-                // Aguardar Auth
                 const checkAuth = setInterval(() => {
                     if (typeof Auth !== 'undefined') {
                         clearInterval(checkAuth);
@@ -310,7 +293,6 @@
                         inicializarSistema();
                     }
                 }, 50);
-                
                 setTimeout(() => {
                     clearInterval(checkAuth);
                     if (!sistemaInicializado) {
@@ -319,14 +301,12 @@
                     }
                 }, 3000);
             });
-            
-            // Erro do Supabase
+
             window.addEventListener('supabaseError', () => {
                 console.error('❌ [Login] Erro Supabase');
                 mostrarErroSistema();
             });
-            
-            // Timeout geral
+
             setTimeout(() => {
                 if (!sistemaInicializado) {
                     console.error('❌ [Login] Timeout geral');
@@ -334,7 +314,7 @@
                 }
             }, 10000);
         }
-        
+
         function mostrarErroSistema() {
             const errorDiv = document.getElementById('errorMessage');
             if (errorDiv) {
@@ -343,23 +323,19 @@
             }
             mostrarErroTimeout();
         }
-        
+
         function mostrarErroTimeout() {
             const overlay = document.createElement('div');
             overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.3);text-align:center;z-index:9999;';
-            
             const title = document.createElement('h2');
             title.style.cssText = 'color:#e53e3e;margin-bottom:20px;';
             title.textContent = '⚠️ Erro de Carregamento';
-            
             const msg = document.createElement('p');
             msg.style.cssText = 'margin-bottom:10px;color:#666;';
             msg.textContent = 'O sistema não conseguiu inicializar.';
-            
             const causesLabel = document.createElement('p');
             causesLabel.style.cssText = 'margin-bottom:5px;font-size:13px;color:#888;';
             causesLabel.textContent = 'Possíveis causas:';
-            
             const causes = document.createElement('ul');
             causes.style.cssText = 'text-align:left;font-size:13px;color:#888;margin-bottom:20px;padding-left:20px;';
             ['Conexão lenta com a internet', 'Problemas com o servidor', 'Bloqueio de firewall/antivírus'].forEach(text => {
@@ -367,12 +343,10 @@
                 li.textContent = text;
                 causes.appendChild(li);
             });
-            
             const btn = document.createElement('button');
             btn.style.cssText = 'padding:12px 24px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:16px;';
             btn.textContent = '🔄 Tentar Novamente';
             btn.addEventListener('click', () => location.reload());
-            
             overlay.appendChild(title);
             overlay.appendChild(msg);
             overlay.appendChild(causesLabel);
@@ -380,57 +354,50 @@
             overlay.appendChild(btn);
             document.body.appendChild(overlay);
         }
-        
-        // Iniciar
+
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', aguardarSistema);
         } else {
             aguardarSistema();
         }
-        
+
         // ============================================
         // FUNÇÕES UTILITÁRIAS
         // ============================================
-        
+
         function limparMensagens() {
             const err = document.getElementById('errorMessage');
             const suc = document.getElementById('successMessage');
             if (err) err.style.display = 'none';
             if (suc) suc.style.display = 'none';
         }
-        
+
         function mostrarErro(msg) {
             const err = document.getElementById('errorMessage');
             const suc = document.getElementById('successMessage');
-            if (err) {
-                err.textContent = msg;
-                err.style.display = 'block';
-            }
+            if (err) { err.textContent = msg; err.style.display = 'block'; }
             if (suc) suc.style.display = 'none';
         }
-        
+
         function mostrarSucesso(msg) {
             const err = document.getElementById('errorMessage');
             const suc = document.getElementById('successMessage');
-            if (suc) {
-                suc.textContent = msg;
-                suc.style.display = 'block';
-            }
+            if (suc) { suc.textContent = msg; suc.style.display = 'block'; }
             if (err) err.style.display = 'none';
         }
-        
+
         function mostrarCadastro() {
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('cadastroForm').style.display = 'block';
             limparMensagens();
         }
-        
+
         function mostrarLogin() {
             document.getElementById('cadastroForm').style.display = 'none';
             document.getElementById('loginForm').style.display = 'block';
             limparMensagens();
         }
-        
+
         async function verificarSeJaEstaLogado() {
             try {
                 if (await Auth.isAuthenticated()) {
@@ -441,124 +408,166 @@
                 console.error('❌ [Login] Erro ao verificar:', e);
             }
         }
-        
+
+        // ============================================
+        // GARANTIR PERFIL (segurança extra)
+        // ============================================
+
+        async function garantirPerfil(user) {
+            try {
+                const supabase = window.getSupabase();
+                const { data: perfil } = await supabase
+                    .from('perfis')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .single();
+                if (!perfil) {
+                    await supabase.from('perfis').insert({
+                        user_id: user.id,
+                        tenant_id: user.id,
+                        role: 'dono',
+                        nome: user.user_metadata?.nome || user.email.split('@')[0]
+                    });
+                    console.log('✅ [Perfil] Perfil criado como dono');
+                }
+            } catch (e) {
+                console.warn('⚠️ [Perfil] Erro ao garantir perfil:', e);
+            }
+        }
+
         // ============================================
         // PROCESSAR CONFIRMAÇÃO DE EMAIL
         // ============================================
-        
+
         async function processarConfirmacaoEmail() {
             console.log('🔍 [Confirmação] Verificando URL...');
-            
+
+            // ── Suporte a PKCE (?code=...) ──────────────────────────────
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (code) {
+                try {
+                    mostrarSucesso('⏳ Confirmando seu email...');
+                    const supabase = window.getSupabase();
+                    await supabase.auth.exchangeCodeForSession(code);
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        await garantirPerfil(user);
+                        window.history.replaceState(null, '', window.location.pathname);
+                        mostrarSucesso('✅ Email confirmado! Redirecionando...');
+                        setTimeout(() => { window.location.href = '/dashboard.html'; }, 2000);
+                        return true;
+                    }
+                } catch (err) {
+                    mostrarErro('Erro ao confirmar: ' + err.message);
+                    return false;
+                }
+            }
+
+            // ── Suporte a implicit flow (#access_token=...) ─────────────
             const hash = window.location.hash;
-            
             if (!hash) {
                 console.log('ℹ️ [Confirmação] Sem hash na URL');
                 return false;
             }
-            
+
             const params = new URLSearchParams(hash.substring(1));
             const accessToken = params.get('access_token');
-            const type = params.get('type');
             const refreshToken = params.get('refresh_token');
-            
+
             console.log('🔍 [Confirmação] Parâmetros:', {
                 hasAccessToken: !!accessToken,
-                type,
+                type: params.get('type'),
                 hasRefreshToken: !!refreshToken
             });
-            
+
             if (!accessToken) {
                 console.log('ℹ️ [Confirmação] Sem access token');
                 return false;
             }
-            
+
             try {
                 console.log('✅ [Confirmação] Token detectado! Processando...');
-                
+
                 const suc = document.getElementById('successMessage');
                 if (suc) {
                     suc.innerHTML = '<span class="loading"></span> Confirmando seu email...';
                     suc.style.display = 'block';
                 }
-                
+
                 const supabase = window.getSupabase();
-                
                 const sessionPayload = { access_token: accessToken };
-                if (refreshToken) {
-                    sessionPayload.refresh_token = refreshToken;
-                }
+                if (refreshToken) sessionPayload.refresh_token = refreshToken;
+
                 const { data, error } = await supabase.auth.setSession(sessionPayload);
-                
+
                 if (error) {
                     console.error('❌ [Confirmação] Erro ao setar sessão:', error);
                     mostrarErro('Erro ao confirmar email: ' + error.message);
                     return false;
                 }
-                
-                console.log('✅ [Confirmação] Sessão setada:', data);
-                
+
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
-                
+
                 if (userError || !user) {
-                    console.error('❌ [Confirmação] Erro ao obter usuário:', userError);
                     mostrarErro('Erro ao confirmar email. Tente fazer login manualmente.');
                     return false;
                 }
-                
-                console.log('✅ [Confirmação] Usuário confirmado:', user.email);
-                
+
+                await garantirPerfil(user);
                 window.history.replaceState(null, '', window.location.pathname);
-                
                 mostrarSucesso('✅ Email confirmado com sucesso! Redirecionando...');
-                
-                setTimeout(() => {
-                    console.log('🚀 [Confirmação] Redirecionando para dashboard...');
-                    window.location.href = '/dashboard.html';
-                }, 2000);
-                
+                setTimeout(() => { window.location.href = '/dashboard.html'; }, 2000);
                 return true;
-                
+
             } catch (erro) {
                 console.error('❌ [Confirmação] Erro:', erro);
                 mostrarErro('Erro ao confirmar email: ' + erro.message);
                 return false;
             }
         }
-        
+
         // ============================================
         // CONFIGURAR EVENTOS
         // ============================================
-        
+
         function configurarEventos() {
             console.log('✅ [Login] Configurando eventos...');
-            
+
             // LOGIN
             document.getElementById('loginForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 limparMensagens();
-                
+
                 const email = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
                 const btn = document.getElementById('loginBtn');
-                
+
                 btn.disabled = true;
                 btn.innerHTML = '<span class="loading"></span>Entrando...';
-                
+
                 try {
                     const resultado = await Auth.signIn(email, password);
-                    
+
                     if (resultado.success) {
+                        // Garantia: criar perfil se não existir
+                        try {
+                            const supabase = window.getSupabase();
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (user) await garantirPerfil(user);
+                        } catch(e) { console.warn('⚠️ [Login] Perfil check:', e); }
+
                         mostrarSucesso('✅ Login realizado!');
                         setTimeout(() => window.location.href = '/dashboard.html', 1000);
                     } else {
                         let erro = resultado.error || 'Erro ao fazer login';
-                        
+
                         if (erro.includes('40301') || erro.includes('Email not confirmed')) {
                             erro = '⚠️ Email não confirmado. Verifique sua caixa de entrada.';
                         } else if (erro.includes('Invalid login credentials')) {
                             erro = '❌ Email ou senha incorretos.';
                         }
-                        
+
                         mostrarErro(erro);
                         btn.disabled = false;
                         btn.innerHTML = 'Entrar';
@@ -569,33 +578,33 @@
                     btn.innerHTML = 'Entrar';
                 }
             });
-            
+
             // CADASTRO
             document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 limparMensagens();
-                
+
                 const email = document.getElementById('cadastroEmail').value;
                 const password = document.getElementById('cadastroPassword').value;
                 const passwordConfirm = document.getElementById('cadastroPasswordConfirm').value;
                 const btn = document.getElementById('cadastroBtn');
-                
+
                 if (password.length < 6) {
                     mostrarErro('❌ A senha deve ter no mínimo 6 caracteres');
                     return;
                 }
-                
+
                 if (password !== passwordConfirm) {
                     mostrarErro('❌ As senhas não coincidem');
                     return;
                 }
-                
+
                 btn.disabled = true;
                 btn.innerHTML = '<span class="loading"></span>Criando...';
-                
+
                 try {
                     const resultado = await Auth.signUp(email, password);
-                    
+
                     if (resultado.success) {
                         localStorage.setItem('emailCadastro', email);
                         mostrarSucesso('✅ Conta criada! Verifique seu email.');
