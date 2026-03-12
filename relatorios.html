@@ -43,7 +43,7 @@
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
                     <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a href="relatorios.html" class="pro-nav-item active"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item active"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
@@ -85,7 +85,6 @@
                             <h1 class="pro-page-title">Relatórios</h1>
                             <p class="pro-page-subtitle">Analytics e insights do negócio</p>
                         </div>
-                        <!-- Filtro de período global -->
                         <div style="display:flex;gap:12px;align-items:center;">
                             <select class="pro-select" id="filterPeriodo" onchange="loadRelatorios()" style="width:160px;">
                                 <option value="3">Últimos 3 meses</option>
@@ -129,7 +128,8 @@
                 </div>
 
                 <!-- Gráficos linha 1 -->
-                <div class="pro-grid-2">
+                <!-- Visível apenas para dono -->
+                <div class="pro-grid-2" id="secaoProfissionaisServicos">
                     <div class="pro-card">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Faturamento por Profissional</h3>
@@ -174,9 +174,10 @@
                     </div>
                 </div>
 
-                <!-- Tabela top clientes + gráfico dia da semana -->
+                <!-- Top clientes + dia da semana -->
                 <div class="pro-grid-2" style="margin-top:24px;">
-                    <div class="pro-card">
+                    <!-- Top clientes: visível apenas para dono -->
+                    <div class="pro-card" id="cardTopClientes">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Clientes que Mais Retornam</h3>
                         </div>
@@ -224,12 +225,12 @@
 
     <script>
         // ─── Estado ────────────────────────────────────────────────────
-        let todosAgendamentos = [];
-        let todosServicos = [];
+        let todosAgendamentos  = [];
+        let todosServicos      = [];
         let todosProfissionais = [];
-        let todosClientes = [];
+        let todosClientes      = [];
+        let perfilAtual        = null;
 
-        // Referências dos charts para destruir antes de recriar
         const charts = {};
 
         // ─── Helpers ───────────────────────────────────────────────────
@@ -243,24 +244,31 @@
         }
 
         function destroyChart(key) {
-            if (charts[key]) {
-                charts[key].destroy();
-                charts[key] = null;
-            }
+            if (charts[key]) { charts[key].destroy(); charts[key] = null; }
         }
 
-        // ─── Perfil na sidebar ─────────────────────────────────────────
+        // ─── Perfil na sidebar + controle de acesso ────────────────────
         document.addEventListener('perfilCarregado', (e) => {
-            const perfil = e.detail;
-            if (!perfil) return;
-            const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
-            document.getElementById('userAvatar').textContent = letra;
-            document.getElementById('userName').textContent = perfil.nome || perfil.email;
-            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
-        });
+            perfilAtual = e.detail;
+            if (!perfilAtual) return;
 
-        // ─── Inicialização ─────────────────────────────────────────────
-        window.addEventListener('DOMContentLoaded', () => {
+            const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = letra;
+            document.getElementById('userName').textContent   = perfilAtual.nome || perfilAtual.email;
+            document.getElementById('userRole').textContent   = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
+
+            // Nome do estabelecimento
+            try {
+                const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
+                if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
+            } catch (_) {}
+
+            // Profissional: oculta seções exclusivas do dono
+            if (perfilAtual.role !== 'dono') {
+                document.getElementById('secaoProfissionaisServicos').style.display = 'none';
+                document.getElementById('cardTopClientes').style.display            = 'none';
+            }
+
             loadRelatorios();
         });
 
@@ -271,13 +279,11 @@
                 document.getElementById('tituloMensal').textContent =
                     `Receita Mensal (Últimos ${meses} Meses)`;
 
-                // Data de corte
                 const corte = new Date();
                 corte.setMonth(corte.getMonth() - meses);
                 corte.setDate(1);
                 corte.setHours(0, 0, 0, 0);
 
-                // Carrega tudo em paralelo
                 const [agendamentos, servicos, profissionais, clientes] = await Promise.all([
                     DB.agendamentos.listar({ inicio: corte.toISOString() }),
                     DB.servicos.listar(),
@@ -285,22 +291,33 @@
                     DB.clientes.listar()
                 ]);
 
-                todosAgendamentos = agendamentos || [];
-                todosServicos = servicos || [];
+                todosAgendamentos  = agendamentos  || [];
+                todosServicos      = servicos      || [];
                 todosProfissionais = profissionais || [];
-                todosClientes = clientes || [];
+                todosClientes      = clientes      || [];
 
-                // Apenas concluídos para métricas financeiras
-                const concluidos = todosAgendamentos.filter(a =>
-                    a.status === 'concluido' || a.status === 'concluído'
+                // Para profissional: filtra apenas seus agendamentos
+                let baseAgendamentos = [...todosAgendamentos];
+                if (perfilAtual?.role !== 'dono' && perfilAtual?.profissional_id) {
+                    baseAgendamentos = baseAgendamentos.filter(
+                        a => a.profissional_id === perfilAtual.profissional_id
+                    );
+                }
+
+                const concluidos = baseAgendamentos.filter(a =>
+                    (a.status || '').toLowerCase().startsWith('conclu')
                 );
 
-                renderMetricas(concluidos);
-                renderChartProfissionais(concluidos);
-                renderChartServicos();
+                renderMetricas(concluidos, baseAgendamentos);
                 renderChartMensal(concluidos, meses);
-                renderChartDiaSemana();
-                renderTopClientes(concluidos);
+                renderChartDiaSemana(baseAgendamentos);
+
+                // Gráficos e tabelas exclusivos do dono
+                if (perfilAtual?.role === 'dono') {
+                    renderChartProfissionais(concluidos);
+                    renderChartServicos(todosAgendamentos);
+                    renderTopClientes(concluidos);
+                }
 
             } catch (error) {
                 console.error('Erro ao carregar relatórios:', error);
@@ -308,24 +325,24 @@
         }
 
         // ─── Métricas rápidas ──────────────────────────────────────────
-        function renderMetricas(concluidos) {
-            const receita = concluidos.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-            const ticket = concluidos.length > 0 ? receita / concluidos.length : 0;
+        function renderMetricas(concluidos, todos) {
+            const receita       = concluidos.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+            const ticket        = concluidos.length > 0 ? receita / concluidos.length : 0;
             const clientesUnicos = new Set(concluidos.map(a => a.cliente_id).filter(Boolean)).size;
 
-            document.getElementById('metricTotalApts').textContent = todosAgendamentos.length;
-            document.getElementById('metricReceita').textContent = formatCurrency(receita);
-            document.getElementById('metricTicket').textContent = formatCurrency(ticket);
-            document.getElementById('metricClientes').textContent = clientesUnicos;
+            document.getElementById('metricTotalApts').textContent = todos.length;
+            document.getElementById('metricReceita').textContent   = formatCurrency(receita);
+            document.getElementById('metricTicket').textContent    = formatCurrency(ticket);
+            document.getElementById('metricClientes').textContent  = clientesUnicos;
         }
 
-        // ─── Gráfico: Faturamento por Profissional ─────────────────────
+        // ─── Gráfico: Faturamento por Profissional (dono) ─────────────
         function renderChartProfissionais(concluidos) {
             hideLoading('loadingProfissionais');
             destroyChart('profissionais');
 
             const resumo = todosProfissionais.map(prof => ({
-                nome: prof.nome,
+                nome:  prof.nome,
                 total: concluidos
                     .filter(a => a.profissional_id === prof.id)
                     .reduce((s, a) => s + parseFloat(a.valor || 0), 0)
@@ -361,16 +378,14 @@
             });
         }
 
-        // ─── Gráfico: Serviços mais realizados ────────────────────────
-        function renderChartServicos() {
+        // ─── Gráfico: Serviços mais realizados (dono) ─────────────────
+        function renderChartServicos(agendamentos) {
             hideLoading('loadingServicos');
             destroyChart('servicos');
 
             const contagem = {};
-            todosAgendamentos.forEach(a => {
-                if (a.servico_id) {
-                    contagem[a.servico_id] = (contagem[a.servico_id] || 0) + 1;
-                }
+            (agendamentos || []).forEach(a => {
+                if (a.servico_id) contagem[a.servico_id] = (contagem[a.servico_id] || 0) + 1;
             });
 
             const top = Object.entries(contagem)
@@ -418,9 +433,9 @@
             destroyChart('mensal');
 
             const agora = new Date();
-            const labels = [];
-            const data = [];
             const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            const labels = [];
+            const data   = [];
 
             for (let i = meses - 1; i >= 0; i--) {
                 const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
@@ -429,7 +444,7 @@
                 const total = concluidos
                     .filter(a => {
                         if (!a.data) return false;
-                        const ad = new Date(a.data);
+                        const ad = new Date(a.data + 'T12:00:00');
                         return ad.getFullYear() === d.getFullYear() && ad.getMonth() === d.getMonth();
                     })
                     .reduce((s, a) => s + parseFloat(a.valor || 0), 0);
@@ -463,9 +478,7 @@
                     },
                     plugins: {
                         tooltip: {
-                            callbacks: {
-                                label: ctx => ' ' + formatCurrency(ctx.raw)
-                            }
+                            callbacks: { label: ctx => ' ' + formatCurrency(ctx.raw) }
                         }
                     }
                 }
@@ -473,16 +486,15 @@
         }
 
         // ─── Gráfico: Agendamentos por dia da semana ───────────────────
-        function renderChartDiaSemana() {
+        function renderChartDiaSemana(agendamentos) {
             hideLoading('loadingDiaSemana');
             destroyChart('diaSemana');
 
-            const weekdays = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+            const weekdays   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
             const countByDay = [0, 0, 0, 0, 0, 0, 0];
 
-            todosAgendamentos.forEach(a => {
+            (agendamentos || []).forEach(a => {
                 if (a.data) {
-                    // Adiciona T12:00 para evitar problema de fuso horário
                     const day = new Date(a.data + 'T12:00:00').getDay();
                     countByDay[day]++;
                 }
@@ -504,21 +516,15 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        }
-                    }
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                 }
             });
         }
 
-        // ─── Tabela: Top clientes ──────────────────────────────────────
+        // ─── Tabela: Top clientes (dono) ───────────────────────────────
         function renderTopClientes(concluidos) {
             const tbody = document.getElementById('topClientes');
 
-            // Agrupa por cliente_id
             const porCliente = {};
             concluidos.forEach(a => {
                 if (!a.cliente_id) return;
@@ -527,7 +533,6 @@
                 }
                 porCliente[a.cliente_id].visitas++;
                 porCliente[a.cliente_id].total += parseFloat(a.valor || 0);
-                // Tenta pegar nome do cliente
                 if (!porCliente[a.cliente_id].nome) {
                     const cli = todosClientes.find(c => c.id === a.cliente_id);
                     porCliente[a.cliente_id].nome = cli?.nome || a.cliente?.nome || 'Cliente';
