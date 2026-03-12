@@ -32,14 +32,13 @@ const Auth = {
       const user = await this.getUser();
       if (!user) return null;
 
-      // Cache em memória para evitar múltiplas queries
       if (window._perfilCache) return window._perfilCache;
 
-      const supabase = window.getSupabase(); // ✅ CORRIGIDO
+      const supabase = window.getSupabase();
       const { data, error } = await supabase
         .from('perfis')
         .select('*')
-        .eq('user_id', user.id) // ✅ CORRIGIDO: era .eq('id', user.id)
+        .eq('id', user.id) // ✅ coluna correta
         .single();
 
       if (error) throw error;
@@ -77,7 +76,7 @@ const Auth = {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      window._perfilCache = null; // Limpar cache ao fazer login
+      window._perfilCache = null;
       console.log('✅ [Auth] Login realizado:', data.user.email);
       return { success: true, user: data.user };
     } catch (error) {
@@ -88,7 +87,7 @@ const Auth = {
 
   async signUp(email, password, nomeDaEmpresa) {
     try {
-      const supabase = window.getSupabase(); // ✅ CORRIGIDO: era getSupabaseClient()
+      const supabase = window.getSupabase();
 
       // 1. Criar conta no Supabase Auth
       const { data, error } = await supabase.auth.signUp({ email, password });
@@ -96,15 +95,17 @@ const Auth = {
 
       const user = data.user;
 
-      // 2. Criar perfil como DONO com tenant_id = user.id (ele É a empresa)
+      // 2. Criar perfil como DONO
+      // id = user.id (chave primária = auth.uid())
+      // tenant_id = user.id (o dono É a empresa)
       const { error: perfilError } = await supabase
         .from('perfis')
         .insert({
-          user_id: user.id,       // ✅ CORRIGIDO: coluna correta
-          tenant_id: user.id,     // O dono define o tenant
-          role: 'dono',
-          nome: nomeDaEmpresa || email,
-          email: email
+          id:        user.id,
+          tenant_id: user.id,
+          role:      'dono',
+          nome:      nomeDaEmpresa || email,
+          email:     email
         });
 
       if (perfilError) {
@@ -124,7 +125,7 @@ const Auth = {
       const supabase = window.getSupabase();
       await supabase.auth.signOut();
 
-      window._perfilCache = null; // Limpar cache
+      window._perfilCache = null;
       console.log('✅ [Auth] Logout realizado');
       window.location.href = '/login.html';
       return { success: true };
@@ -177,14 +178,12 @@ function configurarProtecaoRotas() {
       return;
     }
 
-    // Guardar globalmente para uso nas páginas
     window.TENANT_ID = perfil.tenant_id;
     window.USER_ROLE = perfil.role;
     window.USER_NOME = perfil.nome;
 
     console.log(`✅ [Auth] Autenticado como: ${perfil.role} | Tenant: ${perfil.tenant_id}`);
 
-    // Disparar evento para o auth-guard.js reagir
     window.dispatchEvent(new CustomEvent('perfilCarregado', { detail: perfil }));
   });
 }
