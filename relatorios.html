@@ -9,17 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
-    
-    <!-- Supabase Client CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Scripts do Sistema -->
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
 </head>
@@ -39,29 +36,29 @@
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
-                    <a href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
+                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
-                    <a href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
+                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
                     <a href="relatorios.html" class="pro-nav-item active"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
-                    <a href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
                 </div>
                 <div class="pro-nav-section">
-                    <a href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
                 <div class="pro-user-profile">
-                    <div class="pro-user-avatar">A</div>
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
-                        <div class="pro-user-name">Admin</div>
-                        <div class="pro-user-role">Proprietário</div>
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
                     </div>
                     <button class="pro-user-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -75,9 +72,9 @@
                     <input type="text" class="pro-search-input" placeholder="Buscar...">
                 </div>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn"><i class="fas fa-bell"></i><span class="badge">3</span></button>
+                    <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
                     <div class="pro-header-divider"></div>
-                    <span class="pro-tenant-name">Meu Estabelecimento</span>
+                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
                 </div>
             </header>
 
@@ -88,44 +85,96 @@
                             <h1 class="pro-page-title">Relatórios</h1>
                             <p class="pro-page-subtitle">Analytics e insights do negócio</p>
                         </div>
+                        <!-- Filtro de período global -->
+                        <div style="display:flex;gap:12px;align-items:center;">
+                            <select class="pro-select" id="filterPeriodo" onchange="loadRelatorios()" style="width:160px;">
+                                <option value="3">Últimos 3 meses</option>
+                                <option value="6" selected>Últimos 6 meses</option>
+                                <option value="12">Último ano</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Métricas rápidas -->
+                <div class="pro-metrics-grid" style="margin-bottom:24px;">
+                    <div class="pro-metric-card">
+                        <div class="pro-metric-header">
+                            <span class="pro-metric-label">Total Agendamentos</span>
+                            <div class="pro-metric-icon primary"><i class="fas fa-calendar-check"></i></div>
+                        </div>
+                        <div class="pro-metric-value" id="metricTotalApts">0</div>
+                    </div>
+                    <div class="pro-metric-card">
+                        <div class="pro-metric-header">
+                            <span class="pro-metric-label">Receita Total</span>
+                            <div class="pro-metric-icon success"><i class="fas fa-dollar-sign"></i></div>
+                        </div>
+                        <div class="pro-metric-value" id="metricReceita">R$ 0</div>
+                    </div>
+                    <div class="pro-metric-card">
+                        <div class="pro-metric-header">
+                            <span class="pro-metric-label">Ticket Médio</span>
+                            <div class="pro-metric-icon warning"><i class="fas fa-receipt"></i></div>
+                        </div>
+                        <div class="pro-metric-value" id="metricTicket">R$ 0</div>
+                    </div>
+                    <div class="pro-metric-card">
+                        <div class="pro-metric-header">
+                            <span class="pro-metric-label">Clientes Únicos</span>
+                            <div class="pro-metric-icon primary"><i class="fas fa-users"></i></div>
+                        </div>
+                        <div class="pro-metric-value" id="metricClientes">0</div>
+                    </div>
+                </div>
+
+                <!-- Gráficos linha 1 -->
                 <div class="pro-grid-2">
                     <div class="pro-card">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Faturamento por Profissional</h3>
                         </div>
                         <div class="pro-card-body">
-                            <div style="height:300px;">
+                            <div style="height:300px;position:relative;">
                                 <canvas id="chartProfissionais"></canvas>
+                                <div id="loadingProfissionais" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--primary);"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="pro-card">
                         <div class="pro-card-header">
-                            <h3 class="pro-card-title">Serviços Mais Vendidos</h3>
+                            <h3 class="pro-card-title">Serviços Mais Realizados</h3>
                         </div>
                         <div class="pro-card-body">
-                            <div style="height:300px;">
+                            <div style="height:300px;position:relative;">
                                 <canvas id="chartServicos"></canvas>
+                                <div id="loadingServicos" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--primary);"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Gráfico receita mensal -->
                 <div class="pro-card" style="margin-top:24px;">
                     <div class="pro-card-header">
-                        <h3 class="pro-card-title">Receita Mensal (Últimos 6 Meses)</h3>
+                        <h3 class="pro-card-title" id="tituloMensal">Receita Mensal (Últimos 6 Meses)</h3>
                     </div>
                     <div class="pro-card-body">
-                        <div style="height:300px;">
+                        <div style="height:300px;position:relative;">
                             <canvas id="chartMensal"></canvas>
+                            <div id="loadingMensal" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--primary);"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Tabela top clientes + gráfico dia da semana -->
                 <div class="pro-grid-2" style="margin-top:24px;">
                     <div class="pro-card">
                         <div class="pro-card-header">
@@ -136,12 +185,20 @@
                                 <table class="pro-table">
                                     <thead>
                                         <tr>
+                                            <th>#</th>
                                             <th>Cliente</th>
                                             <th>Visitas</th>
                                             <th>Total Gasto</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="topClientes"></tbody>
+                                    <tbody id="topClientes">
+                                        <tr>
+                                            <td colspan="4" class="pro-empty-state">
+                                                <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
+                                                <p>Carregando...</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -149,11 +206,14 @@
 
                     <div class="pro-card">
                         <div class="pro-card-header">
-                            <h3 class="pro-card-title">Desempenho por Dia da Semana</h3>
+                            <h3 class="pro-card-title">Agendamentos por Dia da Semana</h3>
                         </div>
                         <div class="pro-card-body">
-                            <div style="height:250px;">
+                            <div style="height:250px;position:relative;">
                                 <canvas id="chartDiaSemana"></canvas>
+                                <div id="loadingDiaSemana" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--primary);"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -163,122 +223,233 @@
     </div>
 
     <script>
+        // ─── Estado ────────────────────────────────────────────────────
+        let todosAgendamentos = [];
+        let todosServicos = [];
+        let todosProfissionais = [];
+        let todosClientes = [];
+
+        // Referências dos charts para destruir antes de recriar
+        const charts = {};
+
+        // ─── Helpers ───────────────────────────────────────────────────
+        function formatCurrency(val) {
+            return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function hideLoading(id) {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        }
+
+        function destroyChart(key) {
+            if (charts[key]) {
+                charts[key].destroy();
+                charts[key] = null;
+            }
+        }
+
+        // ─── Perfil na sidebar ─────────────────────────────────────────
+        document.addEventListener('perfilCarregado', (e) => {
+            const perfil = e.detail;
+            if (!perfil) return;
+            const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = letra;
+            document.getElementById('userName').textContent = perfil.nome || perfil.email;
+            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+        });
+
+        // ─── Inicialização ─────────────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            loadRelatorios();
+        });
+
+        // ─── Carregar todos os dados e renderizar ──────────────────────
         async function loadRelatorios() {
             try {
-                await loadChartProfissionais();
-                await loadChartServicos();
-                loadChartMensal();
-                await loadChartDiaSemana();
-                await loadTopClientes();
+                const meses = parseInt(document.getElementById('filterPeriodo').value) || 6;
+                document.getElementById('tituloMensal').textContent =
+                    `Receita Mensal (Últimos ${meses} Meses)`;
+
+                // Data de corte
+                const corte = new Date();
+                corte.setMonth(corte.getMonth() - meses);
+                corte.setDate(1);
+                corte.setHours(0, 0, 0, 0);
+
+                // Carrega tudo em paralelo
+                const [agendamentos, servicos, profissionais, clientes] = await Promise.all([
+                    DB.agendamentos.listar({ inicio: corte.toISOString() }),
+                    DB.servicos.listar(),
+                    DB.profissionais.listar(),
+                    DB.clientes.listar()
+                ]);
+
+                todosAgendamentos = agendamentos || [];
+                todosServicos = servicos || [];
+                todosProfissionais = profissionais || [];
+                todosClientes = clientes || [];
+
+                // Apenas concluídos para métricas financeiras
+                const concluidos = todosAgendamentos.filter(a =>
+                    a.status === 'concluido' || a.status === 'concluído'
+                );
+
+                renderMetricas(concluidos);
+                renderChartProfissionais(concluidos);
+                renderChartServicos();
+                renderChartMensal(concluidos, meses);
+                renderChartDiaSemana();
+                renderTopClientes(concluidos);
+
             } catch (error) {
                 console.error('Erro ao carregar relatórios:', error);
             }
         }
 
-        async function loadChartProfissionais() {
-            try {
-                const report = await DB.financeiro.relatorio();
-                const profissionais = await DB.profissionais.listar();
-            
-            const labels = [];
-            const data = [];
-            
-            if (report.porProfissional) {
-                report.porProfissional.forEach(item => {
-                    const prof = profissionais.find(p => p.id === item.profissional_id);
-                    labels.push(prof?.nome || 'Profissional');
-                    data.push(item.total);
-                });
+        // ─── Métricas rápidas ──────────────────────────────────────────
+        function renderMetricas(concluidos) {
+            const receita = concluidos.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+            const ticket = concluidos.length > 0 ? receita / concluidos.length : 0;
+            const clientesUnicos = new Set(concluidos.map(a => a.cliente_id).filter(Boolean)).size;
+
+            document.getElementById('metricTotalApts').textContent = todosAgendamentos.length;
+            document.getElementById('metricReceita').textContent = formatCurrency(receita);
+            document.getElementById('metricTicket').textContent = formatCurrency(ticket);
+            document.getElementById('metricClientes').textContent = clientesUnicos;
+        }
+
+        // ─── Gráfico: Faturamento por Profissional ─────────────────────
+        function renderChartProfissionais(concluidos) {
+            hideLoading('loadingProfissionais');
+            destroyChart('profissionais');
+
+            const resumo = todosProfissionais.map(prof => ({
+                nome: prof.nome,
+                total: concluidos
+                    .filter(a => a.profissional_id === prof.id)
+                    .reduce((s, a) => s + parseFloat(a.valor || 0), 0)
+            })).filter(r => r.total > 0).sort((a, b) => b.total - a.total);
+
+            if (resumo.length === 0) {
+                document.getElementById('chartProfissionais').parentElement.innerHTML =
+                    '<p style="text-align:center;color:var(--text-secondary);padding:40px 0;">Nenhum dado disponível</p>';
+                return;
             }
 
-            new Chart(document.getElementById('chartProfissionais'), {
+            charts['profissionais'] = new Chart(document.getElementById('chartProfissionais'), {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: resumo.map(r => r.nome),
                     datasets: [{
-                        label: 'Faturamento',
-                        data: data,
-                        backgroundColor: '#6366F1'
+                        label: 'Faturamento (R$)',
+                        data: resumo.map(r => r.total),
+                        backgroundColor: ['#6366F1','#10B981','#F59E0B','#EF4444','#3B82F6','#8B5CF6']
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: {
-                                callback: (value) => ProUI.Format.currency(value)
-                            }
+                            ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') }
                         }
                     }
                 }
             });
-            } catch (error) {
-                console.error('Erro ao carregar gráfico de profissionais:', error);
-            }
         }
 
-        async function loadChartServicos() {
-            try {
-                const servicos = await DB.servicos.listar();
-                const agendamentos = await DB.agendamentos.listar();
-            
-            const servicosCount = {};
-            agendamentos.forEach(apt => {
-                servicosCount[apt.servico_id] = (servicosCount[apt.servico_id] || 0) + 1;
-            });
-            
-            const topServicos = Object.entries(servicosCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5);
-            
-            const labels = topServicos.map(([id]) => {
-                const servico = servicos.find(s => s.id === id);
-                return servico?.nome || 'Serviço';
-            });
-            
-            const data = topServicos.map(([, count]) => count);
+        // ─── Gráfico: Serviços mais realizados ────────────────────────
+        function renderChartServicos() {
+            hideLoading('loadingServicos');
+            destroyChart('servicos');
 
-            new Chart(document.getElementById('chartServicos'), {
+            const contagem = {};
+            todosAgendamentos.forEach(a => {
+                if (a.servico_id) {
+                    contagem[a.servico_id] = (contagem[a.servico_id] || 0) + 1;
+                }
+            });
+
+            const top = Object.entries(contagem)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 6);
+
+            if (top.length === 0) {
+                document.getElementById('chartServicos').parentElement.innerHTML =
+                    '<p style="text-align:center;color:var(--text-secondary);padding:40px 0;">Nenhum dado disponível</p>';
+                return;
+            }
+
+            const labels = top.map(([id]) => {
+                const s = todosServicos.find(sv => sv.id === id);
+                return s?.nome || 'Serviço';
+            });
+
+            charts['servicos'] = new Chart(document.getElementById('chartServicos'), {
                 type: 'doughnut',
                 data: {
-                    labels: labels,
+                    labels,
                     datasets: [{
-                        data: data,
-                        backgroundColor: ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#3B82F6']
+                        data: top.map(([, c]) => c),
+                        backgroundColor: ['#6366F1','#10B981','#F59E0B','#EF4444','#3B82F6','#8B5CF6']
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            position: 'bottom'
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.label}: ${ctx.raw} atendimento${ctx.raw !== 1 ? 's' : ''}`
+                            }
                         }
                     }
                 }
             });
-            } catch (error) {
-                console.error('Erro ao carregar gráfico de serviços:', error);
-            }
         }
 
-        function loadChartMensal() {
-            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
-            const data = months.map(() => Math.random() * 10000);
+        // ─── Gráfico: Receita mensal ───────────────────────────────────
+        function renderChartMensal(concluidos, meses) {
+            hideLoading('loadingMensal');
+            destroyChart('mensal');
 
-            new Chart(document.getElementById('chartMensal'), {
+            const agora = new Date();
+            const labels = [];
+            const data = [];
+            const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+            for (let i = meses - 1; i >= 0; i--) {
+                const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+                labels.push(mesesNomes[d.getMonth()] + '/' + String(d.getFullYear()).slice(2));
+
+                const total = concluidos
+                    .filter(a => {
+                        if (!a.data) return false;
+                        const ad = new Date(a.data);
+                        return ad.getFullYear() === d.getFullYear() && ad.getMonth() === d.getMonth();
+                    })
+                    .reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+
+                data.push(total);
+            }
+
+            charts['mensal'] = new Chart(document.getElementById('chartMensal'), {
                 type: 'line',
                 data: {
-                    labels: months,
+                    labels,
                     datasets: [{
                         label: 'Receita',
-                        data: data,
+                        data,
                         borderColor: '#6366F1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        backgroundColor: 'rgba(99,102,241,0.1)',
                         fill: true,
-                        tension: 0.4
+                        tension: 0.4,
+                        pointBackgroundColor: '#6366F1',
+                        pointRadius: 5
                     }]
                 },
                 options: {
@@ -287,8 +458,13 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: {
-                                callback: (value) => ProUI.Format.currency(value)
+                            ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ' ' + formatCurrency(ctx.raw)
                             }
                         }
                     }
@@ -296,80 +472,101 @@
             });
         }
 
-        async function loadChartDiaSemana() {
-            try {
-                const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-                const agendamentos = await DB.agendamentos.listar();
-            
+        // ─── Gráfico: Agendamentos por dia da semana ───────────────────
+        function renderChartDiaSemana() {
+            hideLoading('loadingDiaSemana');
+            destroyChart('diaSemana');
+
+            const weekdays = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
             const countByDay = [0, 0, 0, 0, 0, 0, 0];
-            agendamentos.forEach(apt => {
-                const day = new Date(apt.data).getDay();
-                countByDay[day]++;
+
+            todosAgendamentos.forEach(a => {
+                if (a.data) {
+                    // Adiciona T12:00 para evitar problema de fuso horário
+                    const day = new Date(a.data + 'T12:00:00').getDay();
+                    countByDay[day]++;
+                }
             });
 
-            new Chart(document.getElementById('chartDiaSemana'), {
+            charts['diaSemana'] = new Chart(document.getElementById('chartDiaSemana'), {
                 type: 'bar',
                 data: {
                     labels: weekdays,
                     datasets: [{
                         label: 'Agendamentos',
                         data: countByDay,
-                        backgroundColor: '#10B981'
+                        backgroundColor: countByDay.map((_, i) =>
+                            i === 0 || i === 6 ? '#F59E0B' : '#10B981'
+                        )
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
+                            ticks: { stepSize: 1 }
                         }
                     }
                 }
             });
-            } catch (error) {
-                console.error('Erro ao carregar gráfico de dia da semana:', error);\
-            }
         }
 
-        async function loadTopClientes() {
-            try {
-                const clientes = await DB.clientes.listar();
-                const top = clientes
-                    .sort((a, b) => (b.totalVisitas || 0) - (a.totalVisitas || 0))
-                    .slice(0, 10);
-            
+        // ─── Tabela: Top clientes ──────────────────────────────────────
+        function renderTopClientes(concluidos) {
             const tbody = document.getElementById('topClientes');
-            
+
+            // Agrupa por cliente_id
+            const porCliente = {};
+            concluidos.forEach(a => {
+                if (!a.cliente_id) return;
+                if (!porCliente[a.cliente_id]) {
+                    porCliente[a.cliente_id] = { visitas: 0, total: 0, nome: '' };
+                }
+                porCliente[a.cliente_id].visitas++;
+                porCliente[a.cliente_id].total += parseFloat(a.valor || 0);
+                // Tenta pegar nome do cliente
+                if (!porCliente[a.cliente_id].nome) {
+                    const cli = todosClientes.find(c => c.id === a.cliente_id);
+                    porCliente[a.cliente_id].nome = cli?.nome || a.cliente?.nome || 'Cliente';
+                }
+            });
+
+            const top = Object.values(porCliente)
+                .sort((a, b) => b.visitas - a.visitas)
+                .slice(0, 10);
+
             if (top.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="pro-empty-state">Nenhum dado disponível</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="pro-empty-state"><p>Nenhum dado disponível</p></td></tr>';
                 return;
             }
 
-            tbody.innerHTML = top.map(cliente => `
+            tbody.innerHTML = top.map((c, i) => `
                 <tr>
-                    <td><strong>${cliente.nome}</strong></td>
-                    <td>0</td>
-                    <td>${ProUI.Format.currency(0)}</td>
+                    <td>
+                        <span style="display:inline-flex;align-items:center;justify-content:center;
+                            width:24px;height:24px;border-radius:50%;
+                            background:${i < 3 ? 'var(--primary)' : 'var(--bg-main)'};
+                            color:${i < 3 ? '#fff' : 'var(--text-secondary)'};
+                            font-size:12px;font-weight:700;">
+                            ${i + 1}
+                        </span>
+                    </td>
+                    <td><strong>${c.nome}</strong></td>
+                    <td>${c.visitas} visita${c.visitas !== 1 ? 's' : ''}</td>
+                    <td style="color:var(--success);font-weight:600;">${formatCurrency(c.total)}</td>
                 </tr>
             `).join('');
-            } catch (error) {
-                console.error('Erro ao carregar top clientes:', error);
-            }
         }
 
+        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
             }
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadRelatorios();
-        });
     </script>
 </body>
 </html>
