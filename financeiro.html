@@ -9,16 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
-    
-    <!-- Supabase Client CDN -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Scripts do Sistema -->
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
 </head>
@@ -38,29 +35,29 @@
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
-                    <a href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
+                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
                     <a href="financeiro.html" class="pro-nav-item active"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
-                    <a href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
                 </div>
                 <div class="pro-nav-section">
-                    <a href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
                 <div class="pro-user-profile">
-                    <div class="pro-user-avatar">A</div>
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
-                        <div class="pro-user-name">Admin</div>
-                        <div class="pro-user-role">Proprietário</div>
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
                     </div>
                     <button class="pro-user-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -71,12 +68,12 @@
             <header class="pro-header">
                 <div class="pro-search">
                     <i class="fas fa-search pro-search-icon"></i>
-                    <input type="text" class="pro-search-input" placeholder="Buscar transações...">
+                    <input type="text" class="pro-search-input" placeholder="Buscar transações..." id="searchInput" oninput="filtrarLocalmente()">
                 </div>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn"><i class="fas fa-bell"></i><span class="badge">3</span></button>
+                    <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
                     <div class="pro-header-divider"></div>
-                    <span class="pro-tenant-name">Meu Estabelecimento</span>
+                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
                 </div>
             </header>
 
@@ -87,14 +84,13 @@
                             <h1 class="pro-page-title">Financeiro</h1>
                             <p class="pro-page-subtitle">Controle financeiro completo</p>
                         </div>
-                        <div style="display:flex;gap:12px;">
-                            <button class="pro-btn pro-btn-ghost" onclick="exportarFinanceiro()">
-                                <i class="fas fa-download"></i> Exportar
-                            </button>
-                        </div>
+                        <button class="pro-btn pro-btn-ghost" onclick="exportarFinanceiro()">
+                            <i class="fas fa-download"></i> Exportar CSV
+                        </button>
                     </div>
                 </div>
 
+                <!-- Métricas -->
                 <div class="pro-metrics-grid">
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
@@ -126,17 +122,18 @@
                     </div>
                 </div>
 
+                <!-- Tabela de movimentações -->
                 <div class="pro-card">
                     <div class="pro-card-header">
                         <h3 class="pro-card-title">Movimentações Financeiras</h3>
                         <div class="pro-filters">
-                            <select class="pro-select" style="width:150px;" onchange="loadFinanceiro()">
+                            <select class="pro-select" style="width:150px;" id="filterPeriodo" onchange="loadFinanceiro()">
                                 <option value="todos">Todos</option>
                                 <option value="hoje">Hoje</option>
                                 <option value="semana">Esta Semana</option>
                                 <option value="mes" selected>Este Mês</option>
                             </select>
-                            <select class="pro-select" style="width:200px;" id="filterProfessional" onchange="loadFinanceiro()">
+                            <select class="pro-select" style="width:200px;" id="filterProfissional" onchange="filtrarLocalmente()">
                                 <option value="">Todos Profissionais</option>
                             </select>
                         </div>
@@ -156,19 +153,29 @@
                                         <th>Status</th>
                                     </tr>
                                 </thead>
-                                <tbody id="financeiroTable"></tbody>
+                                <tbody id="financeiroTable">
+                                    <tr>
+                                        <td colspan="8" class="pro-empty-state">
+                                            <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
+                                            <p>Carregando movimentações...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
+                <!-- Resumo por profissional + Totalizadores -->
                 <div class="pro-grid-2" style="margin-top:24px;">
                     <div class="pro-card">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Resumo por Profissional</h3>
                         </div>
                         <div class="pro-card-body">
-                            <div id="resumoProfissionais"></div>
+                            <div id="resumoProfissionais">
+                                <p style="text-align:center;color:var(--text-secondary);">Carregando...</p>
+                            </div>
                         </div>
                     </div>
 
@@ -199,119 +206,286 @@
     </div>
 
     <script>
+        // ─── Estado ────────────────────────────────────────────────────
+        let todosAgendamentos = [];
+        let perfilAtual = null;
+
+        // ─── Helpers de formatação ─────────────────────────────────────
+        function formatCurrency(val) {
+            return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        // ─── Perfil na sidebar ─────────────────────────────────────────
+        document.addEventListener('perfilCarregado', (e) => {
+            perfilAtual = e.detail;
+            if (!perfilAtual) return;
+            const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = letra;
+            document.getElementById('userName').textContent = perfilAtual.nome || perfilAtual.email;
+            document.getElementById('userRole').textContent = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
+
+            // Profissional só vê seus próprios dados — oculta filtro de profissional
+            if (perfilAtual.role !== 'dono') {
+                document.getElementById('filterProfissional').style.display = 'none';
+                // Oculta colunas de comissão e profissional para profissional
+                document.querySelectorAll('.col-profissional, .col-comissao').forEach(el => el.style.display = 'none');
+            }
+        });
+
+        // ─── Inicialização ─────────────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFinanceiro();
+        });
+
+        // ─── Carregar dados principais ─────────────────────────────────
         async function loadFinanceiro() {
             try {
-                const report = await DB.financeiro.relatorio();
-            
-            document.getElementById('faturamentoHoje').textContent = ProUI.Format.currency(report.receitaDia || 0);
-            document.getElementById('faturamentoSemana').textContent = ProUI.Format.currency(report.receitaSemana || 0);
-            document.getElementById('faturamentoMes').textContent = ProUI.Format.currency(report.receitaMes || 0);
-            document.getElementById('lucroLiquido').textContent = ProUI.Format.currency(report.lucroLiquido || 0);
+                const periodo = document.getElementById('filterPeriodo').value;
+                const { inicio, fim } = calcularPeriodo(periodo);
 
-            await loadProfessionalFilter();
-            await renderTable();
-            renderTotals(report);
+                // Carrega agendamentos concluídos e profissionais em paralelo
+                const [agendamentos, profissionais] = await Promise.all([
+                    DB.agendamentos.listar({ inicio, fim }),
+                    DB.profissionais.listar()
+                ]);
+
+                // Filtra apenas concluídos
+                todosAgendamentos = (agendamentos || []).filter(a =>
+                    a.status === 'concluido' || a.status === 'concluído'
+                );
+
+                // Preenche dropdown de profissionais
+                preencherFiltrosProfissionais(profissionais);
+
+                // Calcula métricas gerais
+                calcularMetricas();
+
+                // Renderiza tabela e resumo
+                filtrarLocalmente();
+                renderResumoProfissionais(profissionais);
+
             } catch (error) {
                 console.error('Erro ao carregar financeiro:', error);
-                alert('Erro ao carregar dados financeiros');
+                document.getElementById('financeiroTable').innerHTML =
+                    '<tr><td colspan="8" class="pro-empty-state"><i class="fas fa-exclamation-circle pro-empty-state-icon"></i><p>Erro ao carregar dados financeiros</p></td></tr>';
             }
         }
 
-        async function loadProfessionalFilter() {
-            try {
-                const profissionais = await DB.profissionais.listar();
-            const select = document.getElementById('filterProfessional');
+        // ─── Calcular período ──────────────────────────────────────────
+        function calcularPeriodo(periodo) {
+            const agora = new Date();
+            let inicio, fim;
+
+            if (periodo === 'hoje') {
+                inicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).toISOString();
+                fim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59).toISOString();
+            } else if (periodo === 'semana') {
+                const diaSemana = agora.getDay();
+                const inicioSemana = new Date(agora);
+                inicioSemana.setDate(agora.getDate() - diaSemana);
+                inicioSemana.setHours(0, 0, 0, 0);
+                inicio = inicioSemana.toISOString();
+                fim = agora.toISOString();
+            } else if (periodo === 'mes') {
+                inicio = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
+                fim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
+            } else {
+                inicio = null;
+                fim = null;
+            }
+
+            return { inicio, fim };
+        }
+
+        // ─── Preencher dropdown de profissionais ───────────────────────
+        function preencherFiltrosProfissionais(profissionais) {
+            const select = document.getElementById('filterProfissional');
+            const valorAtual = select.value;
             select.innerHTML = '<option value="">Todos Profissionais</option>' +
-                profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-            } catch (error) {
-                console.error('Erro ao carregar profissionais:', error);
-            }
+                (profissionais || []).map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+            if (valorAtual) select.value = valorAtual;
         }
 
-        async function renderTable() {
-            try {
-                const tbody = document.getElementById('financeiroTable');
-                let agendamentos = await DB.agendamentos.completos();
-                agendamentos = agendamentos.filter(a => a.status === 'concluido' || a.status === 'concluído');
-            
-            const filterProf = document.getElementById('filterProfessional').value;
-            if (filterProf) {
-                agendamentos = agendamentos.filter(a => a.profissional_id === filterProf);
+        // ─── Calcular métricas do período completo ─────────────────────
+        function calcularMetricas() {
+            const agora = new Date();
+            const hoje = agora.toISOString().split('T')[0];
+
+            const inicioSemana = new Date(agora);
+            inicioSemana.setDate(agora.getDate() - agora.getDay());
+            inicioSemana.setHours(0, 0, 0, 0);
+
+            const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+
+            const somarValor = (lista) =>
+                lista.reduce((sum, a) => sum + parseFloat(a.valor || 0), 0);
+
+            const somarComissao = (lista) =>
+                lista.reduce((sum, a) => sum + parseFloat(a.comissao_valor || 0), 0);
+
+            const deHoje = todosAgendamentos.filter(a => a.data === hoje);
+            const daSemana = todosAgendamentos.filter(a => new Date(a.data) >= inicioSemana);
+            const doMes = todosAgendamentos.filter(a => new Date(a.data) >= inicioMes);
+
+            const totalMes = somarValor(doMes);
+            const comissoesMes = somarComissao(doMes);
+
+            document.getElementById('faturamentoHoje').textContent = formatCurrency(somarValor(deHoje));
+            document.getElementById('faturamentoSemana').textContent = formatCurrency(somarValor(daSemana));
+            document.getElementById('faturamentoMes').textContent = formatCurrency(totalMes);
+            document.getElementById('lucroLiquido').textContent = formatCurrency(totalMes - comissoesMes);
+        }
+
+        // ─── Filtrar localmente ────────────────────────────────────────
+        function filtrarLocalmente() {
+            const search = (document.getElementById('searchInput').value || '').toLowerCase();
+            const filterProf = document.getElementById('filterProfissional').value;
+
+            let lista = [...todosAgendamentos];
+
+            // Profissional só vê seus próprios dados
+            if (perfilAtual && perfilAtual.role !== 'dono' && perfilAtual.profissional_id) {
+                lista = lista.filter(a => a.profissional_id === perfilAtual.profissional_id);
             }
 
-            if (agendamentos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="pro-empty-state"><i class="fas fa-chart-line pro-empty-state-icon"></i><p>Nenhuma movimentação encontrada</p></td></tr>';
+            if (filterProf) {
+                lista = lista.filter(a => a.profissional_id === filterProf);
+            }
+
+            if (search) {
+                lista = lista.filter(a =>
+                    (a.cliente?.nome || '').toLowerCase().includes(search) ||
+                    (a.servico?.nome || '').toLowerCase().includes(search) ||
+                    (a.profissional?.nome || '').toLowerCase().includes(search)
+                );
+            }
+
+            renderTable(lista);
+            renderTotalizadores(lista);
+        }
+
+        // ─── Renderizar tabela ─────────────────────────────────────────
+        function renderTable(lista) {
+            const tbody = document.getElementById('financeiroTable');
+
+            if (lista.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="pro-empty-state">
+                            <i class="fas fa-chart-line pro-empty-state-icon"></i>
+                            <p>Nenhuma movimentação encontrada</p>
+                        </td>
+                    </tr>`;
                 return;
             }
 
-            tbody.innerHTML = agendamentos.map(apt => {
-                const valorServico = apt.valor || 0;
-                const comissao = apt.comissao_valor || 0;
+            tbody.innerHTML = lista.map(apt => {
+                const valorServico = parseFloat(apt.valor || 0);
+                const comissao = parseFloat(apt.comissao_valor || 0);
                 const valorLiquido = valorServico - comissao;
-                
+                const clienteNome = apt.cliente?.nome || apt.cliente_nome || '—';
+                const servicoNome = apt.servico?.nome || apt.servico_nome || '—';
+                const profNome = apt.profissional?.nome || apt.profissional_nome || '—';
+
                 return `
                     <tr>
-                        <td>${ProUI.Format.date(apt.data)} ${apt.hora}</td>
-                        <td>${apt.cliente_nome || '—'}</td>
-                        <td>${apt.servico_nome || '—'}</td>
-                        <td>${apt.profissional_nome || '—'}</td>
-                        <td><strong>${ProUI.Format.currency(valorServico)}</strong></td>
-                        <td style="color:var(--warning);">${ProUI.Format.currency(comissao)}</td>
-                        <td style="color:var(--success);"><strong>${ProUI.Format.currency(valorLiquido)}</strong></td>
+                        <td>${formatDate(apt.data)} ${apt.hora || ''}</td>
+                        <td>${clienteNome}</td>
+                        <td>${servicoNome}</td>
+                        <td>${profNome}</td>
+                        <td><strong>${formatCurrency(valorServico)}</strong></td>
+                        <td style="color:var(--warning);">${formatCurrency(comissao)}</td>
+                        <td style="color:var(--success);"><strong>${formatCurrency(valorLiquido)}</strong></td>
                         <td><span class="pro-badge pro-badge-success">Concluído</span></td>
-                    </tr>
-                `;
+                    </tr>`;
             }).join('');
-            } catch (error) {
-                console.error('Erro ao renderizar tabela:', error);
-            }
         }
 
-        function renderResumoProfissionais(report) {
+        // ─── Totalizadores ─────────────────────────────────────────────
+        function renderTotalizadores(lista) {
+            const totalFaturado = lista.reduce((sum, a) => sum + parseFloat(a.valor || 0), 0);
+            const totalComissoes = lista.reduce((sum, a) => sum + parseFloat(a.comissao_valor || 0), 0);
+            const lucro = totalFaturado - totalComissoes;
+
+            document.getElementById('totalFaturado').textContent = formatCurrency(totalFaturado);
+            document.getElementById('totalComissoes').textContent = formatCurrency(totalComissoes);
+            document.getElementById('lucroTotal').textContent = formatCurrency(lucro);
+        }
+
+        // ─── Resumo por profissional ───────────────────────────────────
+        function renderResumoProfissionais(profissionais) {
             const container = document.getElementById('resumoProfissionais');
-            
-            if (!report.porProfissional || report.porProfissional.length === 0) {
+
+            const resumo = (profissionais || []).map(prof => {
+                const apts = todosAgendamentos.filter(a => a.profissional_id === prof.id);
+                const total = apts.reduce((sum, a) => sum + parseFloat(a.valor || 0), 0);
+                const comissoes = apts.reduce((sum, a) => sum + parseFloat(a.comissao_valor || 0), 0);
+                return { nome: prof.nome, total, comissoes, atendimentos: apts.length };
+            }).filter(r => r.atendimentos > 0)
+              .sort((a, b) => b.total - a.total);
+
+            if (resumo.length === 0) {
                 container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">Nenhum dado disponível</p>';
                 return;
             }
 
-            container.innerHTML = report.porProfissional.map(item => {
-                return `
-                    <div style="padding:12px;border-bottom:1px solid var(--border-color);">
-                        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                            <strong>${item.profissional_nome || 'Profissional'}</strong>
-                            <strong style="color:var(--primary);">${ProUI.Format.currency(item.total)}</strong>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);">
-                            <span>Comissão: ${ProUI.Format.currency(item.comissoes)}</span>
-                            <span>${item.atendimentos} atendimentos</span>
-                        </div>
+            container.innerHTML = resumo.map(item => `
+                <div style="padding:12px;border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                        <strong>${item.nome}</strong>
+                        <strong style="color:var(--primary);">${formatCurrency(item.total)}</strong>
                     </div>
-                `;
-            }).join('');
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);">
+                        <span>Comissão: ${formatCurrency(item.comissoes)}</span>
+                        <span>${item.atendimentos} atendimento${item.atendimentos !== 1 ? 's' : ''}</span>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function renderTotals(report) {
-            document.getElementById('totalFaturado').textContent = ProUI.Format.currency(report.totalFaturado || 0);
-            document.getElementById('totalComissoes').textContent = ProUI.Format.currency(report.totalComissoes || 0);
-            document.getElementById('lucroTotal').textContent = ProUI.Format.currency(report.lucroLiquido || 0);
-        }
-
+        // ─── Exportar CSV ──────────────────────────────────────────────
         function exportarFinanceiro() {
-            alert('Funcionalidade de exportação em desenvolvimento');
+            if (todosAgendamentos.length === 0) {
+                alert('Nenhum dado para exportar.');
+                return;
+            }
+
+            const linhas = [
+                ['Data', 'Hora', 'Cliente', 'Serviço', 'Profissional', 'Valor', 'Comissão', 'Líquido'],
+                ...todosAgendamentos.map(a => [
+                    a.data || '',
+                    a.hora || '',
+                    a.cliente?.nome || a.cliente_nome || '',
+                    a.servico?.nome || a.servico_nome || '',
+                    a.profissional?.nome || a.profissional_nome || '',
+                    (a.valor || 0).toString().replace('.', ','),
+                    (a.comissao_valor || 0).toString().replace('.', ','),
+                    ((parseFloat(a.valor || 0) - parseFloat(a.comissao_valor || 0))).toFixed(2).replace('.', ',')
+                ])
+            ];
+
+            const csv = linhas.map(l => l.join(';')).join('\n');
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `financeiro_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
         }
 
+        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
             }
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadFinanceiro();
-        });
-
-        loadFinanceiro();
     </script>
 </body>
 </html>
