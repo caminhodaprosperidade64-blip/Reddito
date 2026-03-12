@@ -9,16 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
     
-    <!-- Supabase Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Scripts do Sistema -->
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
 </head>
@@ -38,29 +35,29 @@
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
                     <a href="servicos.html" class="pro-nav-item active"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
-                    <a href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
+                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
-                    <a href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
                 </div>
                 <div class="pro-nav-section">
-                    <a href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
                 <div class="pro-user-profile">
-                    <div class="pro-user-avatar">A</div>
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
-                        <div class="pro-user-name">Admin</div>
-                        <div class="pro-user-role">Proprietário</div>
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
                     </div>
                     <button class="pro-user-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -71,12 +68,12 @@
             <header class="pro-header">
                 <div class="pro-search">
                     <i class="fas fa-search pro-search-icon"></i>
-                    <input type="text" class="pro-search-input" placeholder="Buscar serviços..." id="searchInput" oninput="loadServicos()">
+                    <input type="text" class="pro-search-input" placeholder="Buscar serviços..." id="searchInput" oninput="filtrarLocalmente()">
                 </div>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn"><i class="fas fa-bell"></i><span class="badge">3</span></button>
+                    <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
                     <div class="pro-header-divider"></div>
-                    <span class="pro-tenant-name">Meu Estabelecimento</span>
+                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
                 </div>
             </header>
 
@@ -93,6 +90,7 @@
                     </div>
                 </div>
 
+                <!-- Métricas -->
                 <div class="pro-metrics-grid">
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
@@ -124,9 +122,15 @@
                     </div>
                 </div>
 
+                <!-- Tabela -->
                 <div class="pro-card">
                     <div class="pro-card-header">
                         <h3 class="pro-card-title">Lista de Serviços</h3>
+                        <div class="pro-filters">
+                            <button class="pro-filter-chip active" onclick="setFilter('todos', this)">Todos</button>
+                            <button class="pro-filter-chip" onclick="setFilter('ativo', this)">Ativos</button>
+                            <button class="pro-filter-chip" onclick="setFilter('inativo', this)">Inativos</button>
+                        </div>
                     </div>
                     <div class="pro-card-body">
                         <div class="pro-table-container">
@@ -141,7 +145,14 @@
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody id="servicosTable"></tbody>
+                                <tbody id="servicosTable">
+                                    <tr>
+                                        <td colspan="6" class="pro-empty-state">
+                                            <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
+                                            <p>Carregando serviços...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -150,7 +161,8 @@
         </main>
     </div>
 
-    <div class="pro-modal" id="serviceModal">
+    <!-- Modal Serviço -->
+    <div class="pro-modal" id="serviceModal" style="display:none;">
         <div class="pro-modal-overlay" onclick="closeServiceModal()"></div>
         <div class="pro-modal-content">
             <div class="pro-modal-header">
@@ -161,13 +173,13 @@
                 <form id="serviceForm" onsubmit="saveService(event)">
                     <input type="hidden" id="serviceId">
                     <div class="pro-form-group">
-                        <label class="pro-label">Nome do Serviço</label>
+                        <label class="pro-label">Nome do Serviço *</label>
                         <input type="text" class="pro-input" id="serviceName" required>
                     </div>
                     <div class="pro-form-row">
                         <div class="pro-form-group">
                             <label class="pro-label">Categoria</label>
-                            <select class="pro-select" id="serviceCategory" required>
+                            <select class="pro-select" id="serviceCategory">
                                 <option value="">Selecione</option>
                                 <option value="cabelo">Cabelo</option>
                                 <option value="barba">Barba</option>
@@ -189,11 +201,11 @@
                     </div>
                     <div class="pro-form-row">
                         <div class="pro-form-group">
-                            <label class="pro-label">Duração (minutos)</label>
+                            <label class="pro-label">Duração (minutos) *</label>
                             <input type="number" class="pro-input" id="serviceDuration" min="15" step="15" required>
                         </div>
                         <div class="pro-form-group">
-                            <label class="pro-label">Preço (R$)</label>
+                            <label class="pro-label">Preço (R$) *</label>
                             <input type="number" class="pro-input" id="servicePrice" min="0" step="0.01" required>
                         </div>
                     </div>
@@ -213,115 +225,182 @@
     </div>
 
     <script>
+        // ─── Estado ────────────────────────────────────────────────────
+        let currentFilter = 'todos';
+        let todosServicos = [];
+
+        // ─── Perfil na sidebar ─────────────────────────────────────────
+        document.addEventListener('perfilCarregado', (e) => {
+            const perfil = e.detail;
+            if (!perfil) return;
+            const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = letra;
+            document.getElementById('userName').textContent = perfil.nome || perfil.email;
+            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+        });
+
+        // ─── Inicialização ─────────────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            loadServicos();
+        });
+
+        // ─── Carregar serviços do banco ────────────────────────────────
         async function loadServicos() {
             try {
-                const search = document.getElementById('searchInput').value.toLowerCase();
-                let servicos = await DB.servicos.listar();
-
-            if (search) {
-                servicos = servicos.filter(s => s.nome.toLowerCase().includes(search));
-            }
-
-            updateStats(servicos);
-            renderTable(servicos);
+                todosServicos = await DB.servicos.listar();
+                atualizarMetricas(todosServicos);
+                filtrarLocalmente();
             } catch (error) {
                 console.error('Erro ao carregar serviços:', error);
-                alert('Erro ao carregar serviços');
+                document.getElementById('servicosTable').innerHTML =
+                    '<tr><td colspan="6" class="pro-empty-state"><i class="fas fa-exclamation-circle pro-empty-state-icon"></i><p>Erro ao carregar serviços</p></td></tr>';
             }
         }
 
-        function updateStats(servicos) {
-            const all = servicos;
-            document.getElementById('totalServicos').textContent = all.length;
-            
-            const ativos = all.filter(s => s.status === 'ativo');
+        // ─── Filtrar localmente ────────────────────────────────────────
+        function filtrarLocalmente() {
+            const search = (document.getElementById('searchInput').value || '').toLowerCase();
+            let lista = [...todosServicos];
+
+            if (currentFilter !== 'todos') {
+                lista = lista.filter(s => s.status === currentFilter);
+            }
+
+            if (search) {
+                lista = lista.filter(s =>
+                    (s.nome || '').toLowerCase().includes(search) ||
+                    (s.categoria || '').toLowerCase().includes(search)
+                );
+            }
+
+            renderTable(lista);
+        }
+
+        // ─── Métricas ──────────────────────────────────────────────────
+        function atualizarMetricas(lista) {
+            document.getElementById('totalServicos').textContent = lista.length;
+
+            const ativos = lista.filter(s => s.status === 'ativo');
             document.getElementById('servicosAtivos').textContent = ativos.length;
-            
-            const avgPrice = all.length > 0 ? all.reduce((sum, s) => sum + (s.preco || 0), 0) / all.length : 0;
-            document.getElementById('precoMedio').textContent = ProUI.Format.currency(avgPrice);
-            
-            const avgDuration = all.length > 0 ? all.reduce((sum, s) => sum + (s.duracao || 0), 0) / all.length : 0;
+
+            const avgPrice = lista.length > 0
+                ? lista.reduce((sum, s) => sum + parseFloat(s.preco || 0), 0) / lista.length
+                : 0;
+            document.getElementById('precoMedio').textContent =
+                avgPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            const avgDuration = lista.length > 0
+                ? lista.reduce((sum, s) => sum + (parseInt(s.duracao) || 0), 0) / lista.length
+                : 0;
             document.getElementById('duracaoMedia').textContent = Math.round(avgDuration) + ' min';
         }
 
+        // ─── Renderizar tabela ─────────────────────────────────────────
         function renderTable(servicos) {
             const tbody = document.getElementById('servicosTable');
-            
+
             if (servicos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="pro-empty-state"><i class="fas fa-cut pro-empty-state-icon"></i><p>Nenhum serviço encontrado</p></td></tr>';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="pro-empty-state">
+                            <i class="fas fa-cut pro-empty-state-icon"></i>
+                            <p>Nenhum serviço encontrado</p>
+                        </td>
+                    </tr>`;
                 return;
             }
 
-            tbody.innerHTML = servicos.map(servico => `
-                <tr>
-                    <td><strong>${servico.nome}</strong></td>
-                    <td><span class="pro-badge pro-badge-primary">${servico.categoria || '—'}</span></td>
-                    <td>${servico.duracao} minutos</td>
-                    <td><strong>${ProUI.Format.currency(servico.preco)}</strong></td>
-                    <td>
-                        <span class="pro-badge pro-badge-${servico.status === 'ativo' ? 'success' : 'error'}">
-                            ${servico.status}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="pro-table-actions">
-                            <button class="pro-action-btn" onclick='editService(${JSON.stringify(servico)})' title="Editar"><i class="fas fa-edit"></i></button>
-                            <button class="pro-action-btn danger" onclick="deleteService('${servico.id}')" title="Excluir"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = servicos.map(s => {
+                const preco = parseFloat(s.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                const statusClass = s.status === 'ativo' ? 'success' : 'error';
+                const categoriaLabel = {
+                    cabelo: 'Cabelo', barba: 'Barba', unhas: 'Unhas',
+                    estetica: 'Estética', massagem: 'Massagem',
+                    depilacao: 'Depilação', maquiagem: 'Maquiagem', outros: 'Outros'
+                }[s.categoria] || s.categoria || '—';
+
+                return `
+                    <tr>
+                        <td><strong>${s.nome}</strong></td>
+                        <td><span class="pro-badge pro-badge-primary">${categoriaLabel}</span></td>
+                        <td>${s.duracao || 0} min</td>
+                        <td><strong>${preco}</strong></td>
+                        <td>
+                            <span class="pro-badge pro-badge-${statusClass}">
+                                ${s.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="pro-table-actions">
+                                <button class="pro-action-btn" title="Editar"
+                                    onclick="editService('${s.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="pro-action-btn danger" title="Excluir"
+                                    onclick="deleteService('${s.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('');
         }
 
+        // ─── Filtro por chip ───────────────────────────────────────────
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.pro-filter-chip').forEach(c => c.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            filtrarLocalmente();
+        }
+
+        // ─── Modal ─────────────────────────────────────────────────────
         function openServiceModal() {
-            ProUI.Modal.open('serviceModal');
             document.getElementById('modalTitle').textContent = 'Novo Serviço';
             document.getElementById('serviceForm').reset();
             document.getElementById('serviceId').value = '';
             document.getElementById('serviceStatus').value = 'ativo';
+            document.getElementById('serviceModal').style.display = 'flex';
         }
 
         function closeServiceModal() {
-            ProUI.Modal.close('serviceModal');
+            document.getElementById('serviceModal').style.display = 'none';
         }
 
-        function editService(servico) {
-            openServiceModal();
+        function editService(id) {
+            const s = todosServicos.find(x => x.id === id);
+            if (!s) return;
             document.getElementById('modalTitle').textContent = 'Editar Serviço';
-            document.getElementById('serviceId').value = servico.id;
-            document.getElementById('serviceName').value = servico.nome;
-            document.getElementById('serviceCategory').value = servico.categoria || '';
-            document.getElementById('serviceDuration').value = servico.duracao;
-            document.getElementById('servicePrice').value = servico.preco;
-            document.getElementById('serviceStatus').value = servico.status;
-            document.getElementById('serviceDescription').value = servico.descricao || '';
+            document.getElementById('serviceId').value = s.id;
+            document.getElementById('serviceName').value = s.nome || '';
+            document.getElementById('serviceCategory').value = s.categoria || '';
+            document.getElementById('serviceDuration').value = s.duracao || '';
+            document.getElementById('servicePrice').value = s.preco || '';
+            document.getElementById('serviceStatus').value = s.status || 'ativo';
+            document.getElementById('serviceDescription').value = s.descricao || '';
+            document.getElementById('serviceModal').style.display = 'flex';
         }
 
+        // ─── Salvar serviço ────────────────────────────────────────────
         async function saveService(e) {
             e.preventDefault();
-            
             try {
                 const id = document.getElementById('serviceId').value;
-                const data = {
-                    nome: document.getElementById('serviceName').value,
+                const dados = {
+                    nome: document.getElementById('serviceName').value.trim(),
+                    categoria: document.getElementById('serviceCategory').value,
                     duracao: parseInt(document.getElementById('serviceDuration').value),
-                    preco: parseFloat(document.getElementById('servicePrice').value)
+                    preco: parseFloat(document.getElementById('servicePrice').value),
+                    status: document.getElementById('serviceStatus').value,
+                    descricao: document.getElementById('serviceDescription').value.trim()
                 };
 
-                let resultado;
-                if (id) {
-                    resultado = await DB.servicos.atualizar(id, data);
-                    if (resultado.success) {
-                        alert('✅ Serviço atualizado!');
-                    }
-                } else {
-                    resultado = await DB.servicos.criar(data);
-                    if (resultado.success) {
-                        alert('✅ Serviço criado!');
-                    }
-                }
+                const resultado = id
+                    ? await DB.servicos.atualizar(id, dados)
+                    : await DB.servicos.criar(dados);
 
                 if (resultado.success) {
+                    alert(id ? '✅ Serviço atualizado!' : '✅ Serviço criado!');
                     closeServiceModal();
                     await loadServicos();
                 } else {
@@ -333,32 +412,29 @@
             }
         }
 
+        // ─── Excluir serviço ───────────────────────────────────────────
         async function deleteService(id) {
-            if (confirm('Deseja realmente excluir este serviço?')) {
-                try {
-                    const resultado = await DB.servicos.excluir(id);
-                    if (resultado.success) {
-                        alert('✅ Serviço excluído!');
-                        await loadServicos();
-                    } else {
-                        alert('❌ Erro: ' + resultado.error);
-                    }
-                } catch (error) {
-                    console.error('Erro ao excluir serviço:', error);
-                    alert('❌ Erro ao excluir serviço');
+            if (!confirm('Deseja realmente excluir este serviço?')) return;
+            try {
+                const resultado = await DB.servicos.excluir(id);
+                if (resultado.success) {
+                    alert('✅ Serviço excluído!');
+                    await loadServicos();
+                } else {
+                    alert('❌ Erro: ' + resultado.error);
                 }
+            } catch (error) {
+                console.error('Erro ao excluir serviço:', error);
+                alert('❌ Erro ao excluir serviço');
             }
         }
 
+        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
             }
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadServicos();
-        });
     </script>
 </body>
 </html>
