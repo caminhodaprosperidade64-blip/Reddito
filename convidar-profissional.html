@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convidar Profissional - Sistema Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/pro-design-system.css">
+    <link rel="stylesheet" href="css/pro-components.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
+</head>
+<body style="min-height:100vh;background:var(--bg-main,#F8FAFC);">
+
+    <!-- Sidebar igual às outras páginas -->
+    <div style="display:flex;min-height:100vh;">
+
+        <!-- SIDEBAR -->
+        <aside style="width:240px;background:#1E1B4B;color:#fff;display:flex;flex-direction:column;padding:24px 0;flex-shrink:0;">
+            <div style="padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.1);">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#6366F1;display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-cut" style="font-size:16px;"></i>
+                    </div>
+                    <div>
+                        <p style="font-size:13px;font-weight:700;margin:0;" id="sidebarNome">Carregando...</p>
+                        <p style="font-size:11px;color:#A5B4FC;margin:0;" id="sidebarRole">—</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav style="flex:1;padding:16px 12px;">
+                <a id="menu-dashboard" href="dashboard.html" class="sidebar-link" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7D2FE;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-chart-line" style="width:18px;"></i> Dashboard
+                </a>
+                <a id="menu-agenda" href="agenda.html" class="sidebar-link" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7D2FE;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-calendar-alt" style="width:18px;"></i> Agenda
+                </a>
+                <a id="menu-clientes" href="clientes.html" class="sidebar-link" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7D2FE;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-users" style="width:18px;"></i> Clientes
+                </a>
+                <a id="menu-servicos" href="servicos.html" class="sidebar-link" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7D2FE;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-concierge-bell" style="width:18px;"></i> Serviços
+                </a>
+                <a id="menu-profissionais" href="profissionais.html" class="sidebar-link" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7D2FE;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-user-tie" style="width:18px;"></i> Profissionais
+                </a>
+                <a id="menu-financeiro" href="financeiro.html" class="sidebar-link" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7D2FE;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-dollar-sign" style="width:18px;"></i> Financeiro
+                </a>
+                <a id="menu-relatorios" href="relatorios.html" class="sidebar-link" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7D2FE;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-chart-bar" style="width:18px;"></i> Relatórios
+                </a>
+
+                <!-- Item ativo -->
+                <a href="convidar-profissional.html" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:#6366F1;color:#fff;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-user-plus" style="width:18px;"></i> Convidar
+                </a>
+
+                <a id="menu-configuracoes" href="configuracoes.html" class="sidebar-link" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7D2FE;text-decoration:none;font-size:14px;margin-bottom:4px;">
+                    <i class="fas fa-cog" style="width:18px;"></i> Configurações
+                </a>
+            </nav>
+
+            <div style="padding:12px 20px;border-top:1px solid rgba(255,255,255,0.1);">
+                <button onclick="Auth.signOut()" style="width:100%;background:none;border:none;color:#C7D2FE;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px;padding:8px 0;">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main style="flex:1;padding:32px;overflow-y:auto;">
+
+            <!-- Cabeçalho -->
+            <div style="margin-bottom:32px;">
+                <h1 style="font-size:24px;font-weight:700;margin:0 0 4px;">Convidar Profissional</h1>
+                <p style="color:#64748B;font-size:14px;margin:0;">Gere um link de convite para um novo profissional entrar no sistema.</p>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:960px;">
+
+                <!-- Card: Gerar convite -->
+                <div class="pro-card">
+                    <div class="pro-card-body" style="padding:28px;">
+                        <h3 style="font-size:16px;font-weight:700;margin:0 0 20px;display:flex;align-items:center;gap:8px;">
+                            <i class="fas fa-envelope-open-text" style="color:#6366F1;"></i>
+                            Novo Convite
+                        </h3>
+
+                        <form id="formConvite" onsubmit="gerarConvite(event)">
+                            <div class="pro-form-group">
+                                <label class="pro-label">Nome do Profissional</label>
+                                <input type="text" class="pro-input" id="inputNomePro"
+                                    placeholder="Ex: Maria Oliveira">
+                                <small style="color:#64748B;font-size:12px;margin-top:4px;display:block;">Opcional — preenche o nome automaticamente no cadastro.</small>
+                            </div>
+
+                            <div class="pro-form-group">
+                                <label class="pro-label">Email do Profissional <span style="color:#EF4444;">*</span></label>
+                                <input type="email" class="pro-input" id="inputEmailPro"
+                                    placeholder="profissional@email.com" required>
+                            </div>
+
+                            <div class="pro-form-group">
+                                <label class="pro-label">Validade do Convite</label>
+                                <select class="pro-input" id="selectValidade">
+                                    <option value="1">1 dia</option>
+                                    <option value="3" selected>3 dias</option>
+                                    <option value="7">7 dias</option>
+                                    <option value="30">30 dias</option>
+                                </select>
+                            </div>
+
+                            <!-- Erro -->
+                            <div id="erroConvite" style="display:none;padding:10px 14px;background:#FEE2E2;border-radius:8px;margin-bottom:16px;font-size:13px;color:#DC2626;">
+                                <i class="fas fa-exclamation-circle"></i> <span id="textoErroConvite"></span>
+                            </div>
+
+                            <button type="submit" class="pro-btn pro-btn-primary" id="btnGerar"
+                                style="width:100%;justify-content:center;padding:12px;">
+                                <i class="fas fa-link"></i> Gerar Link de Convite
+                            </button>
+                        </form>
+
+                        <!-- Resultado: link gerado -->
+                        <div id="resultadoConvite" style="display:none;margin-top:20px;padding:16px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">
+                            <p style="font-size:12px;font-weight:600;color:#16A34A;margin-bottom:8px;">
+                                <i class="fas fa-check-circle"></i> Link gerado com sucesso!
+                            </p>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <input type="text" id="inputLink" readonly
+                                    style="flex:1;padding:8px 12px;border:1px solid #D1FAE5;border-radius:6px;font-size:12px;background:#fff;color:#374151;outline:none;">
+                                <button onclick="copiarLink()" id="btnCopiar"
+                                    style="padding:8px 14px;background:#16A34A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;white-space:nowrap;">
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                            </div>
+                            <p style="font-size:11px;color:#64748B;margin-top:8px;">
+                                <i class="fas fa-clock"></i> Expira em <span id="textoExpiry">—</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card: Convites enviados -->
+                <div class="pro-card">
+                    <div class="pro-card-body" style="padding:28px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+                            <h3 style="font-size:16px;font-weight:700;margin:0;display:flex;align-items:center;gap:8px;">
+                                <i class="fas fa-history" style="color:#6366F1;"></i>
+                                Convites Enviados
+                            </h3>
+                            <button onclick="carregarConvites()" style="background:none;border:none;color:#6366F1;cursor:pointer;font-size:13px;">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+
+                        <div id="listaConvites">
+                            <div style="text-align:center;padding:32px 0;color:#94A3B8;">
+                                <i class="fas fa-spinner fa-spin" style="font-size:24px;"></i>
+                                <p style="margin-top:8px;font-size:13px;">Carregando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ─── Inicialização ─────────────────────────────────────────────
+        window.addEventListener('perfilCarregado', async (e) => {
+            const perfil = e.detail;
+
+            // Atualiza sidebar
+            document.getElementById('sidebarNome').textContent = perfil.nome || 'Usuário';
+            document.getElementById('sidebarRole').textContent = perfil.role === 'dono' ? '👑 Proprietário' : '✂️ Profissional';
+
+            // Apenas donos podem acessar esta página
+            if (perfil.role !== 'dono') {
+                window.location.href = 'agenda.html';
+                return;
+            }
+
+            await carregarConvites();
+        });
+
+        // ─── Gerar convite ─────────────────────────────────────────────
+        async function gerarConvite(e) {
+            e.preventDefault();
+            document.getElementById('erroConvite').style.display  = 'none';
+            document.getElementById('resultadoConvite').style.display = 'none';
+
+            const nome      = document.getElementById('inputNomePro').value.trim();
+            const email     = document.getElementById('inputEmailPro').value.trim();
+            const diasValidade = parseInt(document.getElementById('selectValidade').value);
+
+            if (!email) { mostrarErroConvite('Informe o email do profissional.'); return; }
+
+            const btn = document.getElementById('btnGerar');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+
+            try {
+                const supabase  = window.getSupabase();
+                const tenantId  = window.TENANT_ID;
+
+                // Calcula expiração
+                const expiry = new Date();
+                expiry.setDate(expiry.getDate() + diasValidade);
+
+                // Insere o convite no banco
+                const { data: convite, error } = await supabase
+                    .from('convites')
+                    .insert({
+                        tenant_id: tenantId,
+                        email:     email,
+                        nome:      nome || null,
+                        expiry:    expiry.toISOString()
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                // Monta o link com o UUID do convite
+                const baseUrl = window.location.origin;
+                const link    = `${baseUrl}/cadastro-profissional.html?convite=${convite.id}`;
+
+                // Exibe o resultado
+                document.getElementById('inputLink').value = link;
+                document.getElementById('textoExpiry').textContent =
+                    `${diasValidade} dia(s) — até ${expiry.toLocaleDateString('pt-BR')}`;
+                document.getElementById('resultadoConvite').style.display = 'block';
+
+                // Limpa o formulário
+                document.getElementById('inputNomePro').value  = '';
+                document.getElementById('inputEmailPro').value = '';
+
+                // Recarrega a lista
+                await carregarConvites();
+
+            } catch (err) {
+                console.error('Erro ao gerar convite:', err);
+                mostrarErroConvite('Erro ao gerar convite: ' + (err.message || 'Tente novamente.'));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-link"></i> Gerar Link de Convite';
+            }
+        }
+
+        // ─── Carregar lista de convites ────────────────────────────────
+        async function carregarConvites() {
+            const container = document.getElementById('listaConvites');
+            container.innerHTML = `
+                <div style="text-align:center;padding:32px 0;color:#94A3B8;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:24px;"></i>
+                    <p style="margin-top:8px;font-size:13px;">Carregando...</p>
+                </div>`;
+
+            try {
+                const supabase = window.getSupabase();
+                const { data: convites, error } = await supabase
+                    .from('convites')
+                    .select('*')
+                    .eq('tenant_id', window.TENANT_ID)
+                    .order('criado_em', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                if (!convites || convites.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align:center;padding:32px 0;color:#94A3B8;">
+                            <i class="fas fa-envelope" style="font-size:32px;margin-bottom:8px;"></i>
+                            <p style="font-size:13px;">Nenhum convite enviado ainda.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = convites.map(c => {
+                    const expirado = new Date(c.expiry) < new Date();
+                    const status   = c.usado ? 'usado' : expirado ? 'expirado' : 'ativo';
+                    const badge    = {
+                        ativo:    { bg: '#D1FAE5', color: '#065F46', label: 'Ativo' },
+                        usado:    { bg: '#E0E7FF', color: '#3730A3', label: 'Usado' },
+                        expirado: { bg: '#FEE2E2', color: '#991B1B', label: 'Expirado' }
+                    }[status];
+
+                    return `
+                        <div style="padding:12px 0;border-bottom:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <div style="min-width:0;">
+                                <p style="font-size:13px;font-weight:600;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${c.nome || '—'}
+                                </p>
+                                <p style="font-size:12px;color:#64748B;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${c.email}
+                                </p>
+                                <p style="font-size:11px;color:#94A3B8;margin:2px 0 0;">
+                                    Expira: ${new Date(c.expiry).toLocaleDateString('pt-BR')}
+                                </p>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                                <span style="padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;background:${badge.bg};color:${badge.color};">
+                                    ${badge.label}
+                                </span>
+                                ${status === 'ativo' ? `
+                                <button onclick="copiarLinkExistente('${c.id}')"
+                                    title="Copiar link"
+                                    style="padding:4px 8px;background:#EEF2FF;color:#6366F1;border:none;border-radius:6px;cursor:pointer;font-size:12px;">
+                                    <i class="fas fa-copy"></i>
+                                </button>` : ''}
+                            </div>
+                        </div>`;
+                }).join('');
+
+            } catch (err) {
+                console.error('Erro ao carregar convites:', err);
+                container.innerHTML = `
+                    <div style="text-align:center;padding:24px;color:#EF4444;font-size:13px;">
+                        <i class="fas fa-exclamation-circle"></i> Erro ao carregar convites.
+                    </div>`;
+            }
+        }
+
+        // ─── Helpers ───────────────────────────────────────────────────
+        function copiarLink() {
+            const link = document.getElementById('inputLink').value;
+            navigator.clipboard.writeText(link).then(() => {
+                const btn = document.getElementById('btnCopiar');
+                btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+                setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copiar'; }, 2000);
+            });
+        }
+
+        function copiarLinkExistente(id) {
+            const baseUrl = window.location.origin;
+            const link    = `${baseUrl}/cadastro-profissional.html?convite=${id}`;
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Link copiado!');
+            });
+        }
+
+        function mostrarErroConvite(msg) {
+            document.getElementById('textoErroConvite').textContent = msg;
+            document.getElementById('erroConvite').style.display    = 'block';
+        }
+    </script>
+</body>
+</html>
