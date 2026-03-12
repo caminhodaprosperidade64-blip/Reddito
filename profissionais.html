@@ -229,11 +229,11 @@
         // ─── Estado ────────────────────────────────────────────────────
         let currentFilter = 'todos';
         let todosProfissionais = [];
-        let totalAgendamentosMes = 0;
-        let perfilAtual = null; // guarda o perfil do usuário logado
+        let agendamentosMes = []; // ✅ guarda lista completa para contar por profissional
+        let perfilAtual = null;
 
         // ─── Perfil na sidebar + controle de acesso ────────────────────
-        document.addEventListener('perfilCarregado', (e) => {
+        window.addEventListener('perfilCarregado', (e) => { // ✅ window, não document
             const perfil = e.detail;
             if (!perfil) return;
             perfilAtual = perfil;
@@ -243,17 +243,14 @@
             document.getElementById('userName').textContent   = perfil.nome || perfil.email;
             document.getElementById('userRole').textContent   = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
 
-            // Nome do estabelecimento
             try {
                 const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
                 if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
             } catch (_) {}
 
-            // Dono: mostra botão de criar e coluna de ações
             if (perfil.role === 'dono') {
                 document.getElementById('btnNovoProfissional').style.display = 'inline-flex';
             } else {
-                // Profissional: oculta coluna de ações
                 document.getElementById('colunaAcoes').style.display = 'none';
             }
 
@@ -263,22 +260,22 @@
         // ─── Carregar dados do banco ───────────────────────────────────
         async function loadProfissionais() {
             try {
-                const agora = new Date();
+                const agora     = new Date();
                 const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
-                const fimMes   = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
+                const fimMes    = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
                 const [profissionais, agendamentos] = await Promise.all([
                     DB.profissionais.listar(),
                     DB.agendamentos.listar({ inicio: inicioMes, fim: fimMes })
                 ]);
 
-                todosProfissionais  = Array.isArray(profissionais) ? profissionais : [];
-                totalAgendamentosMes = Array.isArray(agendamentos)  ? agendamentos.length : 0;
+                todosProfissionais = Array.isArray(profissionais) ? profissionais : [];
+                agendamentosMes    = Array.isArray(agendamentos)  ? agendamentos  : []; // ✅ guarda lista
 
                 // Profissional só vê a si mesmo
                 if (perfilAtual?.role === 'profissional') {
                     todosProfissionais = todosProfissionais.filter(
-                        p => p.user_id === perfilAtual.user_id
+                        p => p.id === perfilAtual.id // ✅ coluna correta: id, não user_id
                     );
                 }
 
@@ -324,13 +321,14 @@
                 : 0;
             document.getElementById('comissaoMedia').textContent = avgComissao.toFixed(1) + '%';
 
-            document.getElementById('totalAgendamentos').textContent = totalAgendamentosMes;
+            // ✅ Total de agendamentos do mês (todos)
+            document.getElementById('totalAgendamentos').textContent = agendamentosMes.length;
         }
 
         // ─── Renderizar tabela ─────────────────────────────────────────
         function renderTable(lista) {
-            const tbody   = document.getElementById('profissionaisTable');
-            const isDono  = perfilAtual?.role === 'dono';
+            const tbody  = document.getElementById('profissionaisTable');
+            const isDono = perfilAtual?.role === 'dono';
 
             if (lista.length === 0) {
                 tbody.innerHTML = `
@@ -350,7 +348,11 @@
                 const statusClass = prof.status === 'ativo' ? 'success' : 'error';
                 const telefone    = prof.telefone || '—';
 
-                // Coluna de ações: só para dono
+                // ✅ Conta agendamentos do mês por profissional
+                const agendProf = agendamentosMes.filter(
+                    a => a.profissional_id === prof.id
+                ).length;
+
                 const acoesHtml = isDono ? `
                     <div class="pro-table-actions">
                         <button class="pro-action-btn" title="Editar"
@@ -376,7 +378,7 @@
                         <td><span class="pro-badge pro-badge-primary">${prof.especialidade || '—'}</span></td>
                         <td>${telefone}</td>
                         <td><strong>${comissaoText}</strong></td>
-                        <td>${totalAgendamentosMes}</td>
+                        <td>${agendProf}</td>
                         <td>
                             <span class="pro-badge pro-badge-${statusClass}">
                                 ${prof.status === 'ativo' ? 'Ativo' : 'Inativo'}
@@ -441,12 +443,12 @@
             try {
                 const id = document.getElementById('professionalId').value;
                 const dados = {
-                    nome:               document.getElementById('professionalName').value.trim(),
-                    telefone:           document.getElementById('professionalPhone').value.trim(),
-                    email:              document.getElementById('professionalEmail').value.trim(),
-                    especialidade:      document.getElementById('professionalSpecialty').value.trim(),
-                    status:             document.getElementById('professionalStatus').value,
-                    comissao_tipo:      document.getElementById('professionalCommissionType').value,
+                    nome:                document.getElementById('professionalName').value.trim(),
+                    telefone:            document.getElementById('professionalPhone').value.trim(),
+                    email:               document.getElementById('professionalEmail').value.trim(),
+                    especialidade:       document.getElementById('professionalSpecialty').value.trim(),
+                    status:              document.getElementById('professionalStatus').value,
+                    comissao_tipo:       document.getElementById('professionalCommissionType').value,
                     comissao_percentual: parseFloat(document.getElementById('professionalCommission').value) || 0
                 };
 
