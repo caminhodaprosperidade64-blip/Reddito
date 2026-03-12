@@ -136,35 +136,25 @@
             if (!token) { mostrarEstado('invalido'); return; }
 
             try {
-                const supabase = window.getSupabase();
+                // ✅ Decodifica o token Base64 gerado pelo configuracoes.html
+                const payload = JSON.parse(atob(token));
 
-                // ✅ Valida o token no banco (UUID seguro)
-                const { data: convite, error } = await supabase
-                    .from('convites')
-                    .select('*')
-                    .eq('id', token)
-                    .eq('usado', false)
-                    .gt('expiry', new Date().toISOString())
-                    .single();
-
-                if (error || !convite) {
-                    // Verifica se já foi usado
-                    const { data: conviteUsado } = await supabase
-                        .from('convites')
-                        .select('usado')
-                        .eq('id', token)
-                        .single();
-
-                    if (conviteUsado?.usado) {
-                        document.getElementById('msgInvalido').textContent =
-                            'Este convite já foi utilizado. Solicite um novo convite ao proprietário.';
-                    }
+                // Valida campos obrigatórios
+                if (!payload.tenant_id || !payload.email || !payload.expiry) {
                     mostrarEstado('invalido');
                     return;
                 }
 
-                dadosConvite = convite;
-                await preencherFormulario(convite);
+                // Valida expiração
+                if (Date.now() > payload.expiry) {
+                    document.getElementById('msgInvalido').textContent =
+                        'Este link de convite expirou (válido por 7 dias). Solicite um novo convite ao proprietário.';
+                    mostrarEstado('invalido');
+                    return;
+                }
+
+                dadosConvite = payload;
+                await preencherFormulario(payload);
                 mostrarEstado('formulario');
 
             } catch (err) {
@@ -185,13 +175,13 @@
                     `Olá, ${convite.nome}! Complete seu cadastro para acessar o sistema.`;
             }
 
-            // ✅ Busca nome do estabelecimento pelo tenant_id (coluna id da tabela perfis)
+            // ✅ Busca nome do estabelecimento pelo tenant_id (user_id do dono na tabela perfis)
             try {
                 const supabase = window.getSupabase();
                 const { data: perfilDono } = await supabase
                     .from('perfis')
                     .select('nome')
-                    .eq('id', convite.tenant_id) // ✅ coluna correta
+                    .eq('user_id', convite.tenant_id) // ✅ coluna correta
                     .single();
 
                 if (perfilDono?.nome) {
@@ -213,7 +203,9 @@
             if (!nome)              { mostrarErro('Informe seu nome completo.'); return; }
             if (senha.length < 6)   { mostrarErro('A senha deve ter pelo menos 6 caracteres.'); return; }
             if (senha !== confirma) { mostrarErro('As senhas não coincidem.'); return; }
-            if (email !== dadosConvite.email) {
+
+            // ✅ Valida email contra o convite
+            if (email.toLowerCase() !== dadosConvite.email.toLowerCase()) {
                 mostrarErro(`Este convite é para o email ${dadosConvite.email}.`);
                 return;
             }
@@ -237,12 +229,11 @@
                 const userId = authData.user?.id;
                 if (!userId) throw new Error('Usuário não criado corretamente.');
 
-                // 2. Cria perfil como 'profissional'
-                // ✅ id = userId (chave primária = auth.uid())
+                // 2. Cria perfil como 'profissional' vinculado ao tenant do dono
                 const { error: perfilError } = await supabase
                     .from('perfis')
                     .insert({
-                        id:        userId,
+                        user_id:   userId,           // ✅ chave correta
                         tenant_id: dadosConvite.tenant_id,
                         nome:      nome,
                         email:     email,
@@ -251,13 +242,7 @@
 
                 if (perfilError) throw perfilError;
 
-                // 3. Marca convite como usado
-                await supabase
-                    .from('convites')
-                    .update({ usado: true })
-                    .eq('id', dadosConvite.id);
-
-                // 4. Sucesso!
+                // 3. Sucesso!
                 mostrarEstado('sucesso');
                 setTimeout(() => {
                     document.getElementById('barraProgresso').style.width = '100%';
