@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Profissional - Sistema Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/pro-design-system.css">
+    <link rel="stylesheet" href="css/pro-components.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+</head>
+<body style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-main,#F8FAFC);">
+
+    <!-- Estado: carregando -->
+    <div id="estadoCarregando" style="text-align:center;">
+        <i class="fas fa-spinner fa-spin" style="font-size:32px;color:#6366F1;"></i>
+        <p style="margin-top:12px;color:#64748B;">Verificando convite...</p>
+    </div>
+
+    <!-- Estado: convite inválido/expirado -->
+    <div id="estadoInvalido" style="display:none;text-align:center;max-width:400px;padding:32px;">
+        <div style="width:64px;height:64px;border-radius:50%;background:#FEE2E2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <i class="fas fa-times-circle" style="font-size:28px;color:#EF4444;"></i>
+        </div>
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Convite inválido ou expirado</h2>
+        <p style="color:#64748B;font-size:14px;">Este link de convite não é válido ou já expirou. Solicite um novo convite ao proprietário do estabelecimento.</p>
+    </div>
+
+    <!-- Estado: formulário de cadastro -->
+    <div id="estadoFormulario" style="display:none;width:100%;max-width:480px;padding:24px;">
+        <div class="pro-card" style="box-shadow:0 8px 32px rgba(0,0,0,0.1);">
+            <div style="padding:32px 32px 0;text-align:center;">
+                <div style="width:56px;height:56px;border-radius:16px;background:#6366F1;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <i class="fas fa-user-plus" style="font-size:24px;color:#fff;"></i>
+                </div>
+                <h1 style="font-size:22px;font-weight:700;margin-bottom:6px;">Você foi convidado!</h1>
+                <p style="color:#64748B;font-size:14px;" id="msgBoasVindas">
+                    Complete seu cadastro para acessar o sistema.
+                </p>
+            </div>
+
+            <!-- Banner do estabelecimento -->
+            <div id="bannerEstabelecimento" style="margin:20px 32px 0;padding:12px 16px;background:#EEF2FF;border-radius:8px;border-left:4px solid #6366F1;display:none;">
+                <p style="font-size:12px;color:#6366F1;font-weight:600;margin-bottom:2px;">ESTABELECIMENTO</p>
+                <p style="font-size:14px;font-weight:600;" id="nomeEstabelecimento">—</p>
+            </div>
+
+            <div class="pro-card-body" style="padding:24px 32px 32px;">
+                <form id="formCadastro" onsubmit="realizarCadastro(event)">
+
+                    <div class="pro-form-group">
+                        <label class="pro-label">Seu Nome Completo</label>
+                        <input type="text" class="pro-input" id="inputNome" placeholder="Ex: João Silva" required>
+                    </div>
+
+                    <div class="pro-form-group">
+                        <label class="pro-label">Email</label>
+                        <input type="email" class="pro-input" id="inputEmail" placeholder="seu@email.com" required>
+                        <small style="color:#64748B;font-size:12px;margin-top:4px;display:block;">
+                            Use o mesmo email para o qual o convite foi enviado.
+                        </small>
+                    </div>
+
+                    <div class="pro-form-group">
+                        <label class="pro-label">Senha</label>
+                        <div style="position:relative;">
+                            <input type="password" class="pro-input" id="inputSenha"
+                                placeholder="Mínimo 6 caracteres" required minlength="6"
+                                style="padding-right:44px;">
+                            <button type="button" onclick="toggleSenha('inputSenha', 'iconSenha')"
+                                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#64748B;">
+                                <i class="fas fa-eye" id="iconSenha"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pro-form-group">
+                        <label class="pro-label">Confirmar Senha</label>
+                        <div style="position:relative;">
+                            <input type="password" class="pro-input" id="inputConfirmar"
+                                placeholder="Repita a senha" required minlength="6"
+                                style="padding-right:44px;">
+                            <button type="button" onclick="toggleSenha('inputConfirmar', 'iconConfirmar')"
+                                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#64748B;">
+                                <i class="fas fa-eye" id="iconConfirmar"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mensagem de erro -->
+                    <div id="msgErro" style="display:none;padding:12px 16px;background:#FEE2E2;border-radius:8px;margin-bottom:16px;font-size:13px;color:#DC2626;">
+                        <i class="fas fa-exclamation-circle"></i> <span id="textoErro"></span>
+                    </div>
+
+                    <button type="submit" class="pro-btn pro-btn-primary" id="btnCadastrar"
+                        style="width:100%;justify-content:center;padding:14px;">
+                        <i class="fas fa-check-circle"></i> Criar Minha Conta
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <p style="text-align:center;font-size:12px;color:#94A3B8;margin-top:16px;">
+            Já tem uma conta? <a href="index.html" style="color:#6366F1;font-weight:600;">Fazer login</a>
+        </p>
+    </div>
+
+    <!-- Estado: sucesso -->
+    <div id="estadoSucesso" style="display:none;text-align:center;max-width:400px;padding:32px;">
+        <div style="width:64px;height:64px;border-radius:50%;background:#D1FAE5;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+            <i class="fas fa-check-circle" style="font-size:28px;color:#10B981;"></i>
+        </div>
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px;">Cadastro realizado! 🎉</h2>
+        <p style="color:#64748B;font-size:14px;margin-bottom:24px;">
+            Sua conta foi criada com sucesso. Você será redirecionado para o login em instantes.
+        </p>
+        <div style="width:100%;height:4px;background:#E2E8F0;border-radius:4px;overflow:hidden;">
+            <div id="barraProgresso" style="height:100%;background:#10B981;width:0%;transition:width 3s linear;border-radius:4px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // ─── Estado global ─────────────────────────────────────────────
+        let dadosConvite = null;
+
+        // ─── Ao carregar: lê e valida o token ─────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const token  = params.get('convite');
+
+            if (!token) {
+                mostrarEstado('invalido');
+                return;
+            }
+
+            try {
+                const payload = JSON.parse(atob(token));
+
+                // Valida campos obrigatórios
+                if (!payload.tenant_id || !payload.email || !payload.expiry) {
+                    mostrarEstado('invalido');
+                    return;
+                }
+
+                // Valida expiração
+                if (Date.now() > payload.expiry) {
+                    mostrarEstado('invalido');
+                    return;
+                }
+
+                dadosConvite = payload;
+                preencherFormulario(payload);
+                mostrarEstado('formulario');
+
+            } catch (err) {
+                console.error('Token inválido:', err);
+                mostrarEstado('invalido');
+            }
+        });
+
+        // ─── Preenche o formulário com dados do convite ────────────────
+        function preencherFormulario(payload) {
+            // Preenche email e nome se vieram no token
+            if (payload.email) {
+                document.getElementById('inputEmail').value    = payload.email;
+                document.getElementById('inputEmail').readOnly = true;
+                document.getElementById('inputEmail').style.opacity = '0.7';
+            }
+            if (payload.nome) {
+                document.getElementById('inputNome').value = payload.nome;
+            }
+
+            // Mensagem de boas-vindas personalizada
+            if (payload.nome) {
+                document.getElementById('msgBoasVindas').textContent =
+                    `Olá, ${payload.nome}! Complete seu cadastro para acessar o sistema.`;
+            }
+
+            // Tenta mostrar nome do estabelecimento (salvo no localStorage pelo dono)
+            try {
+                const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
+                if (cfg.nome) {
+                    document.getElementById('nomeEstabelecimento').textContent    = cfg.nome;
+                    document.getElementById('bannerEstabelecimento').style.display = 'block';
+                }
+            } catch (_) {}
+        }
+
+        // ─── Realiza o cadastro no Supabase ───────────────────────────
+        async function realizarCadastro(e) {
+            e.preventDefault();
+            esconderErro();
+
+            const nome     = document.getElementById('inputNome').value.trim();
+            const email    = document.getElementById('inputEmail').value.trim();
+            const senha    = document.getElementById('inputSenha').value;
+            const confirma = document.getElementById('inputConfirmar').value;
+
+            // Validações
+            if (!nome) { mostrarErro('Informe seu nome completo.'); return; }
+            if (senha.length < 6) { mostrarErro('A senha deve ter pelo menos 6 caracteres.'); return; }
+            if (senha !== confirma) { mostrarErro('As senhas não coincidem.'); return; }
+            if (email !== dadosConvite.email) {
+                mostrarErro(`Este convite é para o email ${dadosConvite.email}. Use o email correto.`);
+                return;
+            }
+
+            const btn = document.getElementById('btnCadastrar');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
+
+            try {
+                const supabase = window.getSupabase();
+
+                // 1. Cria o usuário no Supabase Auth
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email,
+                    password: senha,
+                    options: {
+                        data: { nome }   // salva no user_metadata
+                    }
+                });
+
+                if (authError) throw authError;
+
+                const userId = authData.user?.id;
+                if (!userId) throw new Error('Usuário não criado corretamente.');
+
+                // 2. Cria o perfil na tabela `perfis` como 'profissional'
+                //    vinculado ao tenant_id do dono que gerou o convite
+                const { error: perfilError } = await supabase
+                    .from('perfis')
+                    .insert({
+                        user_id:   userId,
+                        tenant_id: dadosConvite.tenant_id,
+                        nome:      nome,
+                        role:      'profissional'
+                    });
+
+                if (perfilError) throw perfilError;
+
+                // 3. Sucesso!
+                mostrarEstado('sucesso');
+                setTimeout(() => {
+                    document.getElementById('barraProgresso').style.width = '100%';
+                }, 100);
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 3200);
+
+            } catch (err) {
+                console.error('Erro no cadastro:', err);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Criar Minha Conta';
+
+                // Mensagens amigáveis para erros comuns do Supabase
+                if (err.message?.includes('already registered') || err.message?.includes('already been registered')) {
+                    mostrarErro('Este email já possui uma conta. Faça login ou use outro email.');
+                } else if (err.message?.includes('Password')) {
+                    mostrarErro('Senha inválida. Use pelo menos 6 caracteres.');
+                } else {
+                    mostrarErro('Erro ao criar conta: ' + (err.message || 'Tente novamente.'));
+                }
+            }
+        }
+
+        // ─── Helpers de UI ─────────────────────────────────────────────
+        function mostrarEstado(estado) {
+            document.getElementById('estadoCarregando').style.display = 'none';
+            document.getElementById('estadoInvalido').style.display   = 'none';
+            document.getElementById('estadoFormulario').style.display = 'none';
+            document.getElementById('estadoSucesso').style.display    = 'none';
+
+            const mapa = {
+                carregando: 'estadoCarregando',
+                invalido:   'estadoInvalido',
+                formulario: 'estadoFormulario',
+                sucesso:    'estadoSucesso'
+            };
+            if (mapa[estado]) {
+                document.getElementById(mapa[estado]).style.display =
+                    estado === 'formulario' ? 'block' : (estado === 'carregando' ? 'block' : 'flex');
+                // ajuste para flex nos estados de ícone centralizado
+                if (estado === 'invalido' || estado === 'sucesso') {
+                    document.getElementById(mapa[estado]).style.display = 'block';
+                }
+            }
+        }
+
+        function mostrarErro(msg) {
+            document.getElementById('textoErro').textContent = msg;
+            document.getElementById('msgErro').style.display = 'block';
+        }
+
+        function esconderErro() {
+            document.getElementById('msgErro').style.display = 'none';
+        }
+
+        function toggleSenha(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon  = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type    = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type    = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+    </script>
+</body>
+</html>
