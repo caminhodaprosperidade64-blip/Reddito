@@ -49,7 +49,7 @@
                     <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
                 </div>
                 <div class="pro-nav-section">
-                    <a href="configuracoes.html" class="pro-nav-item active"><i class="fas fa-cog"></i><span>Configurações</span></a>
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item active"><i class="fas fa-cog"></i><span>Configurações</span></a>
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
@@ -87,10 +87,10 @@
                     </div>
                 </div>
 
-                <!-- Aviso para profissionais (oculto para donos) -->
+                <!-- Aviso para profissionais -->
                 <div id="avisoAcessoRestrito" style="display:none;margin-bottom:24px;">
-                    <div style="padding:16px;background:var(--warning-light, #FEF3C7);border:1px solid var(--warning);border-radius:8px;display:flex;align-items:center;gap:12px;">
-                        <i class="fas fa-lock" style="color:var(--warning);font-size:20px;"></i>
+                    <div style="padding:16px;background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;display:flex;align-items:center;gap:12px;">
+                        <i class="fas fa-lock" style="color:#F59E0B;font-size:20px;"></i>
                         <div>
                             <strong>Acesso restrito</strong>
                             <p style="font-size:13px;margin-top:2px;color:var(--text-secondary);">
@@ -205,7 +205,48 @@
                         </div>
                     </div>
 
-                    <!-- Gerenciamento de Dados (somente dono) -->
+                    <!-- Convite de Profissional (NOVO — exclusivo do dono) -->
+                    <div class="pro-card" style="margin-top:24px;">
+                        <div class="pro-card-header">
+                            <h3 class="pro-card-title"><i class="fas fa-user-plus" style="color:var(--primary);margin-right:8px;"></i>Convidar Profissional</h3>
+                        </div>
+                        <div class="pro-card-body">
+                            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+                                Envie um convite para um profissional se cadastrar no sistema vinculado ao seu estabelecimento.
+                                Após o cadastro, ele terá acesso apenas à própria agenda e ganhos.
+                            </p>
+                            <div class="pro-form-row" style="align-items:flex-end;">
+                                <div class="pro-form-group" style="flex:1;">
+                                    <label class="pro-label">Email do Profissional</label>
+                                    <input type="email" class="pro-input" id="emailConvite" placeholder="profissional@email.com">
+                                </div>
+                                <div class="pro-form-group" style="flex:1;">
+                                    <label class="pro-label">Nome do Profissional</label>
+                                    <input type="text" class="pro-input" id="nomeConvite" placeholder="Nome completo">
+                                </div>
+                                <div class="pro-form-group" style="flex-shrink:0;">
+                                    <button class="pro-btn pro-btn-primary" onclick="gerarLinkConvite()">
+                                        <i class="fas fa-link"></i> Gerar Link de Convite
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Resultado do link -->
+                            <div id="resultadoConvite" style="display:none;margin-top:16px;padding:14px;background:var(--bg-main);border-radius:8px;border:1px solid var(--border-color);">
+                                <p style="font-size:13px;font-weight:600;margin-bottom:8px;">🔗 Link de convite gerado:</p>
+                                <div style="display:flex;gap:8px;align-items:center;">
+                                    <input type="text" class="pro-input" id="linkConviteGerado" readonly style="font-size:12px;flex:1;">
+                                    <button class="pro-btn pro-btn-secondary" onclick="copiarLink()">
+                                        <i class="fas fa-copy"></i> Copiar
+                                    </button>
+                                </div>
+                                <p style="font-size:12px;color:var(--text-secondary);margin-top:8px;">
+                                    ⚠️ Este link expira em 7 dias. Compartilhe apenas com o profissional convidado.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gerenciamento de Dados -->
                     <div class="pro-card" style="margin-top:24px;">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Gerenciamento de Dados</h3>
@@ -216,7 +257,7 @@
                             </p>
                             <div style="display:flex;gap:12px;flex-wrap:wrap;">
                                 <button class="pro-btn pro-btn-secondary" onclick="exportarDados()">
-                                    <i class="fas fa-download"></i> Exportar Dados (CSV)
+                                    <i class="fas fa-download"></i> Exportar Dados (JSON)
                                 </button>
                                 <button class="pro-btn pro-btn-danger" onclick="limparDados()">
                                     <i class="fas fa-trash"></i> Limpar Todos os Dados
@@ -226,7 +267,7 @@
                     </div>
                 </div>
 
-                <!-- Preferências pessoais (visível para todos) -->
+                <!-- Minha Conta (visível para todos) -->
                 <div class="pro-card" style="margin-top:24px;">
                     <div class="pro-card-header">
                         <h3 class="pro-card-title">Minha Conta</h3>
@@ -349,6 +390,13 @@
         }
         .pro-toggle input:checked + .pro-toggle-slider { background-color: var(--success); }
         .pro-toggle input:checked + .pro-toggle-slider:before { transform: translateX(24px); }
+
+        .pro-btn-danger {
+            background: #EF4444;
+            color: #fff;
+            border: none;
+        }
+        .pro-btn-danger:hover { background: #DC2626; }
     </style>
 
     <script>
@@ -363,17 +411,20 @@
             if (!perfilAtual) return;
 
             const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
-            document.getElementById('userAvatar').textContent = letra;
-            document.getElementById('userName').textContent = perfilAtual.nome || perfilAtual.email;
-            document.getElementById('userRole').textContent = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
+            document.getElementById('userAvatar').textContent  = letra;
+            document.getElementById('userName').textContent    = perfilAtual.nome || perfilAtual.email;
+            document.getElementById('userRole').textContent    = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
+            document.getElementById('perfilNome').value        = perfilAtual.nome  || '';
+            document.getElementById('perfilEmail').value       = perfilAtual.email || '';
 
-            // Preenche campos da conta
-            document.getElementById('perfilNome').value = perfilAtual.nome || '';
-            document.getElementById('perfilEmail').value = perfilAtual.email || '';
+            // Nome do estabelecimento no header
+            try {
+                const cfg = JSON.parse(localStorage.getItem(STORAGE_KEY_CONFIG) || '{}');
+                if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
+            } catch (_) {}
 
-            // Controle de acesso por role
             if (perfilAtual.role !== 'dono') {
-                document.getElementById('secaoDono').style.display = 'none';
+                document.getElementById('secaoDono').style.display          = 'none';
                 document.getElementById('avisoAcessoRestrito').style.display = 'block';
             } else {
                 carregarConfigEstabelecimento();
@@ -382,44 +433,38 @@
             carregarPreferencias();
         });
 
-        // ─── Carregar config salva no localStorage ─────────────────────
+        // ─── Carregar config do localStorage ──────────────────────────
         function carregarConfigEstabelecimento() {
             try {
                 const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_CONFIG) || '{}');
-                if (saved.nome)     document.getElementById('establishmentName').value  = saved.nome;
-                if (saved.telefone) document.getElementById('establishmentPhone').value = saved.telefone;
-                if (saved.email)    document.getElementById('establishmentEmail').value = saved.email;
-                if (saved.endereco) document.getElementById('establishmentAddress').value = saved.endereco;
-                if (saved.cidade)   document.getElementById('establishmentCity').value  = saved.cidade;
-                if (saved.estado)   document.getElementById('establishmentState').value = saved.estado;
-                if (saved.abertura) document.getElementById('openTime').value  = saved.abertura;
-                if (saved.fechamento) document.getElementById('closeTime').value = saved.fechamento;
-                if (saved.intervalo) document.getElementById('slotDuration').value = saved.intervalo;
-                if (saved.dias) {
-                    saved.dias.forEach(d => {
-                        const el = document.getElementById('dia' + d);
-                        if (el) el.checked = true;
-                    });
-                    // Desmarca os que não estão na lista
+                if (saved.nome)       document.getElementById('establishmentName').value    = saved.nome;
+                if (saved.telefone)   document.getElementById('establishmentPhone').value   = saved.telefone;
+                if (saved.email)      document.getElementById('establishmentEmail').value   = saved.email;
+                if (saved.endereco)   document.getElementById('establishmentAddress').value = saved.endereco;
+                if (saved.cidade)     document.getElementById('establishmentCity').value    = saved.cidade;
+                if (saved.estado)     document.getElementById('establishmentState').value   = saved.estado;
+                if (saved.abertura)   document.getElementById('openTime').value             = saved.abertura;
+                if (saved.fechamento) document.getElementById('closeTime').value            = saved.fechamento;
+                if (saved.intervalo)  document.getElementById('slotDuration').value         = saved.intervalo;
+                if (Array.isArray(saved.dias)) {
                     [0,1,2,3,4,5,6].forEach(d => {
                         const el = document.getElementById('dia' + d);
                         if (el) el.checked = saved.dias.includes(d);
                     });
                 }
-                // Atualiza nome no header
                 if (saved.nome) document.getElementById('tenantName').textContent = saved.nome;
-            } catch (e) {
-                console.warn('Erro ao carregar config:', e);
+            } catch (err) {
+                console.warn('Erro ao carregar config:', err);
             }
         }
 
         function carregarPreferencias() {
             try {
                 const prefs = JSON.parse(localStorage.getItem(STORAGE_KEY_PREFS) || '{}');
-                if (prefs.email    !== undefined) document.getElementById('toggleEmail').checked       = prefs.email;
+                if (prefs.email       !== undefined) document.getElementById('toggleEmail').checked       = prefs.email;
                 if (prefs.autoConfirm !== undefined) document.getElementById('toggleAutoConfirm').checked = prefs.autoConfirm;
-                if (prefs.som      !== undefined) document.getElementById('toggleSom').checked         = prefs.som;
-            } catch (e) {}
+                if (prefs.som         !== undefined) document.getElementById('toggleSom').checked         = prefs.som;
+            } catch (_) {}
         }
 
         // ─── Salvar dados do estabelecimento ──────────────────────────
@@ -430,19 +475,17 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
 
             const config = {
-                nome:       document.getElementById('establishmentName').value.trim(),
-                telefone:   document.getElementById('establishmentPhone').value.trim(),
-                email:      document.getElementById('establishmentEmail').value.trim(),
-                endereco:   document.getElementById('establishmentAddress').value.trim(),
-                cidade:     document.getElementById('establishmentCity').value.trim(),
-                estado:     document.getElementById('establishmentState').value.trim().toUpperCase(),
+                nome:     document.getElementById('establishmentName').value.trim(),
+                telefone: document.getElementById('establishmentPhone').value.trim(),
+                email:    document.getElementById('establishmentEmail').value.trim(),
+                endereco: document.getElementById('establishmentAddress').value.trim(),
+                cidade:   document.getElementById('establishmentCity').value.trim(),
+                estado:   document.getElementById('establishmentState').value.trim().toUpperCase(),
             };
 
-            // Mescla com config existente (preserva horários)
             const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_CONFIG) || '{}');
             localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify({ ...existing, ...config }));
 
-            // Atualiza nome no header e sidebar
             if (config.nome) {
                 document.getElementById('tenantName').textContent = config.nome;
             }
@@ -451,7 +494,7 @@
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-save"></i> Salvar Dados';
                 mostrarToast('✅ Dados do estabelecimento salvos!', 'success');
-            }, 500);
+            }, 400);
         }
 
         // ─── Salvar horário ────────────────────────────────────────────
@@ -488,6 +531,53 @@
             mostrarToast('✅ Horário de funcionamento salvo!', 'success');
         }
 
+        // ─── Convidar profissional ─────────────────────────────────────
+        function gerarLinkConvite() {
+            const email = document.getElementById('emailConvite').value.trim();
+            const nome  = document.getElementById('nomeConvite').value.trim();
+
+            if (!email || !email.includes('@')) {
+                mostrarToast('⚠️ Informe um email válido para o convite.', 'warning');
+                return;
+            }
+            if (!nome) {
+                mostrarToast('⚠️ Informe o nome do profissional.', 'warning');
+                return;
+            }
+            if (!perfilAtual?.tenant_id) {
+                mostrarToast('❌ Erro: tenant não identificado.', 'error');
+                return;
+            }
+
+            // Gera token simples: base64 de {tenant_id, email, nome, expiry}
+            const payload = {
+                tenant_id: perfilAtual.tenant_id,
+                email,
+                nome,
+                expiry: Date.now() + 7 * 24 * 60 * 60 * 1000  // 7 dias
+            };
+            const token = btoa(JSON.stringify(payload));
+            const link  = `${window.location.origin}/cadastro-profissional.html?convite=${token}`;
+
+            document.getElementById('linkConviteGerado').value = link;
+            document.getElementById('resultadoConvite').style.display = 'block';
+            mostrarToast('✅ Link gerado! Compartilhe com o profissional.', 'success');
+        }
+
+        function copiarLink() {
+            const input = document.getElementById('linkConviteGerado');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            try {
+                navigator.clipboard.writeText(input.value).then(() => {
+                    mostrarToast('✅ Link copiado para a área de transferência!', 'success');
+                });
+            } catch (_) {
+                document.execCommand('copy');
+                mostrarToast('✅ Link copiado!', 'success');
+            }
+        }
+
         // ─── Salvar perfil pessoal ─────────────────────────────────────
         async function salvarPerfil(e) {
             e.preventDefault();
@@ -506,13 +596,13 @@
 
                 if (error) throw error;
 
-                // Atualiza sidebar
-                document.getElementById('userName').textContent = nome;
+                document.getElementById('userName').textContent   = nome;
                 document.getElementById('userAvatar').textContent = nome[0].toUpperCase();
+                perfilAtual.nome = nome;
                 mostrarToast('✅ Perfil atualizado!', 'success');
             } catch (err) {
                 console.error('Erro ao salvar perfil:', err);
-                mostrarToast('❌ Erro ao salvar perfil.', 'error');
+                mostrarToast('❌ Erro ao salvar perfil: ' + (err.message || ''), 'error');
             }
         }
 
@@ -535,7 +625,7 @@
                 const { error } = await supabase.auth.updateUser({ password: nova });
                 if (error) throw error;
 
-                document.getElementById('novaSenha').value = '';
+                document.getElementById('novaSenha').value     = '';
                 document.getElementById('confirmarSenha').value = '';
                 mostrarToast('✅ Senha alterada com sucesso!', 'success');
             } catch (err) {
@@ -607,10 +697,10 @@
                     DB.agendamentos.listar()
                 ]);
 
-                for (const item of agendamentos)   await DB.agendamentos.excluir(item.id);
-                for (const item of clientes)        await DB.clientes.excluir(item.id);
-                for (const item of profissionais)   await DB.profissionais.excluir(item.id);
-                for (const item of servicos)        await DB.servicos.excluir(item.id);
+                for (const item of agendamentos) await DB.agendamentos.excluir(item.id);
+                for (const item of clientes)     await DB.clientes.excluir(item.id);
+                for (const item of profissionais) await DB.profissionais.excluir(item.id);
+                for (const item of servicos)      await DB.servicos.excluir(item.id);
 
                 mostrarToast('✅ Todos os dados foram removidos!', 'success');
                 setTimeout(() => window.location.href = 'dashboard.html', 2000);
@@ -620,14 +710,9 @@
             }
         }
 
-        // ─── Toast de feedback ─────────────────────────────────────────
+        // ─── Toast ─────────────────────────────────────────────────────
         function mostrarToast(msg, tipo = 'success') {
-            const cores = {
-                success: '#10B981',
-                error:   '#EF4444',
-                warning: '#F59E0B',
-                info:    '#6366F1'
-            };
+            const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
             const toast = document.createElement('div');
             toast.textContent = msg;
             toast.style.cssText = `
@@ -636,7 +721,6 @@
                 background:${cores[tipo] || cores.success};
                 color:#fff;font-weight:500;font-size:14px;
                 box-shadow:0 4px 16px rgba(0,0,0,0.15);
-                animation:slideIn 0.3s ease;
             `;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3500);
