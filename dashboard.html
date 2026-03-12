@@ -115,7 +115,7 @@
                     >
                 </div>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn" onclick="ProUI.Toast.info('Sem notificações')">
+                    <button class="pro-header-btn" onclick="alert('Sem notificações no momento.')">
                         <i class="fas fa-bell"></i>
                     </button>
                     <div class="pro-header-divider"></div>
@@ -130,7 +130,7 @@
                             <h1 class="pro-page-title">Dashboard</h1>
                             <p class="pro-page-subtitle">Visão geral do seu negócio</p>
                         </div>
-                        <button class="pro-btn pro-btn-primary" onclick="ProUI.Modal.open('newAppointmentModal')">
+                        <button class="pro-btn pro-btn-primary" onclick="abrirModalAgendamento()">
                             <i class="fas fa-plus"></i>
                             Novo Agendamento
                         </button>
@@ -243,12 +243,12 @@
     </div>
 
     <!-- New Appointment Modal -->
-    <div class="pro-modal" id="newAppointmentModal">
-        <div class="pro-modal-overlay" onclick="ProUI.Modal.close('newAppointmentModal')"></div>
+    <div class="pro-modal" id="newAppointmentModal" style="display:none;">
+        <div class="pro-modal-overlay" onclick="fecharModalAgendamento()"></div>
         <div class="pro-modal-content">
             <div class="pro-modal-header">
                 <h2 class="pro-modal-title">Novo Agendamento</h2>
-                <button class="pro-modal-close" onclick="ProUI.Modal.close('newAppointmentModal')">
+                <button class="pro-modal-close" onclick="fecharModalAgendamento()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -289,7 +289,7 @@
                 </form>
             </div>
             <div class="pro-modal-footer">
-                <button class="pro-btn pro-btn-secondary" onclick="ProUI.Modal.close('newAppointmentModal')">
+                <button class="pro-btn pro-btn-secondary" onclick="fecharModalAgendamento()">
                     Cancelar
                 </button>
                 <button class="pro-btn pro-btn-primary" onclick="document.getElementById('appointmentForm').requestSubmit()">
@@ -301,6 +301,14 @@
     </div>
 
     <script>
+        // ─── Modal helpers (sem depender de ProUI) ─────────────────────
+        function abrirModalAgendamento() {
+            document.getElementById('newAppointmentModal').style.display = 'flex';
+        }
+        function fecharModalAgendamento() {
+            document.getElementById('newAppointmentModal').style.display = 'none';
+        }
+
         // ─── Carregar info do usuário na sidebar ───────────────────────
         document.addEventListener('perfilCarregado', async (e) => {
             const perfil = e.detail;
@@ -310,6 +318,9 @@
             document.getElementById('userAvatar').textContent = primeiraLetra;
             document.getElementById('userName').textContent = perfil.nome || perfil.email;
             document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+
+            // ✅ Só carrega o dashboard DEPOIS que o perfil (e DB) estão prontos
+            await loadDashboard();
         });
 
         // ─── Carregar Dashboard ────────────────────────────────────────
@@ -318,24 +329,23 @@
                 const hoje = new Date().toISOString().split('T')[0];
                 const agora = new Date();
 
-                const [agendamentosHoje, financeiroHoje, financeiroMes] = await Promise.all([
+                const amanha = new Date();
+                amanha.setDate(amanha.getDate() + 1);
+                const amanhaStr = amanha.toISOString().split('T')[0];
+
+                const [agendamentosHoje, agendamentosAmanha, financeiroHoje, financeiroMes] = await Promise.all([
                     DB.agendamentos.listarPorData(hoje),
+                    DB.agendamentos.listarPorData(amanhaStr),
                     DB.financeiro.faturamentoDia(hoje),
                     DB.financeiro.faturamentoMes(agora.getFullYear(), agora.getMonth() + 1)
                 ]);
 
-                // Amanhã
-                const amanha = new Date();
-                amanha.setDate(amanha.getDate() + 1);
-                const amanhaStr = amanha.toISOString().split('T')[0];
-                const agendamentosAmanha = await DB.agendamentos.listarPorData(amanhaStr);
-
                 document.getElementById('appointmentsToday').textContent = agendamentosHoje.length;
                 document.getElementById('appointmentsTomorrow').textContent = agendamentosAmanha.length;
                 document.getElementById('revenueToday').textContent =
-                    'R$ ' + financeiroHoje.faturamentoBruto.toFixed(2).replace('.', ',');
+                    'R$ ' + (financeiroHoje.faturamentoBruto || 0).toFixed(2).replace('.', ',');
                 document.getElementById('revenueMonth').textContent =
-                    'R$ ' + financeiroMes.faturamentoBruto.toFixed(2).replace('.', ',');
+                    'R$ ' + (financeiroMes.faturamentoBruto || 0).toFixed(2).replace('.', ',');
 
                 await loadCharts();
                 await loadUpcomingAppointments();
@@ -352,7 +362,6 @@
 
         async function loadCharts() {
             try {
-                // Gerar últimos 7 dias
                 const dias = [];
                 for (let i = 6; i >= 0; i--) {
                     const d = new Date();
@@ -365,7 +374,7 @@
                 );
 
                 const labels = dias.map(d => {
-                    const [ano, mes, dia] = d.split('-');
+                    const [, mes, dia] = d.split('-');
                     return `${dia}/${mes}`;
                 });
 
@@ -375,7 +384,6 @@
 
                 const quantidades = resultados.map(lista => lista.length);
 
-                // Gráfico de faturamento
                 if (revenueChart) revenueChart.destroy();
                 revenueChart = new Chart(document.getElementById('revenueChart'), {
                     type: 'line',
@@ -393,7 +401,6 @@
                     options: { responsive: true, maintainAspectRatio: false }
                 });
 
-                // Gráfico de agendamentos
                 if (appointmentsChart) appointmentsChart.destroy();
                 appointmentsChart = new Chart(document.getElementById('appointmentsChart'), {
                     type: 'bar',
@@ -486,7 +493,6 @@
                     '<option value="">Selecione um profissional</option>' +
                     profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
 
-                // Data padrão = hoje
                 document.getElementById('appointmentDate').value = new Date().toISOString().split('T')[0];
 
             } catch (error) {
@@ -516,7 +522,7 @@
 
                 if (resultado.success) {
                     alert('✅ Agendamento criado com sucesso!');
-                    ProUI.Modal.close('newAppointmentModal');
+                    fecharModalAgendamento();
                     await loadDashboard();
                 } else {
                     alert('❌ Erro: ' + resultado.error);
@@ -533,11 +539,6 @@
                 await Auth.signOut();
             }
         }
-
-        // ─── Iniciar ───────────────────────────────────────────────────
-        window.addEventListener('DOMContentLoaded', () => {
-            loadDashboard();
-        });
     </script>
 </body>
 </html>
