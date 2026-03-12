@@ -9,16 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
-    
-    <!-- Supabase Client CDN -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Scripts do Sistema -->
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
 </head>
@@ -38,18 +35,18 @@
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
-                    <a href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
+                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
-                    <a href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
+                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
-                    <a href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <a href="configuracoes.html" class="pro-nav-item active"><i class="fas fa-cog"></i><span>Configurações</span></a>
@@ -57,10 +54,10 @@
             </nav>
             <div class="pro-sidebar-footer">
                 <div class="pro-user-profile">
-                    <div class="pro-user-avatar">A</div>
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
-                        <div class="pro-user-name">Admin</div>
-                        <div class="pro-user-role">Proprietário</div>
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
                     </div>
                     <button class="pro-user-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -74,9 +71,9 @@
                     <input type="text" class="pro-search-input" placeholder="Buscar...">
                 </div>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn"><i class="fas fa-bell"></i><span class="badge">3</span></button>
+                    <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
                     <div class="pro-header-divider"></div>
-                    <span class="pro-tenant-name">Meu Estabelecimento</span>
+                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
                 </div>
             </header>
 
@@ -90,113 +87,189 @@
                     </div>
                 </div>
 
-                <div class="pro-grid-2">
-                    <div class="pro-card">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Dados do Estabelecimento</h3>
-                        </div>
-                        <div class="pro-card-body">
-                            <form id="establishmentForm" onsubmit="saveEstablishment(event)">
-                                <div class="pro-form-group">
-                                    <label class="pro-label">Nome do Estabelecimento</label>
-                                    <input type="text" class="pro-input" id="establishmentName" value="Meu Estabelecimento" required>
-                                </div>
-
-                                <div class="pro-form-row">
-                                    <div class="pro-form-group">
-                                        <label class="pro-label">Telefone</label>
-                                        <input type="tel" class="pro-input" id="establishmentPhone" value="(11) 98765-4321">
-                                    </div>
-                                    <div class="pro-form-group">
-                                        <label class="pro-label">Email</label>
-                                        <input type="email" class="pro-input" id="establishmentEmail" value="contato@estabelecimento.com">
-                                    </div>
-                                </div>
-
-                                <div class="pro-form-group">
-                                    <label class="pro-label">Endereço</label>
-                                    <input type="text" class="pro-input" id="establishmentAddress" value="Rua Exemplo, 123">
-                                </div>
-
-                                <div class="pro-form-row">
-                                    <div class="pro-form-group">
-                                        <label class="pro-label">Cidade</label>
-                                        <input type="text" class="pro-input" id="establishmentCity" value="São Paulo">
-                                    </div>
-                                    <div class="pro-form-group">
-                                        <label class="pro-label">Estado</label>
-                                        <input type="text" class="pro-input" id="establishmentState" value="SP" maxlength="2">
-                                    </div>
-                                </div>
-
-                                <button type="submit" class="pro-btn pro-btn-primary">
-                                    <i class="fas fa-save"></i> Salvar Dados
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <div class="pro-card">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Horário de Funcionamento</h3>
-                        </div>
-                        <div class="pro-card-body">
-                            <form id="scheduleForm" onsubmit="saveSchedule(event)">
-                                <div class="pro-form-group">
-                                    <label class="pro-label">Horário de Abertura</label>
-                                    <input type="time" class="pro-input" id="openTime" value="08:00" required>
-                                </div>
-
-                                <div class="pro-form-group">
-                                    <label class="pro-label">Horário de Fechamento</label>
-                                    <input type="time" class="pro-input" id="closeTime" value="20:00" required>
-                                </div>
-
-                                <div class="pro-form-group">
-                                    <label class="pro-label">Tempo Mínimo Entre Atendimentos (minutos)</label>
-                                    <select class="pro-select" id="slotDuration">
-                                        <option value="15">15 minutos</option>
-                                        <option value="30" selected>30 minutos</option>
-                                        <option value="45">45 minutos</option>
-                                        <option value="60">60 minutos</option>
-                                    </select>
-                                </div>
-
-                                <div class="pro-form-group">
-                                    <label class="pro-label">Dias de Funcionamento</label>
-                                    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                                        <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="checkbox" checked> Segunda-feira
-                                        </label>
-                                        <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="checkbox" checked> Terça-feira
-                                        </label>
-                                        <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="checkbox" checked> Quarta-feira
-                                        </label>
-                                        <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="checkbox" checked> Quinta-feira
-                                        </label>
-                                        <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="checkbox" checked> Sexta-feira
-                                        </label>
-                                        <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="checkbox" checked> Sábado
-                                        </label>
-                                        <label style="display:flex;align-items:center;gap:8px;">
-                                            <input type="checkbox"> Domingo
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <button type="submit" class="pro-btn pro-btn-primary">
-                                    <i class="fas fa-save"></i> Salvar Horário
-                                </button>
-                            </form>
+                <!-- Aviso para profissionais (oculto para donos) -->
+                <div id="avisoAcessoRestrito" style="display:none;margin-bottom:24px;">
+                    <div style="padding:16px;background:var(--warning-light, #FEF3C7);border:1px solid var(--warning);border-radius:8px;display:flex;align-items:center;gap:12px;">
+                        <i class="fas fa-lock" style="color:var(--warning);font-size:20px;"></i>
+                        <div>
+                            <strong>Acesso restrito</strong>
+                            <p style="font-size:13px;margin-top:2px;color:var(--text-secondary);">
+                                Apenas o proprietário pode alterar as configurações do estabelecimento.
+                            </p>
                         </div>
                     </div>
                 </div>
 
+                <!-- Seção exclusiva do dono -->
+                <div id="secaoDono">
+                    <div class="pro-grid-2">
+                        <!-- Dados do Estabelecimento -->
+                        <div class="pro-card">
+                            <div class="pro-card-header">
+                                <h3 class="pro-card-title">Dados do Estabelecimento</h3>
+                            </div>
+                            <div class="pro-card-body">
+                                <form id="establishmentForm" onsubmit="saveEstablishment(event)">
+                                    <div class="pro-form-group">
+                                        <label class="pro-label">Nome do Estabelecimento</label>
+                                        <input type="text" class="pro-input" id="establishmentName" placeholder="Ex: Salão da Maria" required>
+                                    </div>
+                                    <div class="pro-form-row">
+                                        <div class="pro-form-group">
+                                            <label class="pro-label">Telefone</label>
+                                            <input type="tel" class="pro-input" id="establishmentPhone" placeholder="(11) 98765-4321">
+                                        </div>
+                                        <div class="pro-form-group">
+                                            <label class="pro-label">Email</label>
+                                            <input type="email" class="pro-input" id="establishmentEmail" placeholder="contato@salao.com">
+                                        </div>
+                                    </div>
+                                    <div class="pro-form-group">
+                                        <label class="pro-label">Endereço</label>
+                                        <input type="text" class="pro-input" id="establishmentAddress" placeholder="Rua Exemplo, 123">
+                                    </div>
+                                    <div class="pro-form-row">
+                                        <div class="pro-form-group">
+                                            <label class="pro-label">Cidade</label>
+                                            <input type="text" class="pro-input" id="establishmentCity" placeholder="São Paulo">
+                                        </div>
+                                        <div class="pro-form-group">
+                                            <label class="pro-label">Estado</label>
+                                            <input type="text" class="pro-input" id="establishmentState" placeholder="SP" maxlength="2">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="pro-btn pro-btn-primary" id="btnSalvarEstabelecimento">
+                                        <i class="fas fa-save"></i> Salvar Dados
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Horário de Funcionamento -->
+                        <div class="pro-card">
+                            <div class="pro-card-header">
+                                <h3 class="pro-card-title">Horário de Funcionamento</h3>
+                            </div>
+                            <div class="pro-card-body">
+                                <form id="scheduleForm" onsubmit="saveSchedule(event)">
+                                    <div class="pro-form-row">
+                                        <div class="pro-form-group">
+                                            <label class="pro-label">Abertura</label>
+                                            <input type="time" class="pro-input" id="openTime" value="08:00" required>
+                                        </div>
+                                        <div class="pro-form-group">
+                                            <label class="pro-label">Fechamento</label>
+                                            <input type="time" class="pro-input" id="closeTime" value="20:00" required>
+                                        </div>
+                                    </div>
+                                    <div class="pro-form-group">
+                                        <label class="pro-label">Intervalo entre atendimentos</label>
+                                        <select class="pro-select" id="slotDuration">
+                                            <option value="15">15 minutos</option>
+                                            <option value="30" selected>30 minutos</option>
+                                            <option value="45">45 minutos</option>
+                                            <option value="60">60 minutos</option>
+                                        </select>
+                                    </div>
+                                    <div class="pro-form-group">
+                                        <label class="pro-label">Dias de Funcionamento</label>
+                                        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" id="dia1" checked> Segunda-feira
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" id="dia2" checked> Terça-feira
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" id="dia3" checked> Quarta-feira
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" id="dia4" checked> Quinta-feira
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" id="dia5" checked> Sexta-feira
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" id="dia6" checked> Sábado
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                                <input type="checkbox" id="dia0"> Domingo
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="pro-btn pro-btn-primary">
+                                        <i class="fas fa-save"></i> Salvar Horário
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gerenciamento de Dados (somente dono) -->
+                    <div class="pro-card" style="margin-top:24px;">
+                        <div class="pro-card-header">
+                            <h3 class="pro-card-title">Gerenciamento de Dados</h3>
+                        </div>
+                        <div class="pro-card-body">
+                            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+                                Ações irreversíveis — use com cuidado.
+                            </p>
+                            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                                <button class="pro-btn pro-btn-secondary" onclick="exportarDados()">
+                                    <i class="fas fa-download"></i> Exportar Dados (CSV)
+                                </button>
+                                <button class="pro-btn pro-btn-danger" onclick="limparDados()">
+                                    <i class="fas fa-trash"></i> Limpar Todos os Dados
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferências pessoais (visível para todos) -->
+                <div class="pro-card" style="margin-top:24px;">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">Minha Conta</h3>
+                    </div>
+                    <div class="pro-card-body">
+                        <form id="perfilForm" onsubmit="salvarPerfil(event)">
+                            <div class="pro-form-row">
+                                <div class="pro-form-group">
+                                    <label class="pro-label">Meu Nome</label>
+                                    <input type="text" class="pro-input" id="perfilNome" placeholder="Seu nome">
+                                </div>
+                                <div class="pro-form-group">
+                                    <label class="pro-label">Email (somente leitura)</label>
+                                    <input type="email" class="pro-input" id="perfilEmail" disabled style="opacity:0.6;">
+                                </div>
+                            </div>
+                            <button type="submit" class="pro-btn pro-btn-primary">
+                                <i class="fas fa-save"></i> Salvar Perfil
+                            </button>
+                        </form>
+
+                        <hr style="margin:24px 0;border:none;border-top:1px solid var(--border-color);">
+
+                        <div>
+                            <p style="font-weight:600;margin-bottom:12px;">Alterar Senha</p>
+                            <div class="pro-form-row">
+                                <div class="pro-form-group">
+                                    <label class="pro-label">Nova Senha</label>
+                                    <input type="password" class="pro-input" id="novaSenha" placeholder="Mínimo 6 caracteres">
+                                </div>
+                                <div class="pro-form-group">
+                                    <label class="pro-label">Confirmar Nova Senha</label>
+                                    <input type="password" class="pro-input" id="confirmarSenha" placeholder="Repita a senha">
+                                </div>
+                            </div>
+                            <button class="pro-btn pro-btn-secondary" onclick="alterarSenha()">
+                                <i class="fas fa-key"></i> Alterar Senha
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferências do sistema (visível para todos) -->
                 <div class="pro-card" style="margin-top:24px;">
                     <div class="pro-card-header">
                         <h3 class="pro-card-title">Preferências do Sistema</h3>
@@ -209,54 +282,39 @@
                                     <p style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Receber notificações de novos agendamentos</p>
                                 </div>
                                 <label class="pro-toggle">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" id="toggleEmail" checked>
                                     <span class="pro-toggle-slider"></span>
                                 </label>
                             </div>
-
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid var(--border-color);border-radius:8px;">
                                 <div>
                                     <strong>Confirmação Automática</strong>
                                     <p style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Confirmar automaticamente novos agendamentos</p>
                                 </div>
                                 <label class="pro-toggle">
-                                    <input type="checkbox">
+                                    <input type="checkbox" id="toggleAutoConfirm">
                                     <span class="pro-toggle-slider"></span>
                                 </label>
                             </div>
-
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;border:1px solid var(--border-color);border-radius:8px;">
                                 <div>
                                     <strong>Som de Notificação</strong>
                                     <p style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Tocar som ao receber novo agendamento</p>
                                 </div>
                                 <label class="pro-toggle">
-                                    <input type="checkbox" checked>
+                                    <input type="checkbox" id="toggleSom" checked>
                                     <span class="pro-toggle-slider"></span>
                                 </label>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="pro-card" style="margin-top:24px;">
-                    <div class="pro-card-header">
-                        <h3 class="pro-card-title">Gerenciamento de Dados</h3>
-                    </div>
-                    <div class="pro-card-body">
-                        <div style="display:flex;gap:12px;">
-                            <button class="pro-btn pro-btn-primary" onclick="popularDados()">
-                                <i class="fas fa-database"></i> Popular com Dados de Exemplo
-                            </button>
-                            <button class="pro-btn pro-btn-secondary" onclick="exportarDados()">
-                                <i class="fas fa-download"></i> Exportar Dados
-                            </button>
-                            <button class="pro-btn pro-btn-danger" onclick="limparDados()">
-                                <i class="fas fa-trash"></i> Limpar Todos os Dados
+                        <div style="margin-top:16px;">
+                            <button class="pro-btn pro-btn-primary" onclick="salvarPreferencias()">
+                                <i class="fas fa-save"></i> Salvar Preferências
                             </button>
                         </div>
                     </div>
                 </div>
+
             </div>
         </main>
     </div>
@@ -267,19 +325,13 @@
             display: inline-block;
             width: 48px;
             height: 24px;
+            flex-shrink: 0;
         }
-        .pro-toggle input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+        .pro-toggle input { opacity: 0; width: 0; height: 0; }
         .pro-toggle-slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background-color: var(--border-color);
             transition: 0.3s;
             border-radius: 24px;
@@ -295,69 +347,302 @@
             transition: 0.3s;
             border-radius: 50%;
         }
-        .pro-toggle input:checked + .pro-toggle-slider {
-            background-color: var(--success);
-        }
-        .pro-toggle input:checked + .pro-toggle-slider:before {
-            transform: translateX(24px);
-        }
+        .pro-toggle input:checked + .pro-toggle-slider { background-color: var(--success); }
+        .pro-toggle input:checked + .pro-toggle-slider:before { transform: translateX(24px); }
     </style>
 
     <script>
+        // ─── Estado ────────────────────────────────────────────────────
+        let perfilAtual = null;
+        const STORAGE_KEY_CONFIG = 'sispro_config';
+        const STORAGE_KEY_PREFS  = 'sispro_prefs';
+
+        // ─── Perfil na sidebar + controle de acesso ────────────────────
+        document.addEventListener('perfilCarregado', async (e) => {
+            perfilAtual = e.detail;
+            if (!perfilAtual) return;
+
+            const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = letra;
+            document.getElementById('userName').textContent = perfilAtual.nome || perfilAtual.email;
+            document.getElementById('userRole').textContent = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
+
+            // Preenche campos da conta
+            document.getElementById('perfilNome').value = perfilAtual.nome || '';
+            document.getElementById('perfilEmail').value = perfilAtual.email || '';
+
+            // Controle de acesso por role
+            if (perfilAtual.role !== 'dono') {
+                document.getElementById('secaoDono').style.display = 'none';
+                document.getElementById('avisoAcessoRestrito').style.display = 'block';
+            } else {
+                carregarConfigEstabelecimento();
+            }
+
+            carregarPreferencias();
+        });
+
+        // ─── Carregar config salva no localStorage ─────────────────────
+        function carregarConfigEstabelecimento() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_CONFIG) || '{}');
+                if (saved.nome)     document.getElementById('establishmentName').value  = saved.nome;
+                if (saved.telefone) document.getElementById('establishmentPhone').value = saved.telefone;
+                if (saved.email)    document.getElementById('establishmentEmail').value = saved.email;
+                if (saved.endereco) document.getElementById('establishmentAddress').value = saved.endereco;
+                if (saved.cidade)   document.getElementById('establishmentCity').value  = saved.cidade;
+                if (saved.estado)   document.getElementById('establishmentState').value = saved.estado;
+                if (saved.abertura) document.getElementById('openTime').value  = saved.abertura;
+                if (saved.fechamento) document.getElementById('closeTime').value = saved.fechamento;
+                if (saved.intervalo) document.getElementById('slotDuration').value = saved.intervalo;
+                if (saved.dias) {
+                    saved.dias.forEach(d => {
+                        const el = document.getElementById('dia' + d);
+                        if (el) el.checked = true;
+                    });
+                    // Desmarca os que não estão na lista
+                    [0,1,2,3,4,5,6].forEach(d => {
+                        const el = document.getElementById('dia' + d);
+                        if (el) el.checked = saved.dias.includes(d);
+                    });
+                }
+                // Atualiza nome no header
+                if (saved.nome) document.getElementById('tenantName').textContent = saved.nome;
+            } catch (e) {
+                console.warn('Erro ao carregar config:', e);
+            }
+        }
+
+        function carregarPreferencias() {
+            try {
+                const prefs = JSON.parse(localStorage.getItem(STORAGE_KEY_PREFS) || '{}');
+                if (prefs.email    !== undefined) document.getElementById('toggleEmail').checked       = prefs.email;
+                if (prefs.autoConfirm !== undefined) document.getElementById('toggleAutoConfirm').checked = prefs.autoConfirm;
+                if (prefs.som      !== undefined) document.getElementById('toggleSom').checked         = prefs.som;
+            } catch (e) {}
+        }
+
+        // ─── Salvar dados do estabelecimento ──────────────────────────
         function saveEstablishment(e) {
             e.preventDefault();
-            alert('✅ Dados do estabelecimento salvos!');
+            const btn = document.getElementById('btnSalvarEstabelecimento');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+
+            const config = {
+                nome:       document.getElementById('establishmentName').value.trim(),
+                telefone:   document.getElementById('establishmentPhone').value.trim(),
+                email:      document.getElementById('establishmentEmail').value.trim(),
+                endereco:   document.getElementById('establishmentAddress').value.trim(),
+                cidade:     document.getElementById('establishmentCity').value.trim(),
+                estado:     document.getElementById('establishmentState').value.trim().toUpperCase(),
+            };
+
+            // Mescla com config existente (preserva horários)
+            const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_CONFIG) || '{}');
+            localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify({ ...existing, ...config }));
+
+            // Atualiza nome no header e sidebar
+            if (config.nome) {
+                document.getElementById('tenantName').textContent = config.nome;
+            }
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Salvar Dados';
+                mostrarToast('✅ Dados do estabelecimento salvos!', 'success');
+            }, 500);
         }
 
+        // ─── Salvar horário ────────────────────────────────────────────
         function saveSchedule(e) {
             e.preventDefault();
-            alert('✅ Horário de funcionamento salvo!');
+
+            const diasSelecionados = [0,1,2,3,4,5,6].filter(d => {
+                const el = document.getElementById('dia' + d);
+                return el && el.checked;
+            });
+
+            if (diasSelecionados.length === 0) {
+                mostrarToast('⚠️ Selecione pelo menos um dia de funcionamento.', 'warning');
+                return;
+            }
+
+            const abertura   = document.getElementById('openTime').value;
+            const fechamento = document.getElementById('closeTime').value;
+
+            if (abertura >= fechamento) {
+                mostrarToast('⚠️ O horário de abertura deve ser anterior ao fechamento.', 'warning');
+                return;
+            }
+
+            const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_CONFIG) || '{}');
+            localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify({
+                ...existing,
+                abertura,
+                fechamento,
+                intervalo: document.getElementById('slotDuration').value,
+                dias: diasSelecionados
+            }));
+
+            mostrarToast('✅ Horário de funcionamento salvo!', 'success');
         }
 
-        async function popularDados() {
-            if (confirm('Isso criará clientes, serviços, profissionais e agendamentos de exemplo. Deseja continuar?')) {
-                try {
-                    await DB.popularDadosExemplo();
-                    alert('✅ Dados de exemplo criados com sucesso!');
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1500);
-                } catch (error) {
-                    console.error('Erro ao popular dados:', error);
-                    alert('❌ Erro ao criar dados de exemplo');
-                }
+        // ─── Salvar perfil pessoal ─────────────────────────────────────
+        async function salvarPerfil(e) {
+            e.preventDefault();
+            const nome = document.getElementById('perfilNome').value.trim();
+            if (!nome) {
+                mostrarToast('⚠️ Informe seu nome.', 'warning');
+                return;
+            }
+
+            try {
+                const supabase = window.getSupabase();
+                const { error } = await supabase
+                    .from('perfis')
+                    .update({ nome })
+                    .eq('user_id', perfilAtual.user_id);
+
+                if (error) throw error;
+
+                // Atualiza sidebar
+                document.getElementById('userName').textContent = nome;
+                document.getElementById('userAvatar').textContent = nome[0].toUpperCase();
+                mostrarToast('✅ Perfil atualizado!', 'success');
+            } catch (err) {
+                console.error('Erro ao salvar perfil:', err);
+                mostrarToast('❌ Erro ao salvar perfil.', 'error');
             }
         }
 
-        function exportarDados() {
-            alert('Funcionalidade de exportação em desenvolvimento');
+        // ─── Alterar senha ─────────────────────────────────────────────
+        async function alterarSenha() {
+            const nova     = document.getElementById('novaSenha').value;
+            const confirma = document.getElementById('confirmarSenha').value;
+
+            if (!nova || nova.length < 6) {
+                mostrarToast('⚠️ A senha deve ter pelo menos 6 caracteres.', 'warning');
+                return;
+            }
+            if (nova !== confirma) {
+                mostrarToast('⚠️ As senhas não coincidem.', 'warning');
+                return;
+            }
+
+            try {
+                const supabase = window.getSupabase();
+                const { error } = await supabase.auth.updateUser({ password: nova });
+                if (error) throw error;
+
+                document.getElementById('novaSenha').value = '';
+                document.getElementById('confirmarSenha').value = '';
+                mostrarToast('✅ Senha alterada com sucesso!', 'success');
+            } catch (err) {
+                console.error('Erro ao alterar senha:', err);
+                mostrarToast('❌ Erro ao alterar senha: ' + (err.message || ''), 'error');
+            }
         }
 
+        // ─── Salvar preferências ───────────────────────────────────────
+        function salvarPreferencias() {
+            const prefs = {
+                email:       document.getElementById('toggleEmail').checked,
+                autoConfirm: document.getElementById('toggleAutoConfirm').checked,
+                som:         document.getElementById('toggleSom').checked,
+            };
+            localStorage.setItem(STORAGE_KEY_PREFS, JSON.stringify(prefs));
+            mostrarToast('✅ Preferências salvas!', 'success');
+        }
+
+        // ─── Exportar dados ────────────────────────────────────────────
+        async function exportarDados() {
+            try {
+                mostrarToast('⏳ Preparando exportação...', 'info');
+                const [clientes, servicos, profissionais, agendamentos] = await Promise.all([
+                    DB.clientes.listar(),
+                    DB.servicos.listar(),
+                    DB.profissionais.listar(),
+                    DB.agendamentos.listar()
+                ]);
+
+                const dados = {
+                    exportadoEm: new Date().toISOString(),
+                    clientes,
+                    servicos,
+                    profissionais,
+                    agendamentos
+                };
+
+                const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+                const url  = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href     = url;
+                link.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+                mostrarToast('✅ Dados exportados com sucesso!', 'success');
+            } catch (err) {
+                console.error('Erro ao exportar:', err);
+                mostrarToast('❌ Erro ao exportar dados.', 'error');
+            }
+        }
+
+        // ─── Limpar dados ──────────────────────────────────────────────
         async function limparDados() {
-            if (confirm('ATENÇÃO: Esta ação não pode ser desfeita! Todos os dados serão permanentemente excluídos. Deseja continuar?')) {
-                try {
-                    // Limpar todos os dados do tenant atual
-                    const clientes = await DB.clientes.listar();
-                    const servicos = await DB.servicos.listar();
-                    const profissionais = await DB.profissionais.listar();
-                    const agendamentos = await DB.agendamentos.listar();
-                    
-                    for (const item of clientes) await DB.clientes.excluir(item.id);
-                    for (const item of servicos) await DB.servicos.excluir(item.id);
-                    for (const item of profissionais) await DB.profissionais.excluir(item.id);
-                    for (const item of agendamentos) await DB.agendamentos.excluir(item.id);
-                    
-                    alert('✅ Todos os dados foram removidos!');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } catch (error) {
-                    console.error('Erro ao limpar dados:', error);
-                    alert('❌ Erro ao limpar dados');
-                }
+            const confirmacao = prompt(
+                'ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nTodos os clientes, serviços, profissionais e agendamentos serão excluídos.\n\nDigite CONFIRMAR para prosseguir:'
+            );
+            if (confirmacao !== 'CONFIRMAR') {
+                if (confirmacao !== null) mostrarToast('⚠️ Operação cancelada. Texto incorreto.', 'warning');
+                return;
+            }
+
+            try {
+                mostrarToast('⏳ Removendo dados...', 'info');
+                const [clientes, servicos, profissionais, agendamentos] = await Promise.all([
+                    DB.clientes.listar(),
+                    DB.servicos.listar(),
+                    DB.profissionais.listar(),
+                    DB.agendamentos.listar()
+                ]);
+
+                for (const item of agendamentos)   await DB.agendamentos.excluir(item.id);
+                for (const item of clientes)        await DB.clientes.excluir(item.id);
+                for (const item of profissionais)   await DB.profissionais.excluir(item.id);
+                for (const item of servicos)        await DB.servicos.excluir(item.id);
+
+                mostrarToast('✅ Todos os dados foram removidos!', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 2000);
+            } catch (err) {
+                console.error('Erro ao limpar dados:', err);
+                mostrarToast('❌ Erro ao limpar dados: ' + (err.message || ''), 'error');
             }
         }
 
+        // ─── Toast de feedback ─────────────────────────────────────────
+        function mostrarToast(msg, tipo = 'success') {
+            const cores = {
+                success: '#10B981',
+                error:   '#EF4444',
+                warning: '#F59E0B',
+                info:    '#6366F1'
+            };
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style.cssText = `
+                position:fixed;bottom:24px;right:24px;z-index:9999;
+                padding:14px 20px;border-radius:10px;
+                background:${cores[tipo] || cores.success};
+                color:#fff;font-weight:500;font-size:14px;
+                box-shadow:0 4px 16px rgba(0,0,0,0.15);
+                animation:slideIn 0.3s ease;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
