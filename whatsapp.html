@@ -9,16 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
-    
-    <!-- Supabase Client CDN -->
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Scripts do Sistema -->
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
 </head>
@@ -38,18 +35,18 @@
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
-                    <a href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
+                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
-                    <a href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
+                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
-                    <a href="whatsapp.html" class="pro-nav-item active"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item active"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <a href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
@@ -57,10 +54,10 @@
             </nav>
             <div class="pro-sidebar-footer">
                 <div class="pro-user-profile">
-                    <div class="pro-user-avatar">A</div>
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
-                        <div class="pro-user-name">Admin</div>
-                        <div class="pro-user-role">Proprietário</div>
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
                     </div>
                     <button class="pro-user-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -74,9 +71,9 @@
                     <input type="text" class="pro-search-input" placeholder="Buscar...">
                 </div>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn"><i class="fas fa-bell"></i><span class="badge">3</span></button>
+                    <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
                     <div class="pro-header-divider"></div>
-                    <span class="pro-tenant-name">Meu Estabelecimento</span>
+                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
                 </div>
             </header>
 
@@ -85,123 +82,217 @@
                     <div class="pro-page-header-top">
                         <div>
                             <h1 class="pro-page-title">WhatsApp Automação</h1>
-                            <p class="pro-page-subtitle">Configure mensagens automáticas</p>
+                            <p class="pro-page-subtitle">Configure mensagens automáticas para seus clientes</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="pro-card">
-                    <div class="pro-card-body" style="text-align:center;padding:48px;">
-                        <div style="width:120px;height:120px;margin:0 auto 24px;background:var(--success-light);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-                            <i class="fab fa-whatsapp" style="font-size:64px;color:var(--success);"></i>
+                <!-- Aviso: recurso somente para donos -->
+                <div id="avisoAcessoRestrito" style="display:none;margin-bottom:24px;">
+                    <div style="padding:16px;background:var(--warning-light,#FEF3C7);border:1px solid var(--warning);border-radius:8px;display:flex;align-items:center;gap:12px;">
+                        <i class="fas fa-lock" style="color:var(--warning);font-size:20px;"></i>
+                        <div>
+                            <strong>Acesso restrito</strong>
+                            <p style="font-size:13px;margin-top:2px;color:var(--text-secondary);">
+                                Apenas o proprietário pode configurar a automação de WhatsApp.
+                            </p>
                         </div>
-                        
-                        <h2 style="margin-bottom:8px;font-size:24px;">WhatsApp Business</h2>
-                        <p style="color:var(--text-secondary);margin-bottom:32px;">Conecte sua conta do WhatsApp para automação</p>
-                        
-                        <div id="connectionStatus" style="margin-bottom:24px;">
-                            <span class="pro-badge pro-badge-error" style="font-size:14px;padding:8px 16px;">
-                                <i class="fas fa-times-circle"></i> Desconectado
-                            </span>
-                        </div>
-
-                        <button class="pro-btn pro-btn-success pro-btn-lg" onclick="conectarWhatsApp()">
-                            <i class="fab fa-whatsapp"></i> Conectar WhatsApp
-                        </button>
                     </div>
                 </div>
 
-                <div class="pro-grid-2" style="margin-top:24px;">
+                <!-- Conteúdo principal (somente dono) -->
+                <div id="secaoDono">
+
+                    <!-- Card de status de conexão -->
                     <div class="pro-card">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Mensagens Automáticas</h3>
+                        <div class="pro-card-body" style="text-align:center;padding:48px 24px;">
+                            <div style="width:100px;height:100px;margin:0 auto 24px;background:#D1FAE5;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                <i class="fab fa-whatsapp" style="font-size:56px;color:#10B981;"></i>
+                            </div>
+
+                            <h2 style="margin-bottom:8px;font-size:22px;">WhatsApp Business</h2>
+                            <p style="color:var(--text-secondary);margin-bottom:24px;">
+                                Conecte sua conta para enviar mensagens automáticas aos clientes
+                            </p>
+
+                            <div id="connectionStatus" style="margin-bottom:24px;">
+                                <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:20px;font-size:14px;font-weight:500;background:#FEE2E2;color:#EF4444;">
+                                    <i class="fas fa-times-circle"></i> Desconectado
+                                </span>
+                            </div>
+
+                            <!-- Aviso de funcionalidade futura -->
+                            <div style="max-width:480px;margin:0 auto 24px;padding:16px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;text-align:left;">
+                                <div style="display:flex;gap:10px;align-items:flex-start;">
+                                    <i class="fas fa-info-circle" style="color:#3B82F6;margin-top:2px;flex-shrink:0;"></i>
+                                    <div>
+                                        <strong style="font-size:14px;color:#1E40AF;">Integração em desenvolvimento</strong>
+                                        <p style="font-size:13px;color:#3B82F6;margin-top:4px;">
+                                            A conexão direta com WhatsApp Business API estará disponível em breve.
+                                            Por enquanto, você pode configurar os templates e ativar as automações
+                                            para quando a integração for liberada.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="pro-btn pro-btn-primary pro-btn-lg" onclick="conectarWhatsApp()" style="background:#25D366;border-color:#25D366;">
+                                <i class="fab fa-whatsapp"></i> Conectar WhatsApp
+                            </button>
                         </div>
-                        <div class="pro-card-body">
-                            <div style="display:flex;flex-direction:column;gap:16px;">
-                                <div style="padding:16px;border:1px solid var(--border-color);border-radius:8px;">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                        <strong>Confirmação de Agendamento</strong>
+                    </div>
+
+                    <div class="pro-grid-2" style="margin-top:24px;">
+
+                        <!-- Mensagens Automáticas -->
+                        <div class="pro-card">
+                            <div class="pro-card-header">
+                                <h3 class="pro-card-title">Mensagens Automáticas</h3>
+                            </div>
+                            <div class="pro-card-body">
+                                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+                                    Ative as mensagens que serão enviadas automaticamente.
+                                </p>
+                                <div style="display:flex;flex-direction:column;gap:12px;">
+
+                                    <div style="padding:14px 16px;border:1px solid var(--border-color);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                                        <div>
+                                            <strong style="font-size:14px;">Confirmação de Agendamento</strong>
+                                            <p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Enviada logo após criar o agendamento</p>
+                                        </div>
                                         <label class="pro-toggle">
                                             <input type="checkbox" id="autoConfirm">
                                             <span class="pro-toggle-slider"></span>
                                         </label>
                                     </div>
-                                    <p style="font-size:12px;color:var(--text-secondary);">Enviada após criar agendamento</p>
-                                </div>
 
-                                <div style="padding:16px;border:1px solid var(--border-color);border-radius:8px;">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                        <strong>Lembrete (1 dia antes)</strong>
+                                    <div style="padding:14px 16px;border:1px solid var(--border-color);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                                        <div>
+                                            <strong style="font-size:14px;">Lembrete (1 dia antes)</strong>
+                                            <p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Enviada 1 dia antes do agendamento</p>
+                                        </div>
                                         <label class="pro-toggle">
                                             <input type="checkbox" id="autoReminder">
                                             <span class="pro-toggle-slider"></span>
                                         </label>
                                     </div>
-                                    <p style="font-size:12px;color:var(--text-secondary);">Enviada 1 dia antes do agendamento</p>
-                                </div>
 
-                                <div style="padding:16px;border:1px solid var(--border-color);border-radius:8px;">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                        <strong>Agradecimento</strong>
+                                    <div style="padding:14px 16px;border:1px solid var(--border-color);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                                        <div>
+                                            <strong style="font-size:14px;">Agradecimento pós-atendimento</strong>
+                                            <p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Enviada 1 dia após o atendimento</p>
+                                        </div>
                                         <label class="pro-toggle">
                                             <input type="checkbox" id="autoThanks">
                                             <span class="pro-toggle-slider"></span>
                                         </label>
                                     </div>
-                                    <p style="font-size:12px;color:var(--text-secondary);">Enviada 1 dia após atendimento</p>
-                                </div>
 
-                                <div style="padding:16px;border:1px solid var(--border-color);border-radius:8px;">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                        <strong>Reagendamento (15 dias)</strong>
+                                    <div style="padding:14px 16px;border:1px solid var(--border-color);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                                        <div>
+                                            <strong style="font-size:14px;">Convite para reagendar (15 dias)</strong>
+                                            <p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Enviada 15 dias após o último atendimento</p>
+                                        </div>
                                         <label class="pro-toggle">
                                             <input type="checkbox" id="autoReschedule">
                                             <span class="pro-toggle-slider"></span>
                                         </label>
                                     </div>
-                                    <p style="font-size:12px;color:var(--text-secondary);">Enviada 15 dias após último atendimento</p>
-                                </div>
 
-                                <div style="padding:16px;border:1px solid var(--border-color);border-radius:8px;">
-                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                        <strong>Retorno (45 dias)</strong>
+                                    <div style="padding:14px 16px;border:1px solid var(--border-color);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                                        <div>
+                                            <strong style="font-size:14px;">Mensagem de retorno (45 dias)</strong>
+                                            <p style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Enviada 45 dias após o último atendimento</p>
+                                        </div>
                                         <label class="pro-toggle">
                                             <input type="checkbox" id="autoReturn">
                                             <span class="pro-toggle-slider"></span>
                                         </label>
                                     </div>
-                                    <p style="font-size:12px;color:var(--text-secondary);">Enviada 45 dias após último atendimento</p>
+
+                                </div>
+
+                                <div style="margin-top:16px;">
+                                    <button class="pro-btn pro-btn-primary" onclick="salvarAutomacoes()">
+                                        <i class="fas fa-save"></i> Salvar Automações
+                                    </button>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Templates de Mensagens -->
+                        <div class="pro-card">
+                            <div class="pro-card-header">
+                                <h3 class="pro-card-title">Templates de Mensagens</h3>
+                            </div>
+                            <div class="pro-card-body">
+                                <div style="padding:10px 14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;margin-bottom:16px;font-size:12px;color:#166534;">
+                                    <i class="fas fa-tag"></i>
+                                    Use <strong>{cliente}</strong>, <strong>{data}</strong>, <strong>{hora}</strong> e <strong>{servico}</strong> como variáveis dinâmicas.
+                                </div>
+
+                                <div class="pro-form-group">
+                                    <label class="pro-label">✅ Confirmação de Agendamento</label>
+                                    <textarea class="pro-textarea" id="tplConfirmacao" rows="3">Olá {cliente}! Seu agendamento está confirmado para {data} às {hora}. Serviço: {servico}. Até lá! 😊</textarea>
+                                </div>
+
+                                <div class="pro-form-group">
+                                    <label class="pro-label">🔔 Lembrete (1 dia antes)</label>
+                                    <textarea class="pro-textarea" id="tplLembrete" rows="3">Olá {cliente}! Lembrete: amanhã você tem agendamento às {hora} para {servico}. Até amanhã! 👋</textarea>
+                                </div>
+
+                                <div class="pro-form-group">
+                                    <label class="pro-label">🙏 Agradecimento</label>
+                                    <textarea class="pro-textarea" id="tplAgradecimento" rows="3">Obrigado pela visita, {cliente}! Foi um prazer atendê-lo(a). Esperamos vê-lo(a) em breve! ⭐</textarea>
+                                </div>
+
+                                <div class="pro-form-group">
+                                    <label class="pro-label">📅 Convite para Reagendar</label>
+                                    <textarea class="pro-textarea" id="tplReagendar" rows="3">Olá {cliente}! Já faz um tempo desde sua última visita. Que tal agendar um horário? Estamos te esperando! 💇</textarea>
+                                </div>
+
+                                <button class="pro-btn pro-btn-primary" onclick="salvarTemplates()">
+                                    <i class="fas fa-save"></i> Salvar Templates
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="pro-card">
+                    <!-- Teste de envio manual -->
+                    <div class="pro-card" style="margin-top:24px;">
                         <div class="pro-card-header">
-                            <h3 class="pro-card-title">Templates de Mensagens</h3>
+                            <h3 class="pro-card-title">Envio Manual de Mensagem</h3>
                         </div>
                         <div class="pro-card-body">
-                            <div class="pro-form-group">
-                                <label class="pro-label">Mensagem de Confirmação</label>
-                                <textarea class="pro-textarea" rows="4" placeholder="Olá {cliente}! Seu agendamento está confirmado para {data} às {hora}.">Olá {cliente}! Seu agendamento está confirmado para {data} às {hora}.</textarea>
+                            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+                                Envie uma mensagem personalizada para um cliente específico.
+                            </p>
+                            <div class="pro-form-row">
+                                <div class="pro-form-group">
+                                    <label class="pro-label">Número do WhatsApp</label>
+                                    <input type="tel" class="pro-input" id="numeroManual" placeholder="(11) 98765-4321">
+                                </div>
+                                <div class="pro-form-group">
+                                    <label class="pro-label">Template</label>
+                                    <select class="pro-select" id="templateManual">
+                                        <option value="confirmacao">Confirmação de Agendamento</option>
+                                        <option value="lembrete">Lembrete</option>
+                                        <option value="agradecimento">Agradecimento</option>
+                                        <option value="reagendar">Convite para Reagendar</option>
+                                    </select>
+                                </div>
                             </div>
-
                             <div class="pro-form-group">
-                                <label class="pro-label">Mensagem de Lembrete</label>
-                                <textarea class="pro-textarea" rows="4" placeholder="Olá {cliente}! Lembre-se: amanhã você tem agendamento às {hora}.">Olá {cliente}! Lembre-se: amanhã você tem agendamento às {hora}.</textarea>
+                                <label class="pro-label">Mensagem (editável)</label>
+                                <textarea class="pro-textarea" id="mensagemManual" rows="3" placeholder="Digite ou selecione um template acima..."></textarea>
                             </div>
-
-                            <div class="pro-form-group">
-                                <label class="pro-label">Mensagem de Agradecimento</label>
-                                <textarea class="pro-textarea" rows="4" placeholder="Obrigado por sua visita, {cliente}! Foi um prazer atendê-lo(a).">Obrigado por sua visita, {cliente}! Foi um prazer atendê-lo(a).</textarea>
-                            </div>
-
-                            <button class="pro-btn pro-btn-primary" onclick="salvarTemplates()">
-                                <i class="fas fa-save"></i> Salvar Templates
+                            <button class="pro-btn pro-btn-primary" onclick="enviarMensagemManual()" style="background:#25D366;border-color:#25D366;">
+                                <i class="fab fa-whatsapp"></i> Enviar Mensagem
                             </button>
                         </div>
                     </div>
-                </div>
+
+                </div><!-- fim secaoDono -->
             </div>
         </main>
     </div>
@@ -212,19 +303,13 @@
             display: inline-block;
             width: 48px;
             height: 24px;
+            flex-shrink: 0;
         }
-        .pro-toggle input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+        .pro-toggle input { opacity: 0; width: 0; height: 0; }
         .pro-toggle-slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background-color: var(--border-color);
             transition: 0.3s;
             border-radius: 24px;
@@ -240,23 +325,147 @@
             transition: 0.3s;
             border-radius: 50%;
         }
-        .pro-toggle input:checked + .pro-toggle-slider {
-            background-color: var(--success);
-        }
-        .pro-toggle input:checked + .pro-toggle-slider:before {
-            transform: translateX(24px);
-        }
+        .pro-toggle input:checked + .pro-toggle-slider { background-color: #25D366; }
+        .pro-toggle input:checked + .pro-toggle-slider:before { transform: translateX(24px); }
     </style>
 
     <script>
-        function conectarWhatsApp() {
-            alert('Integração WhatsApp será habilitada em breve. Aguarde atualizações!');
+        const STORAGE_KEY_WA = 'sispro_whatsapp';
+
+        // ─── Perfil na sidebar + controle de acesso ────────────────────
+        document.addEventListener('perfilCarregado', (e) => {
+            const perfil = e.detail;
+            if (!perfil) return;
+
+            const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = letra;
+            document.getElementById('userName').textContent   = perfil.nome || perfil.email;
+            document.getElementById('userRole').textContent   = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+
+            // Somente dono acessa esta página
+            if (perfil.role !== 'dono') {
+                document.getElementById('secaoDono').style.display = 'none';
+                document.getElementById('avisoAcessoRestrito').style.display = 'block';
+            } else {
+                carregarConfiguracoes();
+            }
+
+            // Nome do estabelecimento no header
+            try {
+                const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
+                if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
+            } catch (_) {}
+        });
+
+        // ─── Carregar configurações salvas ─────────────────────────────
+        function carregarConfiguracoes() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || '{}');
+
+                // Automações
+                if (saved.autoConfirm   !== undefined) document.getElementById('autoConfirm').checked   = saved.autoConfirm;
+                if (saved.autoReminder  !== undefined) document.getElementById('autoReminder').checked  = saved.autoReminder;
+                if (saved.autoThanks    !== undefined) document.getElementById('autoThanks').checked    = saved.autoThanks;
+                if (saved.autoReschedule !== undefined) document.getElementById('autoReschedule').checked = saved.autoReschedule;
+                if (saved.autoReturn    !== undefined) document.getElementById('autoReturn').checked    = saved.autoReturn;
+
+                // Templates
+                if (saved.tplConfirmacao)  document.getElementById('tplConfirmacao').value  = saved.tplConfirmacao;
+                if (saved.tplLembrete)     document.getElementById('tplLembrete').value     = saved.tplLembrete;
+                if (saved.tplAgradecimento) document.getElementById('tplAgradecimento').value = saved.tplAgradecimento;
+                if (saved.tplReagendar)    document.getElementById('tplReagendar').value    = saved.tplReagendar;
+            } catch (e) {
+                console.warn('Erro ao carregar config WhatsApp:', e);
+            }
         }
 
+        // ─── Salvar automações ─────────────────────────────────────────
+        function salvarAutomacoes() {
+            const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || '{}');
+            localStorage.setItem(STORAGE_KEY_WA, JSON.stringify({
+                ...existing,
+                autoConfirm:    document.getElementById('autoConfirm').checked,
+                autoReminder:   document.getElementById('autoReminder').checked,
+                autoThanks:     document.getElementById('autoThanks').checked,
+                autoReschedule: document.getElementById('autoReschedule').checked,
+                autoReturn:     document.getElementById('autoReturn').checked,
+            }));
+            mostrarToast('✅ Automações salvas!', 'success');
+        }
+
+        // ─── Salvar templates ──────────────────────────────────────────
         function salvarTemplates() {
-            alert('✅ Templates salvos com sucesso!');
+            const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || '{}');
+            localStorage.setItem(STORAGE_KEY_WA, JSON.stringify({
+                ...existing,
+                tplConfirmacao:   document.getElementById('tplConfirmacao').value.trim(),
+                tplLembrete:      document.getElementById('tplLembrete').value.trim(),
+                tplAgradecimento: document.getElementById('tplAgradecimento').value.trim(),
+                tplReagendar:     document.getElementById('tplReagendar').value.trim(),
+            }));
+            mostrarToast('✅ Templates salvos!', 'success');
         }
 
+        // ─── Preencher mensagem manual ao trocar template ──────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            const sel = document.getElementById('templateManual');
+            if (sel) {
+                sel.addEventListener('change', () => {
+                    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || '{}');
+                    const map = {
+                        confirmacao:   saved.tplConfirmacao   || document.getElementById('tplConfirmacao')?.value   || '',
+                        lembrete:      saved.tplLembrete      || document.getElementById('tplLembrete')?.value      || '',
+                        agradecimento: saved.tplAgradecimento || document.getElementById('tplAgradecimento')?.value || '',
+                        reagendar:     saved.tplReagendar     || document.getElementById('tplReagendar')?.value     || '',
+                    };
+                    document.getElementById('mensagemManual').value = map[sel.value] || '';
+                });
+            }
+        });
+
+        // ─── Conectar WhatsApp (placeholder) ──────────────────────────
+        function conectarWhatsApp() {
+            mostrarToast('⏳ Integração WhatsApp Business em breve. Fique ligado nas atualizações!', 'info');
+        }
+
+        // ─── Envio manual (placeholder) ───────────────────────────────
+        function enviarMensagemManual() {
+            const numero   = document.getElementById('numeroManual').value.trim();
+            const mensagem = document.getElementById('mensagemManual').value.trim();
+
+            if (!numero) {
+                mostrarToast('⚠️ Informe o número do WhatsApp.', 'warning');
+                return;
+            }
+            if (!mensagem) {
+                mostrarToast('⚠️ Escreva uma mensagem antes de enviar.', 'warning');
+                return;
+            }
+
+            // Abre WhatsApp Web como fallback até a API estar disponível
+            const numeroLimpo = numero.replace(/\D/g, '');
+            const url = `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, '_blank');
+            mostrarToast('✅ WhatsApp Web aberto! Confirme o envio no app.', 'success');
+        }
+
+        // ─── Toast ─────────────────────────────────────────────────────
+        function mostrarToast(msg, tipo = 'success') {
+            const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style.cssText = `
+                position:fixed;bottom:24px;right:24px;z-index:9999;
+                padding:14px 20px;border-radius:10px;
+                background:${cores[tipo]||cores.success};
+                color:#fff;font-weight:500;font-size:14px;
+                box-shadow:0 4px 16px rgba(0,0,0,0.15);
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
