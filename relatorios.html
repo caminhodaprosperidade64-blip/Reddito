@@ -127,8 +127,7 @@
                     </div>
                 </div>
 
-                <!-- Gráficos linha 1 -->
-                <!-- Visível apenas para dono -->
+                <!-- Gráficos linha 1: visível apenas para dono -->
                 <div class="pro-grid-2" id="secaoProfissionaisServicos">
                     <div class="pro-card">
                         <div class="pro-card-header">
@@ -143,7 +142,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="pro-card">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Serviços Mais Realizados</h3>
@@ -230,6 +228,7 @@
         let todosProfissionais = [];
         let todosClientes      = [];
         let perfilAtual        = null;
+        let profissionalIdAtual = null; // ✅ ID na tabela profissionais (não o user_id do perfil)
 
         const charts = {};
 
@@ -248,7 +247,7 @@
         }
 
         // ─── Perfil na sidebar + controle de acesso ────────────────────
-        document.addEventListener('perfilCarregado', (e) => {
+        window.addEventListener('perfilCarregado', async (e) => { // ✅ window, não document
             perfilAtual = e.detail;
             if (!perfilAtual) return;
 
@@ -257,14 +256,20 @@
             document.getElementById('userName').textContent   = perfilAtual.nome || perfilAtual.email;
             document.getElementById('userRole').textContent   = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
 
-            // Nome do estabelecimento
             try {
                 const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
                 if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
             } catch (_) {}
 
-            // Profissional: oculta seções exclusivas do dono
             if (perfilAtual.role !== 'dono') {
+                // ✅ Busca o ID correto na tabela profissionais pelo user_id do perfil
+                try {
+                    const todos = await DB.profissionais.listar();
+                    const meu   = (todos || []).find(p => p.user_id === perfilAtual.id);
+                    profissionalIdAtual = meu ? meu.id : null;
+                } catch (_) {}
+
+                // Oculta seções exclusivas do dono
                 document.getElementById('secaoProfissionaisServicos').style.display = 'none';
                 document.getElementById('cardTopClientes').style.display            = 'none';
             }
@@ -296,11 +301,11 @@
                 todosProfissionais = profissionais || [];
                 todosClientes      = clientes      || [];
 
-                // Para profissional: filtra apenas seus agendamentos
+                // ✅ Para profissional: filtra usando profissionalIdAtual (ID correto da tabela)
                 let baseAgendamentos = [...todosAgendamentos];
-                if (perfilAtual?.role !== 'dono' && perfilAtual?.profissional_id) {
+                if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
                     baseAgendamentos = baseAgendamentos.filter(
-                        a => a.profissional_id === perfilAtual.profissional_id
+                        a => a.profissional_id === profissionalIdAtual
                     );
                 }
 
@@ -312,7 +317,6 @@
                 renderChartMensal(concluidos, meses);
                 renderChartDiaSemana(baseAgendamentos);
 
-                // Gráficos e tabelas exclusivos do dono
                 if (perfilAtual?.role === 'dono') {
                     renderChartProfissionais(concluidos);
                     renderChartServicos(todosAgendamentos);
@@ -326,8 +330,8 @@
 
         // ─── Métricas rápidas ──────────────────────────────────────────
         function renderMetricas(concluidos, todos) {
-            const receita       = concluidos.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-            const ticket        = concluidos.length > 0 ? receita / concluidos.length : 0;
+            const receita        = concluidos.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+            const ticket         = concluidos.length > 0 ? receita / concluidos.length : 0;
             const clientesUnicos = new Set(concluidos.map(a => a.cliente_id).filter(Boolean)).size;
 
             document.getElementById('metricTotalApts').textContent = todos.length;
@@ -432,10 +436,10 @@
             hideLoading('loadingMensal');
             destroyChart('mensal');
 
-            const agora = new Date();
+            const agora      = new Date();
             const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-            const labels = [];
-            const data   = [];
+            const labels     = [];
+            const data       = [];
 
             for (let i = meses - 1; i >= 0; i--) {
                 const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
