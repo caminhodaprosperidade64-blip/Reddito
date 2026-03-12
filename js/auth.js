@@ -27,7 +27,6 @@ const Auth = {
     }
   },
 
-  // ✅ FIX 1: usa getSession() em vez de getUser() — lê do localStorage, sem rede
   async isAuthenticated() {
     try {
       const supabase = window.getSupabase();
@@ -43,7 +42,6 @@ const Auth = {
     try {
       if (window._perfilCache) return window._perfilCache;
 
-      // usa getSession para não depender de rede
       const supabase = window.getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
@@ -153,14 +151,13 @@ console.log('✅ [Auth] Módulo exportado');
 // PROTEÇÃO DE ROTAS
 // ============================================
 function configurarProtecaoRotas() {
-  // ✅ FIX 2: evita rodar mais de uma vez
   if (window.__protecaoRotasRodou) return;
   window.__protecaoRotasRodou = true;
 
   const paginasPublicas = [
     '/', '/index.html', '/login.html',
     '/aguardando-confirmacao.html', '/agendar.html',
-    '/teste-auth.html', '/onboarding-step1.html',
+    '/teste-auth.html',
     'index.html', 'login.html',
     'aguardando-confirmacao.html', 'agendar.html'
   ];
@@ -180,10 +177,9 @@ function configurarProtecaoRotas() {
 
     const perfil = await Auth.getPerfil();
 
-    // ✅ FIX 3: perfil ausente NÃO é logout — vai para onboarding
     if (!perfil) {
-      console.warn('⚠️ [Auth] Perfil não encontrado, indo para onboarding...');
-      window.location.href = 'onboarding-step1.html';
+      console.warn('⚠️ [Auth] Perfil não encontrado, continuando para dashboard...');
+      window.location.href = 'dashboard.html';
       return;
     }
 
