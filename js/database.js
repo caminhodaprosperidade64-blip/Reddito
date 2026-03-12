@@ -509,8 +509,9 @@ const DB = {
                 let faturamentoBruto = 0;
                 let totalComissoes = 0;
                 agendamentos.forEach(ag => {
-                    const valor = parseFloat(ag.valor);
-                    const comissao = (valor * parseFloat(ag.profissional.comissao_percentual)) / 100;
+                    const valor = parseFloat(ag.valor || 0);
+                    const comissaoPerc = parseFloat(ag.profissional?.comissao_percentual || 0);
+                    const comissao = (valor * comissaoPerc) / 100;
                     faturamentoBruto += valor;
                     totalComissoes += comissao;
                 });
@@ -558,10 +559,16 @@ const DB = {
                 agendamentos.forEach(ag => {
                     const id = ag.profissional_id;
                     if (!resultado[id]) {
-                        resultado[id] = { nome: ag.profissional.nome, faturamento: 0, comissao: 0, totalAgendamentos: 0 };
+                        resultado[id] = {
+                            nome: ag.profissional?.nome || 'Desconhecido',
+                            faturamento: 0,
+                            comissao: 0,
+                            totalAgendamentos: 0
+                        };
                     }
-                    const valor = parseFloat(ag.valor);
-                    const comissao = (valor  parseFloat(ag.profissional.comissao_percentual)) / 100;
+                    const valor = parseFloat(ag.valor || 0);
+                    const comissaoPerc = parseFloat(ag.profissional?.comissao_percentual || 0);
+                    const comissao = (valor * comissaoPerc) / 100;
                     resultado[id].faturamento += valor;
                     resultado[id].comissao += comissao;
                     resultado[id].totalAgendamentos += 1;
@@ -605,5 +612,8 @@ const DB = {
         }
     }
 };
+
+// ✅ Expõe DB globalmente para todos os HTMLs
+window.DB = DB;
 
 console.log('✅ Módulo DB carregado - Tabelas em português');
