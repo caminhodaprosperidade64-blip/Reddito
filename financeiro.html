@@ -11,13 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/auth-guard.js"></script>
-    <script src="js/database.js"></script>
-    <script src="js/pro-ui.js"></script>
 </head>
 <body>
     <div class="pro-app">
@@ -133,7 +126,6 @@
                                 <option value="semana">Esta Semana</option>
                                 <option value="mes" selected>Este Mês</option>
                             </select>
-                            <!-- Visível apenas para dono -->
                             <select class="pro-select" style="width:200px;" id="filterProfissional" onchange="filtrarLocalmente()">
                                 <option value="">Todos Profissionais</option>
                             </select>
@@ -141,7 +133,6 @@
                     </div>
                     <div class="pro-card-body">
                         <div class="pro-table-container">
-                            <!-- ✅ Duas versões da tabela: dono vê todas as colunas, profissional vê versão reduzida -->
                             <table class="pro-table" id="tabelaDono">
                                 <thead>
                                     <tr>
@@ -186,7 +177,6 @@
 
                 <!-- Resumo por profissional + Totalizadores -->
                 <div class="pro-grid-2" style="margin-top:24px;">
-                    <!-- Resumo por profissional: visível apenas para dono -->
                     <div class="pro-card" id="cardResumoProfissionais">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Resumo por Profissional</h3>
@@ -208,7 +198,6 @@
                                     <span style="font-weight:500;">Total Faturado</span>
                                     <span style="font-weight:700;color:var(--success);" id="totalFaturado">R$ 0</span>
                                 </div>
-                                <!-- Comissões: visível apenas para dono -->
                                 <div id="rowComissoes" style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-main);border-radius:8px;">
                                     <span style="font-weight:500;">Total Comissões</span>
                                     <span style="font-weight:700;color:var(--warning);" id="totalComissoes">R$ 0</span>
@@ -225,13 +214,29 @@
         </main>
     </div>
 
-    <script>
-        // ─── Estado ────────────────────────────────────────────────────
-        let todosAgendamentos = [];
-        let perfilAtual       = null;
-        let profissionalIdAtual = null; // ✅ ID na tabela profissionais (não o user_id)
+    <!-- Scripts no final do body -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/pro-ui.js"></script>
 
-        // ─── Helpers de formatação ─────────────────────────────────────
+    <script>
+        // ─── Estado ────
+        let todosAgendamentos  = [];
+        let perfilAtual        = null;
+        let profissionalIdAtual = null;
+
+        // ─── Helper: calcula comissão de um agendamento ────
+        // ✅ CORREÇÃO: usa profissional.comissao_percentual pois não existe comissao_valor na tabela
+        function calcularComissao(apt) {
+            const valor      = parseFloat(apt.valor || 0);
+            const percentual = parseFloat(apt.profissional?.comissao_percentual || 0);
+            return (valor * percentual) / 100;
+        }
+
+        // ─── Helpers de formatação ────
         function formatCurrency(val) {
             return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
@@ -242,8 +247,8 @@
             return d.toLocaleDateString('pt-BR');
         }
 
-        // ─── Perfil na sidebar + controle de acesso ────────────────────
-        window.addEventListener('perfilCarregado', async (e) => { // ✅ window, não document
+        // ─── Perfil na sidebar + controle de acesso ────
+        window.addEventListener('perfilCarregado', async (e) => {
             perfilAtual = e.detail;
             if (!perfilAtual) return;
 
@@ -258,27 +263,23 @@
             } catch (_) {}
 
             if (perfilAtual.role !== 'dono') {
-                // ✅ Busca o registro na tabela profissionais pelo user_id do perfil
                 try {
                     const todos = await DB.profissionais.listar();
                     const meu   = (todos || []).find(p => p.user_id === perfilAtual.id);
                     profissionalIdAtual = meu ? meu.id : null;
                 } catch (_) {}
 
-                // Oculta elementos exclusivos do dono
                 document.getElementById('filterProfissional').style.display     = 'none';
                 document.getElementById('cardResumoProfissionais').style.display = 'none';
                 document.getElementById('rowComissoes').style.display            = 'none';
-
-                // ✅ Mostra tabela reduzida (sem colunas de profissional e comissão)
-                document.getElementById('tabelaDono').style.display        = 'none';
-                document.getElementById('tabelaProfissional').style.display = '';
+                document.getElementById('tabelaDono').style.display              = 'none';
+                document.getElementById('tabelaProfissional').style.display      = '';
             }
 
             loadFinanceiro();
         });
 
-        // ─── Carregar dados principais ─────────────────────────────────
+        // ─── Carregar dados principais ────
         async function loadFinanceiro() {
             try {
                 const periodo = document.getElementById('filterPeriodo').value;
@@ -296,7 +297,7 @@
 
                 if (perfilAtual?.role === 'dono') {
                     preencherFiltrosProfissionais(profissionais);
-                    renderResumoProfissionais(profissionais); // ✅ chamado após todosAgendamentos ser preenchido
+                    renderResumoProfissionais(profissionais);
                 }
 
                 calcularMetricas();
@@ -313,7 +314,7 @@
             }
         }
 
-        // ─── Calcular período ──────────────────────────────────────────
+        // ─── Calcular período ────
         function calcularPeriodo(periodo) {
             const agora = new Date();
             let inicio = null, fim = null;
@@ -335,7 +336,7 @@
             return { inicio, fim };
         }
 
-        // ─── Preencher dropdown de profissionais ───────────────────────
+        // ─── Preencher dropdown de profissionais ────
         function preencherFiltrosProfissionais(profissionais) {
             const select = document.getElementById('filterProfissional');
             const valorAtual = select.value;
@@ -346,7 +347,7 @@
             if (valorAtual) select.value = valorAtual;
         }
 
-        // ─── Calcular métricas do período completo ─────────────────────
+        // ─── Calcular métricas do período completo ────
         function calcularMetricas() {
             const agora = new Date();
             const hoje  = agora.toISOString().split('T')[0];
@@ -357,14 +358,13 @@
 
             const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
 
-            // ✅ Para profissional, filtra pelo ID correto da tabela profissionais
             let base = [...todosAgendamentos];
             if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
                 base = base.filter(a => a.profissional_id === profissionalIdAtual);
             }
 
             const somarValor    = (lista) => lista.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-            const somarComissao = (lista) => lista.reduce((s, a) => s + parseFloat(a.comissao_valor || 0), 0);
+            const somarComissao = (lista) => lista.reduce((s, a) => s + calcularComissao(a), 0); // ✅ usa helper
 
             const deHoje   = base.filter(a => (a.data || '').startsWith(hoje));
             const daSemana = base.filter(a => new Date(a.data) >= inicioSemana);
@@ -379,14 +379,13 @@
             document.getElementById('lucroLiquido').textContent      = formatCurrency(totalMes - comissoesMes);
         }
 
-        // ─── Filtrar localmente ────────────────────────────────────────
+        // ─── Filtrar localmente ────
         function filtrarLocalmente() {
             const search     = (document.getElementById('searchInput').value || '').toLowerCase();
             const filterProf = document.getElementById('filterProfissional').value;
 
             let lista = [...todosAgendamentos];
 
-            // ✅ Profissional só vê seus próprios dados (usando ID correto)
             if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
                 lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
             }
@@ -397,22 +396,21 @@
 
             if (search) {
                 lista = lista.filter(a =>
-                    (a.cliente?.nome      || a.cliente_nome      || '').toLowerCase().includes(search) ||
-                    (a.servico?.nome      || a.servico_nome      || '').toLowerCase().includes(search) ||
-                    (a.profissional?.nome || a.profissional_nome || '').toLowerCase().includes(search)
+                    (a.cliente?.nome      || '').toLowerCase().includes(search) ||
+                    (a.servico?.nome      || '').toLowerCase().includes(search) ||
+                    (a.profissional?.nome || '').toLowerCase().includes(search)
                 );
             }
 
             renderTable(lista);
             renderTotalizadores(lista);
 
-            // ✅ Atualiza resumo por profissional com a lista filtrada
             if (perfilAtual?.role === 'dono') {
                 renderResumoProfissionaisFromLista(lista);
             }
         }
 
-        // ─── Renderizar tabela ─────────────────────────────────────────
+        // ─── Renderizar tabela ────
         function renderTable(lista) {
             const isDono = perfilAtual?.role === 'dono';
 
@@ -433,11 +431,11 @@
 
             const rowsDono = lista.map(apt => {
                 const valorServico = parseFloat(apt.valor || 0);
-                const comissao     = parseFloat(apt.comissao_valor || 0);
+                const comissao     = calcularComissao(apt); // ✅ usa helper
                 const valorLiquido = valorServico - comissao;
-                const clienteNome  = apt.cliente?.nome  || apt.cliente_nome  || '—';
-                const servicoNome  = apt.servico?.nome  || apt.servico_nome  || '—';
-                const profNome     = apt.profissional?.nome || apt.profissional_nome || '—';
+                const clienteNome  = apt.cliente?.nome      || '—';
+                const servicoNome  = apt.servico?.nome      || '—';
+                const profNome     = apt.profissional?.nome || '—';
                 const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
 
                 return `<tr>
@@ -452,13 +450,12 @@
                 </tr>`;
             }).join('');
 
-            // ✅ Tabela do profissional: sem colunas de profissional e comissão
             const rowsProf = lista.map(apt => {
                 const valorServico = parseFloat(apt.valor || 0);
-                const comissao     = parseFloat(apt.comissao_valor || 0);
+                const comissao     = calcularComissao(apt); // ✅ usa helper
                 const valorLiquido = valorServico - comissao;
-                const clienteNome  = apt.cliente?.nome || apt.cliente_nome || '—';
-                const servicoNome  = apt.servico?.nome || apt.servico_nome || '—';
+                const clienteNome  = apt.cliente?.nome || '—';
+                const servicoNome  = apt.servico?.nome || '—';
                 const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
 
                 return `<tr>
@@ -475,10 +472,10 @@
             document.getElementById('financeiroTableProf').innerHTML = !isDono ? rowsProf : emptyProf;
         }
 
-        // ─── Totalizadores ─────────────────────────────────────────────
+        // ─── Totalizadores ────
         function renderTotalizadores(lista) {
             const totalFaturado  = lista.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-            const totalComissoes = lista.reduce((s, a) => s + parseFloat(a.comissao_valor || 0), 0);
+            const totalComissoes = lista.reduce((s, a) => s + calcularComissao(a), 0); // ✅ usa helper
             const lucro          = totalFaturado - totalComissoes;
 
             document.getElementById('totalFaturado').textContent  = formatCurrency(totalFaturado);
@@ -486,21 +483,20 @@
             document.getElementById('lucroTotal').textContent     = formatCurrency(lucro);
         }
 
-        // ─── Resumo por profissional (somente dono) ────────────────────
+        // ─── Resumo por profissional (somente dono) ────
         function renderResumoProfissionais(profissionais) {
-            // Guarda lista de profissionais para uso posterior
             window._profissionaisCache = profissionais || [];
             renderResumoProfissionaisFromLista(todosAgendamentos);
         }
 
         function renderResumoProfissionaisFromLista(agendamentos) {
-            const container    = document.getElementById('resumoProfissionais');
+            const container     = document.getElementById('resumoProfissionais');
             const profissionais = window._profissionaisCache || [];
 
             const resumo = profissionais.map(prof => {
                 const apts      = agendamentos.filter(a => a.profissional_id === prof.id);
                 const total     = apts.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-                const comissoes = apts.reduce((s, a) => s + parseFloat(a.comissao_valor || 0), 0);
+                const comissoes = apts.reduce((s, a) => s + calcularComissao(a), 0); // ✅ usa helper
                 return { nome: prof.nome, total, comissoes, atendimentos: apts.length };
             })
             .filter(r => r.atendimentos > 0)
@@ -525,7 +521,7 @@
             `).join('');
         }
 
-        // ─── Exportar CSV ──────────────────────────────────────────────
+        // ─── Exportar CSV ────
         function exportarFinanceiro() {
             if (todosAgendamentos.length === 0) {
                 mostrarToast('⚠️ Nenhum dado para exportar.', 'warning');
@@ -537,7 +533,6 @@
                 ? ['Data', 'Hora', 'Cliente', 'Serviço', 'Profissional', 'Valor', 'Comissão', 'Líquido']
                 : ['Data', 'Hora', 'Cliente', 'Serviço', 'Valor', 'Líquido'];
 
-            // ✅ Exporta apenas os dados visíveis ao usuário
             let lista = [...todosAgendamentos];
             if (!isDono && profissionalIdAtual) {
                 lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
@@ -547,15 +542,15 @@
                 cabecalho,
                 ...lista.map(a => {
                     const valor    = parseFloat(a.valor || 0);
-                    const comissao = parseFloat(a.comissao_valor || 0);
+                    const comissao = calcularComissao(a); // ✅ usa helper
                     const liquido  = (valor - comissao).toFixed(2).replace('.', ',');
                     const base = [
                         a.data || '',
                         a.hora ? a.hora.substring(0, 5) : '',
-                        a.cliente?.nome  || a.cliente_nome  || '',
-                        a.servico?.nome  || a.servico_nome  || '',
+                        a.cliente?.nome || '',
+                        a.servico?.nome || '',
                     ];
-                    if (isDono) base.push(a.profissional?.nome || a.profissional_nome || '');
+                    if (isDono) base.push(a.profissional?.nome || '');
                     base.push(valor.toFixed(2).replace('.', ','));
                     if (isDono) base.push(comissao.toFixed(2).replace('.', ','));
                     base.push(liquido);
@@ -574,7 +569,7 @@
             mostrarToast('✅ CSV exportado com sucesso!', 'success');
         }
 
-        // ─── Toast ─────────────────────────────────────────────────────
+        // ─── Toast ────
         function mostrarToast(msg, tipo = 'success') {
             const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
             const toast = document.createElement('div');
@@ -590,7 +585,7 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        // ─── Logout ────────────────────────────────────────────────────
+        // ─── Logout ────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
