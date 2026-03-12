@@ -37,7 +37,7 @@
                     <div class="pro-nav-section-title">Gestão</div>
                     <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
                     <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a href="profissionais.html" class="pro-nav-item active"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item active"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
@@ -84,7 +84,8 @@
                             <h1 class="pro-page-title">Profissionais</h1>
                             <p class="pro-page-subtitle">Gerencie sua equipe</p>
                         </div>
-                        <button class="pro-btn pro-btn-primary" onclick="openProfessionalModal()">
+                        <!-- Botão visível apenas para dono -->
+                        <button id="btnNovoProfissional" class="pro-btn pro-btn-primary" onclick="openProfessionalModal()" style="display:none;">
                             <i class="fas fa-plus"></i> Novo Profissional
                         </button>
                     </div>
@@ -141,9 +142,9 @@
                                         <th>Especialidade</th>
                                         <th>Telefone</th>
                                         <th>Comissão</th>
-                                        <th>Agendamentos (mês)</th>
+                                        <th>Agend. (mês)</th>
                                         <th>Status</th>
-                                        <th>Ações</th>
+                                        <th id="colunaAcoes">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody id="profissionaisTable">
@@ -229,44 +230,67 @@
         let currentFilter = 'todos';
         let todosProfissionais = [];
         let totalAgendamentosMes = 0;
+        let perfilAtual = null; // guarda o perfil do usuário logado
 
-        // ─── Perfil na sidebar ─────────────────────────────────────────
+        // ─── Perfil na sidebar + controle de acesso ────────────────────
         document.addEventListener('perfilCarregado', (e) => {
             const perfil = e.detail;
             if (!perfil) return;
+            perfilAtual = perfil;
+
             const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = letra;
-            document.getElementById('userName').textContent = perfil.nome || perfil.email;
-            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
-        });
+            document.getElementById('userName').textContent   = perfil.nome || perfil.email;
+            document.getElementById('userRole').textContent   = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
 
-        // ─── Inicialização ─────────────────────────────────────────────
-        window.addEventListener('DOMContentLoaded', () => {
+            // Nome do estabelecimento
+            try {
+                const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
+                if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
+            } catch (_) {}
+
+            // Dono: mostra botão de criar e coluna de ações
+            if (perfil.role === 'dono') {
+                document.getElementById('btnNovoProfissional').style.display = 'inline-flex';
+            } else {
+                // Profissional: oculta coluna de ações
+                document.getElementById('colunaAcoes').style.display = 'none';
+            }
+
             loadProfissionais();
         });
 
         // ─── Carregar dados do banco ───────────────────────────────────
         async function loadProfissionais() {
             try {
-                // Carrega profissionais e agendamentos do mês em paralelo
                 const agora = new Date();
                 const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
-                const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
+                const fimMes   = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
                 const [profissionais, agendamentos] = await Promise.all([
                     DB.profissionais.listar(),
                     DB.agendamentos.listar({ inicio: inicioMes, fim: fimMes })
                 ]);
 
-                todosProfissionais = profissionais;
-                totalAgendamentosMes = Array.isArray(agendamentos) ? agendamentos.length : 0;
+                todosProfissionais  = Array.isArray(profissionais) ? profissionais : [];
+                totalAgendamentosMes = Array.isArray(agendamentos)  ? agendamentos.length : 0;
+
+                // Profissional só vê a si mesmo
+                if (perfilAtual?.role === 'profissional') {
+                    todosProfissionais = todosProfissionais.filter(
+                        p => p.user_id === perfilAtual.user_id
+                    );
+                }
 
                 atualizarMetricas(todosProfissionais);
                 filtrarLocalmente();
             } catch (error) {
                 console.error('Erro ao carregar profissionais:', error);
                 document.getElementById('profissionaisTable').innerHTML =
-                    '<tr><td colspan="7" class="pro-empty-state"><i class="fas fa-exclamation-circle pro-empty-state-icon"></i><p>Erro ao carregar profissionais</p></td></tr>';
+                    `<tr><td colspan="7" class="pro-empty-state">
+                        <i class="fas fa-exclamation-circle pro-empty-state-icon"></i>
+                        <p>Erro ao carregar profissionais</p>
+                    </td></tr>`;
             }
         }
 
@@ -278,7 +302,6 @@
             if (currentFilter !== 'todos') {
                 lista = lista.filter(p => p.status === currentFilter);
             }
-
             if (search) {
                 lista = lista.filter(p =>
                     (p.nome || '').toLowerCase().includes(search) ||
@@ -306,7 +329,8 @@
 
         // ─── Renderizar tabela ─────────────────────────────────────────
         function renderTable(lista) {
-            const tbody = document.getElementById('profissionaisTable');
+            const tbody   = document.getElementById('profissionaisTable');
+            const isDono  = perfilAtual?.role === 'dono';
 
             if (lista.length === 0) {
                 tbody.innerHTML = `
@@ -324,7 +348,20 @@
                     ? parseFloat(prof.comissao_percentual).toFixed(1) + '%'
                     : '—';
                 const statusClass = prof.status === 'ativo' ? 'success' : 'error';
-                const telefone = prof.telefone || '—';
+                const telefone    = prof.telefone || '—';
+
+                // Coluna de ações: só para dono
+                const acoesHtml = isDono ? `
+                    <div class="pro-table-actions">
+                        <button class="pro-action-btn" title="Editar"
+                            onclick="editProfessional('${prof.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="pro-action-btn danger" title="Excluir"
+                            onclick="deleteProfessional('${prof.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>` : '—';
 
                 return `
                     <tr>
@@ -333,7 +370,7 @@
                                 <div class="pro-user-avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0;">
                                     ${(prof.nome || 'P')[0].toUpperCase()}
                                 </div>
-                                <strong>${prof.nome}</strong>
+                                <strong>${prof.nome || '—'}</strong>
                             </div>
                         </td>
                         <td><span class="pro-badge pro-badge-primary">${prof.especialidade || '—'}</span></td>
@@ -345,18 +382,7 @@
                                 ${prof.status === 'ativo' ? 'Ativo' : 'Inativo'}
                             </span>
                         </td>
-                        <td>
-                            <div class="pro-table-actions">
-                                <button class="pro-action-btn" title="Editar"
-                                    onclick="editProfessional('${prof.id}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="pro-action-btn danger" title="Excluir"
-                                    onclick="deleteProfessional('${prof.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
+                        <td>${acoesHtml}</td>
                     </tr>`;
             }).join('');
         }
@@ -394,14 +420,14 @@
             const prof = todosProfissionais.find(p => p.id === id);
             if (!prof) return;
             document.getElementById('modalTitle').textContent = 'Editar Profissional';
-            document.getElementById('professionalId').value = prof.id;
-            document.getElementById('professionalName').value = prof.nome || '';
-            document.getElementById('professionalPhone').value = prof.telefone || '';
-            document.getElementById('professionalEmail').value = prof.email || '';
-            document.getElementById('professionalSpecialty').value = prof.especialidade || '';
-            document.getElementById('professionalStatus').value = prof.status || 'ativo';
-            document.getElementById('professionalCommissionType').value = prof.comissao_tipo || 'percentual';
-            document.getElementById('professionalCommission').value = prof.comissao_percentual || '';
+            document.getElementById('professionalId').value              = prof.id;
+            document.getElementById('professionalName').value            = prof.nome || '';
+            document.getElementById('professionalPhone').value           = prof.telefone || '';
+            document.getElementById('professionalEmail').value           = prof.email || '';
+            document.getElementById('professionalSpecialty').value       = prof.especialidade || '';
+            document.getElementById('professionalStatus').value          = prof.status || 'ativo';
+            document.getElementById('professionalCommissionType').value  = prof.comissao_tipo || 'percentual';
+            document.getElementById('professionalCommission').value      = prof.comissao_percentual || '';
             updateCommissionLabel();
             document.getElementById('professionalModal').style.display = 'flex';
         }
@@ -409,15 +435,18 @@
         // ─── Salvar profissional ───────────────────────────────────────
         async function saveProfessional(e) {
             e.preventDefault();
+            const btn = document.querySelector('#professionalModal .pro-btn-primary');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...'; }
+
             try {
                 const id = document.getElementById('professionalId').value;
                 const dados = {
-                    nome: document.getElementById('professionalName').value.trim(),
-                    telefone: document.getElementById('professionalPhone').value.trim(),
-                    email: document.getElementById('professionalEmail').value.trim(),
-                    especialidade: document.getElementById('professionalSpecialty').value.trim(),
-                    status: document.getElementById('professionalStatus').value,
-                    comissao_tipo: document.getElementById('professionalCommissionType').value,
+                    nome:               document.getElementById('professionalName').value.trim(),
+                    telefone:           document.getElementById('professionalPhone').value.trim(),
+                    email:              document.getElementById('professionalEmail').value.trim(),
+                    especialidade:      document.getElementById('professionalSpecialty').value.trim(),
+                    status:             document.getElementById('professionalStatus').value,
+                    comissao_tipo:      document.getElementById('professionalCommissionType').value,
                     comissao_percentual: parseFloat(document.getElementById('professionalCommission').value) || 0
                 };
 
@@ -426,33 +455,51 @@
                     : await DB.profissionais.criar(dados);
 
                 if (resultado.success) {
-                    alert(id ? '✅ Profissional atualizado!' : '✅ Profissional criado!');
+                    mostrarToast(id ? '✅ Profissional atualizado!' : '✅ Profissional criado!', 'success');
                     closeProfessionalModal();
                     await loadProfissionais();
                 } else {
-                    alert('❌ Erro: ' + resultado.error);
+                    mostrarToast('❌ Erro: ' + (resultado.error || 'Tente novamente'), 'error');
                 }
             } catch (error) {
                 console.error('Erro ao salvar profissional:', error);
-                alert('❌ Erro ao salvar profissional');
+                mostrarToast('❌ Erro ao salvar profissional', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Salvar'; }
             }
         }
 
         // ─── Excluir profissional ──────────────────────────────────────
         async function deleteProfessional(id) {
-            if (!confirm('Deseja realmente excluir este profissional?')) return;
+            if (!confirm('Deseja realmente excluir este profissional?\nEsta ação não pode ser desfeita.')) return;
             try {
                 const resultado = await DB.profissionais.excluir(id);
                 if (resultado.success) {
-                    alert('✅ Profissional excluído!');
+                    mostrarToast('✅ Profissional excluído!', 'success');
                     await loadProfissionais();
                 } else {
-                    alert('❌ Erro: ' + resultado.error);
+                    mostrarToast('❌ Erro: ' + (resultado.error || 'Tente novamente'), 'error');
                 }
             } catch (error) {
                 console.error('Erro ao excluir profissional:', error);
-                alert('❌ Erro ao excluir profissional');
+                mostrarToast('❌ Erro ao excluir profissional', 'error');
             }
+        }
+
+        // ─── Toast ─────────────────────────────────────────────────────
+        function mostrarToast(msg, tipo = 'success') {
+            const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style.cssText = `
+                position:fixed;bottom:24px;right:24px;z-index:9999;
+                padding:14px 20px;border-radius:10px;
+                background:${cores[tipo]||cores.success};
+                color:#fff;font-weight:500;font-size:14px;
+                box-shadow:0 4px 16px rgba(0,0,0,0.15);
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
         }
 
         // ─── Logout ────────────────────────────────────────────────────
