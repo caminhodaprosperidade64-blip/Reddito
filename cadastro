@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Reddito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-blue-600">Reddito</h1>
+            <p class="text-gray-500">Crie sua conta e comece seus 15 dias grátis</p>
+        </div>
+
+        <form id="formCadastro" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nome Completo</label>
+                    <input type="text" id="nome" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nome da Empresa/Salão</label>
+                    <input type="text" id="nomeEmpresa" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">E-mail</label>
+                <input type="email" id="email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Senha</label>
+                <input type="password" id="senha" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <!-- Seleção de Planos -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-3">Escolha seu Plano</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Plano 1 -->
+                    <label class="relative border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-blue-400 transition-all peer-checked:border-blue-600">
+                        <input type="radio" name="plano" value="plano1" class="absolute top-2 right-2" checked>
+                        <div class="font-bold text-blue-600">Individual</div>
+                        <div class="text-[10px] text-gray-500 leading-tight mt-1">Uso individual. O dono é o profissional.</div>
+                    </label>
+
+                    <!-- Plano 2 -->
+                    <label class="relative border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-blue-400 transition-all">
+                        <input type="radio" name="plano" value="plano2" class="absolute top-2 right-2">
+                        <div class="font-bold text-blue-600">Equipe</div>
+                        <div class="text-[10px] text-gray-500 leading-tight mt-1">Até 5 profissionais cadastrados.</div>
+                    </label>
+
+                    <!-- Plano 3 -->
+                    <label class="relative border-2 border-gray-200 rounded-xl p-4 cursor-pointer hover:border-blue-400 transition-all">
+                        <input type="radio" name="plano" value="plano3" class="absolute top-2 right-2">
+                        <div class="font-bold text-blue-600">Multi-Lojas</div>
+                        <div class="text-[10px] text-gray-500 leading-tight mt-1">Vários estabelecimentos e visão de grupo.</div>
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-lg">
+                Começar Teste Grátis (15 dias)
+            </button>
+
+            <p class="text-center text-sm text-gray-500">
+                Já tem uma conta? <a href="index.html" class="text-blue-600 hover:underline">Faça login</a>
+            </p>
+        </form>
+    </div>
+
+    <!-- Scripts do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerText = 'Criando sua conta...';
+
+            const dados = {
+                nome: document.getElementById('nome').value,
+                nomeEmpresa: document.getElementById('nomeEmpresa').value,
+                email: document.getElementById('email.').value,
+                senha: document.getElementById('senha').value,
+                plano: document.querySelector('input[name="plano"]:checked').value
+            };
+
+            // Aqui chamaremos a função de cadastro que vamos criar no próximo passo
+            console.log('Dados para cadastro:', dados);
+            alert('Página criada! No próximo passo vamos fazer o botão funcionar.');
+            btn.disabled = false;
+            btn.innerText = 'Começar Teste Grátis (15 dias)';
+        });
+    </script>
+</body>
+</html>
