@@ -1,6 +1,6 @@
 /**
  * ============================================
- * AUTH MODULE - COM SUPORTE A ROLES
+ * AUTH MODULE - VERSÃO CORRIGIDA
  * ============================================
  */
 console.log('🔧 [Auth] Carregando módulo...');
@@ -27,14 +27,28 @@ const Auth = {
     }
   },
 
+  // ✅ FIX 1: usa getSession() em vez de getUser() — lê do localStorage, sem rede
+  async isAuthenticated() {
+    try {
+      const supabase = window.getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session?.user;
+    } catch (e) {
+      console.error('❌ [Auth] Erro ao obter session:', e);
+      return false;
+    }
+  },
+
   async getPerfil() {
     try {
-      const user = await this.getUser();
-      if (!user) return null;
-
       if (window._perfilCache) return window._perfilCache;
 
+      // usa getSession para não depender de rede
       const supabase = window.getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) return null;
+
       const { data, error } = await supabase
         .from('perfis')
         .select('*')
@@ -65,17 +79,11 @@ const Auth = {
     return role === 'dono';
   },
 
-  async isAuthenticated() {
-    const user = await this.getUser();
-    return user !== null;
-  },
-
   async signIn(email, password) {
     try {
       const supabase = window.getSupabase();
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-
       window._perfilCache = null;
       console.log('✅ [Auth] Login realizado:', data.user.email);
       return { success: true, user: data.user };
@@ -88,12 +96,10 @@ const Auth = {
   async signUp(email, password, nomeDaEmpresa) {
     try {
       const supabase = window.getSupabase();
-
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
 
       const user = data.user;
-
       const { error: perfilError } = await supabase
         .from('perfis')
         .insert({
@@ -105,7 +111,7 @@ const Auth = {
         });
 
       if (perfilError) {
-        console.warn('⚠️ [Auth] Perfil será criado após confirmação de email:', perfilError.message);
+        console.warn('⚠️ [Auth] Perfil será criado após confirmação:', perfilError.message);
       }
 
       console.log('✅ [Auth] Conta criada:', user.email);
@@ -120,7 +126,6 @@ const Auth = {
     try {
       const supabase = window.getSupabase();
       await supabase.auth.signOut();
-
       window._perfilCache = null;
       console.log('✅ [Auth] Logout realizado');
       window.location.href = 'login.html';
@@ -148,6 +153,10 @@ console.log('✅ [Auth] Módulo exportado');
 // PROTEÇÃO DE ROTAS
 // ============================================
 function configurarProtecaoRotas() {
+  // ✅ FIX 2: evita rodar mais de uma vez
+  if (window.__protecaoRotasRodou) return;
+  window.__protecaoRotasRodou = true;
+
   const paginasPublicas = [
     '/', '/index.html', '/login.html',
     '/aguardando-confirmacao.html', '/agendar.html',
@@ -170,9 +179,11 @@ function configurarProtecaoRotas() {
     }
 
     const perfil = await Auth.getPerfil();
+
+    // ✅ FIX 3: perfil ausente NÃO é logout — vai para onboarding
     if (!perfil) {
-      console.warn('⚠️ [Auth] Perfil não encontrado, redirecionando...');
-      window.location.href = 'login.html';
+      console.warn('⚠️ [Auth] Perfil não encontrado, indo para onboarding...');
+      window.location.href = 'onboarding-step1.html';
       return;
     }
 
@@ -180,8 +191,7 @@ function configurarProtecaoRotas() {
     window.USER_ROLE = perfil.role;
     window.USER_NOME = perfil.nome;
 
-    console.log(`✅ [Auth] Autenticado como: ${perfil.role} | Tenant: ${perfil.tenant_id}`);
-
+    console.log(`✅ [Auth] Autenticado: ${perfil.role} | Tenant: ${perfil.tenant_id}`);
     window.dispatchEvent(new CustomEvent('perfilCarregado', { detail: perfil }));
   });
 }
