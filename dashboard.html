@@ -310,7 +310,7 @@
         }
 
         // ─── Carregar info do usuário na sidebar ───────────────────────
-        document.addEventListener('perfilCarregado', async (e) => {
+        window.addEventListener('perfilCarregado', async (e) => {
             const perfil = e.detail;
             if (!perfil) return;
 
