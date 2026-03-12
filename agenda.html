@@ -9,23 +9,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
     
-    <!-- Supabase Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Scripts do Sistema -->
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
     
     <style>
-        .agenda-container {
-            padding: 24px;
-        }
+        .agenda-container { padding: 24px; }
         
         .agenda-header {
             display: flex;
@@ -34,22 +29,9 @@
             margin-bottom: 32px;
         }
         
-        .agenda-title h1 {
-            margin: 0;
-            font-size: 28px;
-            color: var(--text-primary);
-        }
-        
-        .agenda-subtitle {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-top: 4px;
-        }
-        
-        .agenda-toolbar {
-            display: flex;
-            gap: 12px;
-        }
+        .agenda-title h1 { margin: 0; font-size: 28px; color: var(--text-primary); }
+        .agenda-subtitle { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+        .agenda-toolbar { display: flex; gap: 12px; }
         
         .date-selector {
             display: flex;
@@ -61,12 +43,7 @@
             border: 1px solid var(--border-color);
         }
         
-        .date-selector input {
-            border: none;
-            outline: none;
-            font-size: 16px;
-            font-weight: 600;
-        }
+        .date-selector input { border: none; outline: none; font-size: 16px; font-weight: 600; }
         
         .agenda-grid {
             background: white;
@@ -82,9 +59,7 @@
             min-height: 60px;
         }
         
-        .time-slot:last-child {
-            border-bottom: none;
-        }
+        .time-slot:last-child { border-bottom: none; }
         
         .time-label {
             display: flex;
@@ -104,9 +79,7 @@
             transition: background 0.2s;
         }
         
-        .slot-content:hover:not(.occupied) {
-            background: var(--primary-light);
-        }
+        .slot-content:hover:not(.occupied) { background: var(--primary-light); }
         
         .appointment-card {
             background: var(--primary);
@@ -116,55 +89,21 @@
             font-size: 14px;
             cursor: pointer;
             transition: transform 0.2s;
-        }
-        
-        .appointment-card:hover {
-            transform: translateX(4px);
-        }
-        
-        .appointment-client {
-            font-weight: 600;
             margin-bottom: 4px;
         }
         
-        .appointment-service {
-            font-size: 12px;
-            opacity: 0.9;
-            margin-bottom: 4px;
-        }
+        .appointment-card:hover { transform: translateX(4px); }
+        .appointment-client { font-weight: 600; margin-bottom: 4px; }
+        .appointment-service { font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
+        .appointment-professional { font-size: 12px; opacity: 0.85; }
         
-        .appointment-professional {
-            font-size: 12px;
-            opacity: 0.85;
-        }
+        .empty-state { padding: 60px 20px; text-align: center; color: var(--text-secondary); }
+        .empty-state i { font-size: 48px; opacity: 0.3; margin-bottom: 16px; display: block; }
         
-        .empty-state {
-            padding: 60px 20px;
-            text-align: center;
-            color: var(--text-secondary);
-        }
+        .loading-spinner { text-align: center; padding: 60px; color: var(--text-secondary); }
+        .loading-spinner i { font-size: 36px; animation: spin 1s linear infinite; display: block; margin-bottom: 12px; }
         
-        .empty-state i {
-            font-size: 48px;
-            opacity: 0.3;
-            margin-bottom: 16px;
-        }
-        
-        .loading-spinner {
-            text-align: center;
-            padding: 60px;
-            color: var(--text-secondary);
-        }
-        
-        .loading-spinner i {
-            font-size: 36px;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -184,19 +123,35 @@
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
-                    <a href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
+                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
                 </div>
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
-                    <a href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
+                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
                 </div>
                 <div class="pro-nav-section">
-                    <a href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
+                    <div class="pro-nav-section-title">Automação</div>
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
+                </div>
+                <div class="pro-nav-section">
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
                 </div>
             </nav>
+            <div class="pro-sidebar-footer">
+                <div class="pro-user-profile">
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
+                    <div class="pro-user-info">
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
+                    </div>
+                    <button class="pro-user-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -216,9 +171,7 @@
                             <button class="pro-btn pro-btn-icon" onclick="nextDay()">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
-                            <button class="pro-btn pro-btn-secondary" onclick="goToToday()">
-                                Hoje
-                            </button>
+                            <button class="pro-btn pro-btn-secondary" onclick="goToToday()">Hoje</button>
                         </div>
                         <button class="pro-btn pro-btn-primary" onclick="openNewAppointmentModal()">
                             <i class="fas fa-plus"></i> Novo Agendamento
@@ -237,7 +190,8 @@
     </div>
 
     <!-- Modal Novo/Editar Agendamento -->
-    <div id="appointmentModal" class="pro-modal">
+    <div id="appointmentModal" class="pro-modal" style="display:none;">
+        <div class="pro-modal-overlay" onclick="closeAppointmentModal()"></div>
         <div class="pro-modal-content" style="max-width: 600px;">
             <div class="pro-modal-header">
                 <h3 id="modalTitle">Novo Agendamento</h3>
@@ -248,83 +202,90 @@
                     <input type="hidden" id="appointmentId">
                     
                     <div class="pro-form-group">
-                        <label>Cliente *</label>
-                        <select id="appointmentClient" required class="pro-input">
-                            <option value="">Carregando...</option>
+                        <label class="pro-label">Cliente *</label>
+                        <select id="appointmentClient" required class="pro-select">
+                            <option value="">Selecione um cliente</option>
                         </select>
                     </div>
                     
                     <div class="pro-form-group">
-                        <label>Serviço *</label>
-                        <select id="appointmentService" required class="pro-input" onchange="updateValor()">
-                            <option value="">Carregando...</option>
+                        <label class="pro-label">Serviço *</label>
+                        <select id="appointmentService" required class="pro-select" onchange="updateValor()">
+                            <option value="">Selecione um serviço</option>
                         </select>
                     </div>
                     
                     <div class="pro-form-group">
-                        <label>Profissional *</label>
-                        <select id="appointmentProfessional" required class="pro-input">
-                            <option value="">Carregando...</option>
+                        <label class="pro-label">Profissional *</label>
+                        <select id="appointmentProfessional" required class="pro-select">
+                            <option value="">Selecione um profissional</option>
                         </select>
                     </div>
                     
                     <div class="pro-form-row">
                         <div class="pro-form-group">
-                            <label>Data *</label>
+                            <label class="pro-label">Data *</label>
                             <input type="date" id="appointmentDate" required class="pro-input">
                         </div>
                         <div class="pro-form-group">
-                            <label>Horário *</label>
+                            <label class="pro-label">Horário *</label>
                             <input type="time" id="appointmentTime" required class="pro-input">
                         </div>
                     </div>
                     
                     <div class="pro-form-group">
-                        <label>Valor *</label>
-                        <input type="number" id="appointmentValor" required class="pro-input" step="0.01" min="0" readonly>
+                        <label class="pro-label">Valor (R$)</label>
+                        <input type="number" id="appointmentValor" class="pro-input" step="0.01" min="0" readonly>
                     </div>
                     
                     <div class="pro-form-group">
-                        <label>Status</label>
-                        <select id="appointmentStatus" class="pro-input">
+                        <label class="pro-label">Status</label>
+                        <select id="appointmentStatus" class="pro-select">
                             <option value="confirmado">Confirmado</option>
                             <option value="concluido">Concluído</option>
                             <option value="cancelado">Cancelado</option>
                         </select>
                     </div>
-                    
-                    <div class="pro-modal-actions">
-                        <button type="button" class="pro-btn pro-btn-secondary" onclick="closeAppointmentModal()">
-                            Cancelar
-                        </button>
-                        <button type="submit" class="pro-btn pro-btn-primary">
-                            <i class="fas fa-save"></i> Salvar
-                        </button>
-                    </div>
                 </form>
+            </div>
+            <div class="pro-modal-footer">
+                <button type="button" class="pro-btn pro-btn-secondary" onclick="closeAppointmentModal()">
+                    Cancelar
+                </button>
+                <button type="button" class="pro-btn pro-btn-primary" onclick="document.getElementById('appointmentForm').requestSubmit()">
+                    <i class="fas fa-save"></i> Salvar
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // Estado global
+        // ─── Estado global ─────────────────────────────────────────────
         let currentDate = new Date();
         let allClientes = [];
         let allServicos = [];
         let allProfissionais = [];
         let allAgendamentos = [];
+        let perfilAtual = null;
 
-        // Inicialização
+        // ─── Perfil do usuário na sidebar ─────────────────────────────
+        document.addEventListener('perfilCarregado', (e) => {
+            perfilAtual = e.detail;
+            if (!perfilAtual) return;
+            const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = letra;
+            document.getElementById('userName').textContent = perfilAtual.nome || perfilAtual.email;
+            document.getElementById('userRole').textContent = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
+        });
+
+        // ─── Inicialização ─────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', async () => {
-            // Definir data atual
             document.getElementById('selectedDate').valueAsDate = currentDate;
-            
-            // Carregar dados
             await loadAllData();
             await loadAgenda();
         });
 
-        // Carregar todos os dados necessários
+        // ─── Carregar dados base ───────────────────────────────────────
         async function loadAllData() {
             try {
                 [allClientes, allServicos, allProfissionais] = await Promise.all([
@@ -332,30 +293,25 @@
                     DB.servicos.listar(),
                     DB.profissionais.listar()
                 ]);
-                
-                console.log('✅ Dados carregados:', {
-                    clientes: allClientes.length,
-                    servicos: allServicos.length,
-                    profissionais: allProfissionais.length
-                });
             } catch (error) {
                 console.error('❌ Erro ao carregar dados:', error);
-                alert('Erro ao carregar dados. Verifique sua conexão.');
             }
         }
 
-        // Carregar agenda do dia
+        // ─── Carregar agenda do dia ────────────────────────────────────
         async function loadAgenda() {
             const dataStr = document.getElementById('selectedDate').value;
             const container = document.getElementById('agendaContent');
-            
             container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner"></i><p>Carregando...</p></div>';
             
             try {
-                allAgendamentos = await DB.agendamentos.listarPorData(dataStr);
-                
-                console.log('📅 Agendamentos do dia:', allAgendamentos);
-                
+                // Se for profissional, filtra só os agendamentos dele
+                let filtros = { data: dataStr };
+                if (perfilAtual && perfilAtual.role === 'profissional' && perfilAtual.profissional_id) {
+                    filtros.profissional_id = perfilAtual.profissional_id;
+                }
+
+                allAgendamentos = await DB.agendamentos.listar(filtros);
                 renderAgenda(dataStr, allAgendamentos);
             } catch (error) {
                 console.error('❌ Erro ao carregar agenda:', error);
@@ -363,104 +319,99 @@
             }
         }
 
-        // Renderizar agenda
+        // ─── Renderizar agenda ─────────────────────────────────────────
         function renderAgenda(data, agendamentos) {
             const container = document.getElementById('agendaContent');
-            
-            // Gerar horários (8h às 20h, a cada 30 min)
             const horarios = [];
             for (let h = 8; h < 20; h++) {
                 horarios.push(`${String(h).padStart(2, '0')}:00`);
                 horarios.push(`${String(h).padStart(2, '0')}:30`);
             }
-            
+
             let html = '';
-            
             horarios.forEach(hora => {
-                const agendamentosHora = agendamentos.filter(a => a.hora.substring(0, 5) === hora);
-                
+                const agendamentosHora = agendamentos.filter(a => a.hora && a.hora.substring(0, 5) === hora);
                 html += `
                     <div class="time-slot">
                         <div class="time-label">${hora}</div>
-                        <div class="slot-content ${agendamentosHora.length > 0 ? 'occupied' : ''}" onclick="openNewAppointmentModal('${hora}', '${data}')">
+                        <div class="slot-content ${agendamentosHora.length > 0 ? 'occupied' : ''}"
+                             onclick="openNewAppointmentModal('${hora}', '${data}')">
                             ${agendamentosHora.map(a => `
-                                <div class="appointment-card" onclick="event.stopPropagation(); editAppointment('${a.id}')">
-                                    <div class="appointment-client">${a.cliente.nome}</div>
-                                    <div class="appointment-service">${a.servico.nome} - R$ ${parseFloat(a.valor).toFixed(2)}</div>
-                                    <div class="appointment-professional">👤 ${a.profissional.nome}</div>
+                                <div class="appointment-card"
+                                     onclick="event.stopPropagation(); editAppointment('${a.id}')">
+                                    <div class="appointment-client">${a.cliente?.nome || '—'}</div>
+                                    <div class="appointment-service">${a.servico?.nome || '—'} — R$ ${parseFloat(a.valor || 0).toFixed(2)}</div>
+                                    <div class="appointment-professional">👤 ${a.profissional?.nome || '—'}</div>
                                 </div>
                             `).join('')}
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-            
-            container.innerHTML = html;
+
+            container.innerHTML = html || '<div class="empty-state"><i class="fas fa-calendar-times"></i><p>Nenhum agendamento</p></div>';
         }
 
-        // Abrir modal de novo agendamento
-        async function openNewAppointmentModal(hora = null, data = null) {
+        // ─── Abrir modal novo agendamento ──────────────────────────────
+        function openNewAppointmentModal(hora = null, data = null) {
             document.getElementById('modalTitle').textContent = 'Novo Agendamento';
             document.getElementById('appointmentForm').reset();
             document.getElementById('appointmentId').value = '';
-            
-            // Preencher dropdowns
-            document.getElementById('appointmentClient').innerHTML = 
-                '<option value="">Selecione um cliente</option>' +
-                allClientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-            
-            document.getElementById('appointmentService').innerHTML = 
-                '<option value="">Selecione um serviço</option>' +
-                allServicos.map(s => `<option value="${s.id}" data-preco="${s.preco}">${s.nome} - R$ ${parseFloat(s.preco).toFixed(2)}</option>`).join('');
-            
-            document.getElementById('appointmentProfessional').innerHTML = 
-                '<option value="">Selecione um profissional</option>' +
-                allProfissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-            
-            // Preencher data e hora
+
+            preencherDropdowns();
+
             document.getElementById('appointmentDate').value = data || document.getElementById('selectedDate').value;
             if (hora) document.getElementById('appointmentTime').value = hora;
-            
-            // Abrir modal
+
             document.getElementById('appointmentModal').style.display = 'flex';
         }
 
-        // Editar agendamento
-        async function editAppointment(id) {
-            const agendamento = allAgendamentos.find(a => a.id === id);
-            if (!agendamento) return;
-            
-            document.getElementById('modalTitle').textContent = 'Editar Agendamento';
-            document.getElementById('appointmentId').value = agendamento.id;
-            
-            // Preencher dropdowns
-            await openNewAppointmentModal();
-            
-            // Preencher dados
-            document.getElementById('appointmentClient').value = agendamento.cliente_id;
-            document.getElementById('appointmentService').value = agendamento.servico_id;
-            document.getElementById('appointmentProfessional').value = agendamento.profissional_id;
-            document.getElementById('appointmentDate').value = agendamento.data;
-            document.getElementById('appointmentTime').value = agendamento.hora.substring(0, 5);
-            document.getElementById('appointmentValor').value = agendamento.valor;
-            document.getElementById('appointmentStatus').value = agendamento.status;
+        // ─── Preencher dropdowns ───────────────────────────────────────
+        function preencherDropdowns() {
+            document.getElementById('appointmentClient').innerHTML =
+                '<option value="">Selecione um cliente</option>' +
+                allClientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+            document.getElementById('appointmentService').innerHTML =
+                '<option value="">Selecione um serviço</option>' +
+                allServicos.map(s => `<option value="${s.id}" data-preco="${s.preco}">${s.nome} — R$ ${parseFloat(s.preco).toFixed(2)}</option>`).join('');
+
+            document.getElementById('appointmentProfessional').innerHTML =
+                '<option value="">Selecione um profissional</option>' +
+                allProfissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
         }
 
-        // Atualizar valor automaticamente ao selecionar serviço
+        // ─── Editar agendamento ────────────────────────────────────────
+        function editAppointment(id) {
+            const ag = allAgendamentos.find(a => a.id === id);
+            if (!ag) return;
+
+            document.getElementById('modalTitle').textContent = 'Editar Agendamento';
+            document.getElementById('appointmentId').value = ag.id;
+
+            preencherDropdowns();
+
+            document.getElementById('appointmentClient').value = ag.cliente_id;
+            document.getElementById('appointmentService').value = ag.servico_id;
+            document.getElementById('appointmentProfessional').value = ag.profissional_id;
+            document.getElementById('appointmentDate').value = ag.data;
+            document.getElementById('appointmentTime').value = ag.hora ? ag.hora.substring(0, 5) : '';
+            document.getElementById('appointmentValor').value = parseFloat(ag.valor || 0).toFixed(2);
+            document.getElementById('appointmentStatus').value = ag.status;
+
+            document.getElementById('appointmentModal').style.display = 'flex';
+        }
+
+        // ─── Atualizar valor ao selecionar serviço ─────────────────────
         function updateValor() {
             const select = document.getElementById('appointmentService');
             const option = select.options[select.selectedIndex];
             const preco = option.getAttribute('data-preco');
-            
-            if (preco) {
-                document.getElementById('appointmentValor').value = parseFloat(preco).toFixed(2);
-            }
+            if (preco) document.getElementById('appointmentValor').value = parseFloat(preco).toFixed(2);
         }
 
-        // Salvar agendamento
+        // ─── Salvar agendamento ────────────────────────────────────────
         async function saveAppointment(event) {
             event.preventDefault();
-            
             const id = document.getElementById('appointmentId').value;
             const dados = {
                 cliente_id: document.getElementById('appointmentClient').value,
@@ -468,28 +419,17 @@
                 profissional_id: document.getElementById('appointmentProfessional').value,
                 data: document.getElementById('appointmentDate').value,
                 hora: document.getElementById('appointmentTime').value,
-                valor: parseFloat(document.getElementById('appointmentValor').value),
+                valor: parseFloat(document.getElementById('appointmentValor').value || 0),
                 status: document.getElementById('appointmentStatus').value
             };
-            
+
             try {
-                let resultado;
-                
-                if (id) {
-                    // Atualizar
-                    resultado = await DB.agendamentos.atualizar(id, dados);
-                    if (resultado.success) {
-                        alert('✅ Agendamento atualizado com sucesso!');
-                    }
-                } else {
-                    // Criar
-                    resultado = await DB.agendamentos.criar(dados);
-                    if (resultado.success) {
-                        alert('✅ Agendamento criado com sucesso!');
-                    }
-                }
-                
+                const resultado = id
+                    ? await DB.agendamentos.atualizar(id, dados)
+                    : await DB.agendamentos.criar(dados);
+
                 if (resultado.success) {
+                    alert(id ? '✅ Agendamento atualizado!' : '✅ Agendamento criado!');
                     closeAppointmentModal();
                     await loadAgenda();
                 } else {
@@ -497,16 +437,16 @@
                 }
             } catch (error) {
                 console.error('❌ Erro ao salvar:', error);
-                alert('❌ Erro ao salvar agendamento: ' + error.message);
+                alert('❌ Erro ao salvar agendamento');
             }
         }
 
-        // Fechar modal
+        // ─── Fechar modal ──────────────────────────────────────────────
         function closeAppointmentModal() {
             document.getElementById('appointmentModal').style.display = 'none';
         }
 
-        // Navegação de datas
+        // ─── Navegação de datas ────────────────────────────────────────
         function previousDay() {
             currentDate.setDate(currentDate.getDate() - 1);
             document.getElementById('selectedDate').valueAsDate = currentDate;
@@ -525,11 +465,10 @@
             loadAgenda();
         }
 
-        // Fechar modal ao clicar fora
-        window.onclick = function(event) {
-            const modal = document.getElementById('appointmentModal');
-            if (event.target === modal) {
-                closeAppointmentModal();
+        // ─── Logout ────────────────────────────────────────────────────
+        async function logout() {
+            if (confirm('Deseja realmente sair?')) {
+                await Auth.signOut();
             }
         }
     </script>
