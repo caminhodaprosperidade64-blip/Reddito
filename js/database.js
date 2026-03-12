@@ -20,7 +20,7 @@ const DB = {
             try {
                 const tenantId = await Auth.getTenantId();
                 const supabase = window.getSupabase();  
-
+               
                 const { data, error } = await supabase
                     .from('clientes')
                     .select('*')
@@ -246,7 +246,8 @@ const DB = {
         async listar() {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('profissionais')
                     .select('*')
@@ -265,7 +266,8 @@ const DB = {
         async buscar(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('profissionais')
                     .select('*')
@@ -284,7 +286,8 @@ const DB = {
         async criar(dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('profissionais')
                     .insert({
@@ -308,7 +311,8 @@ const DB = {
         async atualizar(id, dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('profissionais')
                     .update({
@@ -380,7 +384,8 @@ const DB = {
                 
                 query = query.order('data', { ascending: true })
                             .order('hora', { ascending: true });
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await query;
                 
                 if (error) throw error;
@@ -395,7 +400,8 @@ const DB = {
         async buscar(id) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .select(`
@@ -419,7 +425,8 @@ const DB = {
         async criar(dados) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .insert({
@@ -456,7 +463,8 @@ const DB = {
                 if (dados.hora) updateData.hora = dados.hora;
                 if (dados.valor) updateData.valor = parseFloat(dados.valor);
                 if (dados.status) updateData.status = dados.status;
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .update(updateData)
@@ -500,7 +508,8 @@ const DB = {
         async listarPorPeriodo(dataInicio, dataFim) {
             try {
                 const tenantId = await Auth.getTenantId();
-                
+
+                const supabase = window.getSupabase ();
                 const { data, error } = await supabase
                     .from('agendamentos')
                     .select(`
