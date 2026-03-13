@@ -13,20 +13,19 @@
 <body>
   <div class="pro-page" style="max-width:450px;margin:80px auto;padding:32px;background:#fff;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.05);">
     <div style="text-align:center;margin-bottom:24px;">
-        <i class="fas fa-user-plus" style="font-size:40px;color:#6366F1;margin-bottom:16px;"></i>
-        <h1 style="font-size:24px;margin-bottom:8px;">Crie sua Senha</h1>
-        <p style="color:#6B7280;font-size:14px;">Olá! Complete seu cadastro para acessar o sistema.</p>
+        <h1 style="font-size:24px;margin-bottom:8px;">Ativar sua Conta</h1>
+        <p style="color:#6B7280;font-size:14px;">Defina sua senha de acesso abaixo.</p>
     </div>
 
     <form id="firstAccessForm" onsubmit="handleFirstAccess(event)" style="display:grid;gap:16px;">
       <div class="pro-form-group">
         <label class="pro-label">Seu E-mail</label>
-        <input id="emailInput" type="email" class="pro-input" readonly style="background:#F3F4F6;cursor:not-allowed;" />
+        <input id="emailInput" type="email" class="pro-input" readonly style="background:#F3F4F6;" />
       </div>
 
       <div class="pro-form-group">
         <label class="pro-label">Nome Completo</label>
-        <input id="nameInput" type="text" class="pro-input" placeholder="Como quer ser chamado?" required />
+        <input id="nameInput" type="text" class="pro-input" placeholder="Seu nome" required />
       </div>
 
       <div class="pro-form-group">
@@ -39,21 +38,19 @@
         <input id="passwordConfirmInput" type="password" class="pro-input" minlength="8" placeholder="Repita a senha" required />
       </div>
 
-      <button class="pro-btn pro-btn-primary" type="submit" id="btnSubmit" style="width:100%;height:45px;font-size:16px;">
-        <i class="fas fa-check-circle"></i> Ativar minha Conta
+      <button class="pro-btn pro-btn-primary" type="submit" id="btnSubmit" style="width:100%;height:45px;">
+        Ativar minha Conta
       </button>
     </form>
   </div>
 
   <script>
-    // Preenche o e-mail vindo do link automaticamente
+    // Pega o e-mail da URL e limpa espaços
     (function prefillEmail() {
       const params = new URLSearchParams(window.location.search);
-      const email = params.get('email') || '';
+      let email = params.get('email') || '';
       if (email) {
-        document.getElementById('emailInput').value = decodeURIComponent(email).toLowerCase();
-      } else {
-        alert("Link inválido. Por favor, use o link enviado no seu e-mail.");
+        document.getElementById('emailInput').value = decodeURIComponent(email).trim().toLowerCase();
       }
     })();
 
@@ -68,12 +65,18 @@
       if (pass !== pass2) return alert('As senhas não conferem!');
       
       btn.disabled = true;
-      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+      btn.innerHTML = 'Processando...';
 
       try {
         const supabase = window.getSupabase();
 
-        // 1. Verificar se o convite existe na tabela profissionais (usando ilike para ignorar maiúsculas)
+        // --- DIAGNÓSTICO ---
+        // Vamos tentar buscar de um jeito mais "aberto" para ver se o registro existe
+        const { data: todos, error: errTodos } = await supabase.from('profissionais').select('email');
+        console.log("E-mails cadastrados no banco:", todos);
+        // -------------------
+
+        // 1. Buscar o convite (usando trim para garantir que não há espaços invisíveis)
         const { data: prof, error: profErr } = await supabase
           .from('profissionais')
           .select('*')
@@ -81,14 +84,14 @@
           .maybeSingle();
 
         if (profErr || !prof) {
-          console.error('Erro ao buscar convite:', profErr);
-          alert('Nenhum convite encontrado para o e-mail: ' + email + '\n\nPeça ao dono para cadastrar você primeiro na tela de Profissionais.');
+          console.error('Erro detalhado:', profErr);
+          alert('ERRO: O e-mail "' + email + '" não foi encontrado na lista de profissionais.\n\nVerifique se você cadastrou este e-mail EXATAMENTE assim na tela de Profissionais do sistema.');
           btn.disabled = false;
-          btn.innerHTML = '<i class="fas fa-check-circle"></i> Ativar minha Conta';
+          btn.innerHTML = 'Ativar minha Conta';
           return;
         }
 
-        // 2. Criar o usuário no Supabase Auth
+        // 2. Criar o usuário no Auth
         const { data: signData, error: signErr } = await supabase.auth.signUp({
           email: email,
           password: pass,
@@ -96,20 +99,17 @@
         });
 
         if (signErr) {
-          alert('Erro ao criar conta: ' + signErr.message);
+          alert('Erro no cadastro: ' + signErr.message);
           btn.disabled = false;
-          btn.innerHTML = '<i class="fas fa-check-circle"></i> Ativar minha Conta';
+          btn.innerHTML = 'Ativar minha Conta';
           return;
         }
 
         const user = signData.user;
-        if (!user) return alert('Erro ao gerar usuário. Tente novamente.');
 
-        // 3. Vincular o user_id na tabela profissionais
+        // 3. Vincular e Criar Perfil
         await supabase.from('profissionais').update({ user_id: user.id }).eq('id', prof.id);
-
-        // 4. Criar o perfil de acesso (Role Profissional)
-        const { error: perfErr } = await supabase.from('perfis').insert([{
+        await supabase.from('perfis').insert([{
           user_id: user.id,
           tenant_id: prof.tenant_id,
           role: 'profissional',
@@ -117,16 +117,12 @@
           email: email
         }]);
 
-        if (perfErr) {
-            console.error("Erro ao criar perfil:", perfErr);
-        }
-
-        alert('✅ Conta ativada com sucesso! Você será redirecionado.');
-        window.location.href = 'agenda.html';
+        alert('✅ Conta ativada! Verifique seu e-mail para confirmar o cadastro e depois faça login.');
+        window.location.href = 'login.html';
 
       } catch (err) {
         console.error('Erro crítico:', err);
-        alert('Ocorreu um erro inesperado. Tente novamente.');
+        alert('Erro inesperado. Tente novamente.');
         btn.disabled = false;
       }
     }
