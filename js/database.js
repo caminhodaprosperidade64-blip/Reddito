@@ -46,61 +46,57 @@ const DB = {
         },
 
         async criar(dados) {
-  try {
-    const tenantId = await Auth.getTenantId();
-    const supabase = window.getSupabase();
-    const { data, error } = await supabase
-      .from('profissionais')
-      .insert({
-        tenant_id: tenantId,
-        nome: dados.nome,
-        telefone: dados.telefone,
-        email: dados.email,
-        especialidade: dados.especialidade,
-        status: dados.status || 'Ativo',
-        tipo_comissao: dados.tipo_comissao,
-        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
-        cor_agenda: dados.cor_agenda || '#667eea'
-      })
-      .select()
-      .single();
-    if (error) throw error;
-    console.log('✅ Profissional criado:', data);
-    return { success: true, data };
-  } catch (error) {
-    console.error('❌ Erro ao criar profissional:', error);
-    return { success: false, error: error.message || error };
-  }
-},
+            try {
+                const tenantId = await Auth.getTenantId();
+                const supabase = window.getSupabase();
+                const { data, error } = await supabase
+                    .from('profissionais')
+                    .insert({
+                        tenant_id: tenantId,
+                        nome: dados.nome,
+                        telefone: dados.telefone || null,
+                        email: dados.email || null,           // <-- Ajuste 1: Salvar E-mail
+                        especialidade: dados.especialidade || null, // <-- Ajuste 2: Salvar Especialidade
+                        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
+                        cor_agenda: dados.cor_agenda || '#667eea'
+                    })
+                    .select()
+                    .single();
+                if (error) throw error;
+                console.log('✅ Profissional criado:', data);
+                return { success: true, data };
+            } catch (error) {
+                console.error('❌ Erro ao criar profissional:', error);
+                return { success: false, error: error.message };
+            }
+        },
 
-       async atualizar(id, dados) {
-  try {
-    const tenantId = await Auth.getTenantId();
-    const supabase = window.getSupabase();
-    const { data, error } = await supabase
-      .from('profissionais')
-      .update({
-        nome: dados.nome,
-        telefone: dados.telefone,
-        email: dados.email,
-        especialidade: dados.especialidade,
-        status: dados.status || 'Ativo',
-        tipo_comissao: dados.tipo_comissao,
-        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
-        cor_agenda: dados.cor_agenda || '#667eea'
-      })
-      .eq('id', id)
-      .eq('tenant_id', tenantId)
-      .select()
-      .single();
-    if (error) throw error;
-    console.log('✅ Profissional atualizado:', data);
-    return { success: true, data };
-  } catch (error) {
-    console.error('❌ Erro ao atualizar profissional:', error);
-    return { success: false, error: error.message || error };
-  }
-},
+        async atualizar(id, dados) {
+            try {
+                const tenantId = await Auth.getTenantId();
+                const supabase = window.getSupabase();
+                const { data, error } = await supabase
+                    .from('profissionais')
+                    .update({
+                        nome: dados.nome,
+                        telefone: dados.telefone || null,
+                        email: dados.email || null,           // <-- Ajuste 1: Atualizar E-mail
+                        especialidade: dados.especialidade || null, // <-- Ajuste 2: Atualizar Especialidade
+                        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
+                        cor_agenda: dados.cor_agenda || '#667eea'
+                    })
+                    .eq('id', id)
+                    .eq('tenant_id', tenantId)
+                    .select()
+                    .single();
+                if (error) throw error;
+                console.log('✅ Profissional atualizado:', data);
+                return { success: true, data };
+            } catch (error) {
+                console.error('❌ Erro ao atualizar profissional:', error);
+                return { success: false, error: error.message };
+            }
+        },
         async excluir(id) {
             try {
                 const tenantId = await Auth.getTenantId();
