@@ -46,52 +46,61 @@ const DB = {
         },
 
         async criar(dados) {
-            try {
-                const tenantId = await Auth.getTenantId();
-                const supabase = window.getSupabase();
-                const { data, error } = await supabase
-                    .from('clientes')
-                    .insert({
-                        tenant_id: tenantId,
-                        nome: dados.nome,
-                        telefone: dados.telefone,
-                        email: dados.email || null
-                    })
-                    .select()
-                    .single();
-                if (error) throw error;
-                console.log('✅ Cliente criado:', data);
-                return { success: true, data };
-            } catch (error) {
-                console.error('❌ Erro ao criar cliente:', error);
-                return { success: false, error: error.message };
-            }
-        },
+  try {
+    const tenantId = await Auth.getTenantId();
+    const supabase = window.getSupabase();
+    const { data, error } = await supabase
+      .from('profissionais')
+      .insert({
+        tenant_id: tenantId,
+        nome: dados.nome,
+        telefone: dados.telefone || null,
+        email: dados.email || null,           // <-- garante salvar email
+        especialidade: dados.especialidade || null, // <-- garante salvar especialidade
+        status: dados.status || 'Ativo',
+        tipo_comissao: dados.tipo_comissao || null,
+        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
+        cor_agenda: dados.cor_agenda || '#667eea'
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    console.log('✅ Profissional criado:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('❌ Erro ao criar profissional:', error);
+    return { success: false, error: error.message || error };
+  }
+},
 
-        async atualizar(id, dados) {
-            try {
-                const tenantId = await Auth.getTenantId();
-                const supabase = window.getSupabase();
-                const { data, error } = await supabase
-                    .from('clientes')
-                    .update({
-                        nome: dados.nome,
-                        telefone: dados.telefone,
-                        email: dados.email || null
-                    })
-                    .eq('id', id)
-                    .eq('tenant_id', tenantId)
-                    .select()
-                    .single();
-                if (error) throw error;
-                console.log('✅ Cliente atualizado:', data);
-                return { success: true, data };
-            } catch (error) {
-                console.error('❌ Erro ao atualizar cliente:', error);
-                return { success: false, error: error.message };
-            }
-        },
-
+       async atualizar(id, dados) {
+  try {
+    const tenantId = await Auth.getTenantId();
+    const supabase = window.getSupabase();
+    const { data, error } = await supabase
+      .from('profissionais')
+      .update({
+        nome: dados.nome,
+        telefone: dados.telefone || null,
+        email: dados.email || null,           // <-- garante atualizar email
+        especialidade: dados.especialidade || null, // <-- garante atualizar especialidade
+        status: dados.status || 'Ativo',
+        tipo_comissao: dados.tipo_comissao || null,
+        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
+        cor_agenda: dados.cor_agenda || '#667eea'
+      })
+      .eq('id', id)
+      .eq('tenant_id', tenantId)
+      .select()
+      .single();
+    if (error) throw error;
+    console.log('✅ Profissional atualizado:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('❌ Erro ao atualizar profissional:', error);
+    return { success: false, error: error.message || error };
+  }
+},
         async excluir(id) {
             try {
                 const tenantId = await Auth.getTenantId();
