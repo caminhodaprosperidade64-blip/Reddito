@@ -50,23 +50,21 @@ const DB = {
                 const tenantId = await Auth.getTenantId();
                 const supabase = window.getSupabase();
                 const { data, error } = await supabase
-                    .from('profissionais')
+                    .from('clientes')
                     .insert({
                         tenant_id: tenantId,
                         nome: dados.nome,
                         telefone: dados.telefone || null,
-                        email: dados.email || null,           // <-- Ajuste 1: Salvar E-mail
-                        especialidade: dados.especialidade || null, // <-- Ajuste 2: Salvar Especialidade
-                        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
-                        cor_agenda: dados.cor_agenda || '#667eea'
+                        email: dados.email || null,
+                        // Adicione outros campos de clientes aqui se necessário
                     })
                     .select()
                     .single();
                 if (error) throw error;
-                console.log('✅ Profissional criado:', data);
+                console.log('✅ Cliente criado:', data);
                 return { success: true, data };
             } catch (error) {
-                console.error('❌ Erro ao criar profissional:', error);
+                console.error('❌ Erro ao criar cliente:', error);
                 return { success: false, error: error.message };
             }
         },
@@ -76,27 +74,26 @@ const DB = {
                 const tenantId = await Auth.getTenantId();
                 const supabase = window.getSupabase();
                 const { data, error } = await supabase
-                    .from('profissionais')
+                    .from('clientes')
                     .update({
                         nome: dados.nome,
                         telefone: dados.telefone || null,
-                        email: dados.email || null,           // <-- Ajuste 1: Atualizar E-mail
-                        especialidade: dados.especialidade || null, // <-- Ajuste 2: Atualizar Especialidade
-                        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
-                        cor_agenda: dados.cor_agenda || '#667eea'
+                        email: dados.email || null,
+                        // Adicione outros campos de clientes aqui se necessário
                     })
                     .eq('id', id)
                     .eq('tenant_id', tenantId)
                     .select()
                     .single();
                 if (error) throw error;
-                console.log('✅ Profissional atualizado:', data);
+                console.log('✅ Cliente atualizado:', data);
                 return { success: true, data };
             } catch (error) {
-                console.error('❌ Erro ao atualizar profissional:', error);
+                console.error('❌ Erro ao atualizar cliente:', error);
                 return { success: false, error: error.message };
             }
         },
+
         async excluir(id) {
             try {
                 const tenantId = await Auth.getTenantId();
@@ -333,6 +330,7 @@ const DB = {
             }
         }
     },
+
     // ============================================
     // AGENDAMENTOS
     // ============================================
