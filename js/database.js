@@ -54,11 +54,11 @@ const DB = {
       .insert({
         tenant_id: tenantId,
         nome: dados.nome,
-        telefone: dados.telefone || null,
-        email: dados.email || null,           // <-- garante salvar email
-        especialidade: dados.especialidade || null, // <-- garante salvar especialidade
+        telefone: dados.telefone,
+        email: dados.email,
+        especialidade: dados.especialidade,
         status: dados.status || 'Ativo',
-        tipo_comissao: dados.tipo_comissao || null,
+        tipo_comissao: dados.tipo_comissao,
         comissao_percentual: parseFloat(dados.comissao_percentual || 0),
         cor_agenda: dados.cor_agenda || '#667eea'
       })
@@ -81,11 +81,11 @@ const DB = {
       .from('profissionais')
       .update({
         nome: dados.nome,
-        telefone: dados.telefone || null,
-        email: dados.email || null,           // <-- garante atualizar email
-        especialidade: dados.especialidade || null, // <-- garante atualizar especialidade
+        telefone: dados.telefone,
+        email: dados.email,
+        especialidade: dados.especialidade,
         status: dados.status || 'Ativo',
-        tipo_comissao: dados.tipo_comissao || null,
+        tipo_comissao: dados.tipo_comissao,
         comissao_percentual: parseFloat(dados.comissao_percentual || 0),
         cor_agenda: dados.cor_agenda || '#667eea'
       })
