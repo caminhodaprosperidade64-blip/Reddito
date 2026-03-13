@@ -120,10 +120,9 @@
         alert('✅ Conta ativada! Verifique seu e-mail para confirmar o cadastro e depois faça login.');
         window.location.href = 'login.html';
 
-      } catch (err) {
-        console.error('Erro crítico:', err);
-        alert('Erro inesperado. Tente novamente.');
-        btn.disabled = false;
+      } catch (error) {
+        console.error('Erro detalhado:', error);
+        alert('Erro ao processar o primeiro acesso: ' + (error.message || JSON.stringify(error) || error));
       }
     }
   </script>
