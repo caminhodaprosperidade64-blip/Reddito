@@ -457,6 +457,11 @@
                     : await DB.profissionais.criar(dados);
 
                 if (resultado.success) {
+                    // Enviar convite se for novo profissional e tiver email
+                    if (!id && dados.email) {
+                        await enviarConvite(dados.email);
+                    }
+
                     mostrarToast(id ? '✅ Profissional atualizado!' : '✅ Profissional criado!', 'success');
                     closeProfessionalModal();
                     await loadProfissionais();
@@ -468,6 +473,36 @@
                 mostrarToast('❌ Erro ao salvar profissional', 'error');
             } finally {
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Salvar'; }
+            }
+        }
+
+        // ─── Função para enviar convite via Edge Function ─────────────
+        async function enviarConvite(email) {
+            if (!email) return;
+
+            try {
+                const supabase = window.getSupabase();
+                const { data: { session } } = await supabase.auth.getSession();
+
+                const endpoint = 'https://ldnbivvqzpaqcdhxkywl.supabase.co/functions/v1/dynamic-action';
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${session?.access_token}`
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                if (response.ok) {
+                    console.log(`📧 Convite enviado para ${email}`);
+                } else {
+                    const error = await response.json();
+                    console.error(`❌ Erro ao enviar convite para ${email}:`, error);
+                }
+            } catch (err) {
+                console.error(`❌ Erro na requisição de convite para ${email}:`, err);
             }
         }
 
