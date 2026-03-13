@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Primeiro Acesso — Definir Senha</title>
-
   <link rel="stylesheet" href="css/pro-design-system.css">
   <link rel="stylesheet" href="css/pro-components.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,180 +11,124 @@
   <script src="js/auth.js"></script>
 </head>
 <body>
-  <div class="pro-page" style="max-width:720px;margin:48px auto;padding:24px;">
-    <h1>Primeiro Acesso</h1>
-    <p>Defina sua senha para acessar sua agenda e faturamento.</p>
+  <div class="pro-page" style="max-width:450px;margin:80px auto;padding:32px;background:#fff;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.05);">
+    <div style="text-align:center;margin-bottom:24px;">
+        <i class="fas fa-user-plus" style="font-size:40px;color:#6366F1;margin-bottom:16px;"></i>
+        <h1 style="font-size:24px;margin-bottom:8px;">Crie sua Senha</h1>
+        <p style="color:#6B7280;font-size:14px;">Olá! Complete seu cadastro para acessar o sistema.</p>
+    </div>
 
-    <div id="infoBox" style="margin:12px 0;color:#374151;"></div>
-
-    <form id="firstAccessForm" onsubmit="handleFirstAccess(event)" style="display:grid;gap:12px;">
-      <label>
-        E-mail
-        <input id="emailInput" type="email" class="pro-input" required />
-      </label>
-
-      <label>
-        Nome (opcional)
-        <input id="nameInput" type="text" class="pro-input" />
-      </label>
-
-      <label>
-        Senha
-        <input id="passwordInput" type="password" class="pro-input" minlength="8" required />
-      </label>
-
-      <label>
-        Confirmar senha
-        <input id="passwordConfirmInput" type="password" class="pro-input" minlength="8" required />
-      </label>
-
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="pro-btn pro-btn-primary" type="submit">Criar conta e entrar</button>
-        <button class="pro-btn" type="button" onclick="window.location.href='login.html'">Voltar ao login</button>
+    <form id="firstAccessForm" onsubmit="handleFirstAccess(event)" style="display:grid;gap:16px;">
+      <div class="pro-form-group">
+        <label class="pro-label">Seu E-mail</label>
+        <input id="emailInput" type="email" class="pro-input" readonly style="background:#F3F4F6;cursor:not-allowed;" />
       </div>
+
+      <div class="pro-form-group">
+        <label class="pro-label">Nome Completo</label>
+        <input id="nameInput" type="text" class="pro-input" placeholder="Como quer ser chamado?" required />
+      </div>
+
+      <div class="pro-form-group">
+        <label class="pro-label">Nova Senha</label>
+        <input id="passwordInput" type="password" class="pro-input" minlength="8" placeholder="Mínimo 8 caracteres" required />
+      </div>
+
+      <div class="pro-form-group">
+        <label class="pro-label">Confirmar Senha</label>
+        <input id="passwordConfirmInput" type="password" class="pro-input" minlength="8" placeholder="Repita a senha" required />
+      </div>
+
+      <button class="pro-btn pro-btn-primary" type="submit" id="btnSubmit" style="width:100%;height:45px;font-size:16px;">
+        <i class="fas fa-check-circle"></i> Ativar minha Conta
+      </button>
     </form>
   </div>
 
   <script>
-    // Obtém query string 'email' (se houver) e preenche o campo
+    // Preenche o e-mail vindo do link automaticamente
     (function prefillEmail() {
       const params = new URLSearchParams(window.location.search);
       const email = params.get('email') || '';
       if (email) {
-        document.getElementById('emailInput').value = decodeURIComponent(email);
-        document.getElementById('infoBox').textContent = "Verifique o e-mail já preenchido abaixo e defina sua senha.";
+        document.getElementById('emailInput').value = decodeURIComponent(email).toLowerCase();
+      } else {
+        alert("Link inválido. Por favor, use o link enviado no seu e-mail.");
       }
     })();
 
     async function handleFirstAccess(e) {
       e.preventDefault();
-      const email = (document.getElementById('emailInput').value || '').trim().toLowerCase();
-      const nome  = (document.getElementById('nameInput').value || '').trim();
+      const btn = document.getElementById('btnSubmit');
+      const email = document.getElementById('emailInput').value.trim().toLowerCase();
+      const nome  = document.getElementById('nameInput').value.trim();
       const pass  = document.getElementById('passwordInput').value;
       const pass2 = document.getElementById('passwordConfirmInput').value;
 
-      if (!email) return alert('Por favor, preencha o e-mail.');
-      if (pass.length < 8) return alert('A senha deve ter pelo menos 8 caracteres.');
-      if (pass !== pass2) return alert('As senhas não conferem.');
+      if (pass !== pass2) return alert('As senhas não conferem!');
+      
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
 
       try {
         const supabase = window.getSupabase();
 
-        // 1) Criar usuário no Auth
-        const { data: signData, error: signErr } = await supabase.auth.signUp({
-          email,
-          password: pass
-        });
-
-        if (signErr) {
-          // Possíveis erros: email já usado, regras de senha, etc.
-          console.error('Erro signUp', signErr);
-          alert('Erro ao criar conta: ' + (signErr.message || signErr));
-          return;
-        }
-
-        // signUp normalmente envia confirmação por e-mail dependendo das configurações.
-        // Obtemos o user (pode ser null em flows com confirmações por e-mail). Vamos tentar obter session/usuario.
-        const sessionResult = await supabase.auth.getSession();
-        const user = sessionResult?.data?.session?.user ?? signData?.user ?? null;
-
-        // 2) Buscar o registro "profissionais" criado pelo dono (pelo e-mail)
+        // 1. Verificar se o convite existe na tabela profissionais (usando ilike para ignorar maiúsculas)
         const { data: prof, error: profErr } = await supabase
           .from('profissionais')
           .select('*')
-          .eq('email', email)
-          .limit(1)
+          .ilike('email', email)
           .maybeSingle();
 
-        if (profErr) {
-          console.error('Erro ao buscar profissional:', profErr);
-          alert('Erro ao verificar cadastro do profissional. Contate o proprietário.');
+        if (profErr || !prof) {
+          console.error('Erro ao buscar convite:', profErr);
+          alert('Nenhum convite encontrado para o e-mail: ' + email + '\n\nPeça ao dono para cadastrar você primeiro na tela de Profissionais.');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check-circle"></i> Ativar minha Conta';
           return;
         }
 
-        if (!prof) {
-          // Se não existe registro de profissional com esse e-mail, interrompe.
-          alert('Nenhum convite encontrado para este e‑mail. Peça ao proprietário para reenviar o convite.');
+        // 2. Criar o usuário no Supabase Auth
+        const { data: signData, error: signErr } = await supabase.auth.signUp({
+          email: email,
+          password: pass,
+          options: { data: { full_name: nome } }
+        });
+
+        if (signErr) {
+          alert('Erro ao criar conta: ' + signErr.message);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check-circle"></i> Ativar minha Conta';
           return;
         }
 
-        // 3) Atualiza profissionais.user_id = user.id (se user exist)
-        if (!user) {
-          // Em alguns flows o signUp exige confirmação da conta por e-mail e user ainda não está logado.
-          // Neste caso, instruímos o usuário a confirmar o e-mail e depois logar.
-          alert('Conta criada. Você deve confirmar seu e‑mail antes de acessar. Verifique sua caixa de entrada.');
-          return;
+        const user = signData.user;
+        if (!user) return alert('Erro ao gerar usuário. Tente novamente.');
+
+        // 3. Vincular o user_id na tabela profissionais
+        await supabase.from('profissionais').update({ user_id: user.id }).eq('id', prof.id);
+
+        // 4. Criar o perfil de acesso (Role Profissional)
+        const { error: perfErr } = await supabase.from('perfis').insert([{
+          user_id: user.id,
+          tenant_id: prof.tenant_id,
+          role: 'profissional',
+          nome: nome,
+          email: email
+        }]);
+
+        if (perfErr) {
+            console.error("Erro ao criar perfil:", perfErr);
         }
 
-        // Atualizar registro do profissional para ligar ao user criado
-        const { error: updErr } = await supabase
-          .from('profissionais')
-          .update({ user_id: user.id })
-          .eq('id', prof.id);
-
-        if (updErr) {
-          console.error('Erro ao atualizar profissionais.user_id:', updErr);
-          // Não abortamos aqui — tentamos continuar para criar perfis
-        }
-
-        // 4) Inserir perfis (caso ainda não exista)
-        // Checamos se já existe perfis para esse user
-        const { data: perfilExist, error: perfilExistErr } = await supabase
-          .from('perfis')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1)
-          .maybeSingle();
-
-        if (perfilExistErr) {
-          console.error('Erro ao checar perfis:', perfilExistErr);
-        } else if (!perfilExist) {
-          const perfilPayload = {
-            user_id: user.id,
-            tenant_id: prof.tenant_id,
-            role: 'profissional',
-            nome: nome || prof.nome || null,
-            email: email
-          };
-
-          const { error: perfCreateErr } = await supabase
-            .from('perfis')
-            .insert([perfilPayload]);
-
-          if (perfCreateErr) {
-            console.error('Erro ao criar perfil:', perfCreateErr);
-            // decorar: se RLS bloquear, proprietário deverá vincular manualmente
-            alert('Conta criada — mas não foi possível completar o cadastro interno. Peça ao proprietário para vincular seu perfil.');
-            return;
-          }
-        }
-
-        // 5) Tudo ok → redireciona para a dashboard (agenda)
-        mostrarToast('✅ Conta criada com sucesso! Você será redirecionado...','success');
-        setTimeout(() => {
-          window.location.href = 'agenda.html';
-        }, 1200);
+        alert('✅ Conta ativada com sucesso! Você será redirecionado.');
+        window.location.href = 'agenda.html';
 
       } catch (err) {
-        console.error('Erro no primeiro acesso:', err);
-        alert('Erro inesperado. Veja o console para detalhes.');
+        console.error('Erro crítico:', err);
+        alert('Ocorreu um erro inesperado. Tente novamente.');
+        btn.disabled = false;
       }
-    }
-
-    // Toast simples (copiado do seu projeto)
-    function mostrarToast(msg, tipo = 'success') {
-      const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
-      const toast = document.createElement('div');
-      toast.textContent = msg;
-      toast.style.cssText = `
-        position:fixed;bottom:24px;right:24px;z-index:9999;
-        padding:14px 20px;border-radius:10px;
-        background:${cores[tipo]||cores.success};
-        color:#fff;font-weight:500;font-size:14px;
-        box-shadow:0 4px 16px rgba(0,0,0,0.15);
-      `;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 3500);
     }
   </script>
 </body>
