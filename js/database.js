@@ -268,9 +268,6 @@ const DB = {
                         nome: dados.nome,
                         comissao_percentual: parseFloat(dados.comissao_percentual || 0),
                         cor_agenda: dados.cor_agenda || '#667eea'
-                        telefone: dados.telefone,
-                        email: dados.email,
-                        especialidade: dados.especialidade,
                     })
                     .select()
                     .single();
