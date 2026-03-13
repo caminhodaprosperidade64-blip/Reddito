@@ -31,7 +31,6 @@
       overflow: hidden;
     }
 
-    /* Progress Bar */
     .ob-progress {
       background: #f1f5f9;
       padding: 24px 40px 0;
@@ -103,7 +102,6 @@
     .ob-step.active .ob-step-label { color: #667eea; }
     .ob-step.done .ob-step-label { color: #10b981; }
 
-    /* Content */
     .ob-content {
       padding: 32px 40px 40px;
     }
@@ -124,7 +122,6 @@
       margin-bottom: 28px;
     }
 
-    /* Form */
     .form-group { margin-bottom: 20px; }
 
     .form-row {
@@ -157,7 +154,6 @@
       border-color: #667eea;
     }
 
-    /* Logo Upload */
     .logo-upload {
       border: 2px dashed #e2e8f0;
       border-radius: 12px;
@@ -192,7 +188,6 @@
     .logo-upload-text { font-size: 13px; color: #64748b; }
     .logo-upload-hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
 
-    /* Horários */
     .horario-row {
       display: grid;
       grid-template-columns: 32px 1fr 1fr 1fr;
@@ -228,7 +223,6 @@
       color: #cbd5e1;
     }
 
-    /* Serviços / Profissionais */
     .item-list { display: flex; flex-direction: column; gap: 12px; }
 
     .item-card {
@@ -281,7 +275,6 @@
 
     .btn-add:hover { background: #ede9fe; }
 
-    /* Navigation */
     .ob-nav {
       display: flex;
       justify-content: space-between;
@@ -332,7 +325,6 @@
       text-decoration: underline;
     }
 
-    /* Mensagens */
     .msg-error {
       background: #fef2f2;
       color: #dc2626;
@@ -355,7 +347,6 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Convite badge */
     .invite-badge {
       display: inline-flex;
       align-items: center;
@@ -379,7 +370,6 @@
 <body>
 <div class="ob-container">
 
-  <!-- Progress -->
   <div class="ob-progress">
     <div class="ob-steps">
       <div class="ob-step active" id="step-ind-1">
@@ -401,7 +391,6 @@
     </div>
   </div>
 
-  <!-- Content -->
   <div class="ob-content">
     <div id="msgError" class="msg-error"></div>
 
@@ -530,9 +519,6 @@
 </div>
 
 <script>
-// ============================================
-// ESTADO
-// ============================================
 let currentStep = 1;
 let userId = null;
 let tenantId = null;
@@ -540,18 +526,15 @@ let logoUrl = null;
 
 const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const HORARIOS_PADRAO = [
-  { ativo: false, inicio: '08:00', fim: '18:00' }, // Dom
-  { ativo: true,  inicio: '08:00', fim: '18:00' }, // Seg
-  { ativo: true,  inicio: '08:00', fim: '18:00' }, // Ter
-  { ativo: true,  inicio: '08:00', fim: '18:00' }, // Qua
-  { ativo: true,  inicio: '08:00', fim: '18:00' }, // Qui
-  { ativo: true,  inicio: '08:00', fim: '18:00' }, // Sex
-  { ativo: false, inicio: '08:00', fim: '13:00' }, // Sab
+  { ativo: false, inicio: '08:00', fim: '18:00' },
+  { ativo: true,  inicio: '08:00', fim: '18:00' },
+  { ativo: true,  inicio: '08:00', fim: '18:00' },
+  { ativo: true,  inicio: '08:00', fim: '18:00' },
+  { ativo: true,  inicio: '08:00', fim: '18:00' },
+  { ativo: true,  inicio: '08:00', fim: '18:00' },
+  { ativo: false, inicio: '08:00', fim: '13:00' },
 ];
 
-// ============================================
-// INICIALIZAÇÃO
-// ============================================
 function aguardarSistema() {
   if (window.isSupabaseReady && window.isSupabaseReady() && typeof Auth !== 'undefined') {
     inicializar();
@@ -579,7 +562,6 @@ async function inicializar() {
   userId = session.user.id;
   tenantId = session.user.id;
 
-  // Se já completou onboarding, vai para dashboard
   const { data: perfil } = await supabase
     .from('perfis')
     .select('onboarding_completo')
@@ -601,34 +583,25 @@ if (document.readyState === 'loading') {
   aguardarSistema();
 }
 
-// ============================================
-// NAVEGAÇÃO ENTRE STEPS
-// ============================================
 function irParaStep(step) {
   if (step > currentStep && !validarStep(currentStep)) return;
 
-  // Atualiza indicadores
   for (let i = 1; i <= 4; i++) {
     const ind = document.getElementById(`step-ind-${i}`);
     ind.className = 'ob-step';
     if (i < step) ind.classList.add('done');
     else if (i === step) ind.classList.add('active');
 
-    // Ícone de check nos concluídos
     const circle = ind.querySelector('.ob-step-circle');
     circle.innerHTML = i < step ? '<i class="fas fa-check"></i>' : i;
   }
 
-  // Troca conteúdo
   document.getElementById(`content-${currentStep}`).classList.remove('active');
   document.getElementById(`content-${step}`).classList.add('active');
   currentStep = step;
   esconderErro();
 }
 
-// ============================================
-// VALIDAÇÕES
-// ============================================
 function validarStep(step) {
   esconderErro();
   if (step === 1) {
@@ -659,9 +632,6 @@ function esconderErro() {
   document.getElementById('msgError').style.display = 'none';
 }
 
-// ============================================
-// LOGO PREVIEW
-// ============================================
 function previewLogo(input) {
   const file = input.files[0];
   if (!file) return;
@@ -682,9 +652,6 @@ function previewLogo(input) {
   reader.readAsDataURL(file);
 }
 
-// ============================================
-// HORÁRIOS
-// ============================================
 function renderHorarios() {
   const container = document.getElementById('horariosContainer');
   container.innerHTML = DIAS.map((dia, i) => `
@@ -706,9 +673,6 @@ function toggleHorario(i) {
   document.getElementById(`fim-${i}`).disabled = !ativo;
 }
 
-// ============================================
-// SERVIÇOS
-// ============================================
 let servicoCount = 0;
 
 function adicionarServico() {
@@ -742,9 +706,6 @@ function adicionarServico() {
   document.getElementById('servicosList').appendChild(div);
 }
 
-// ============================================
-// PROFISSIONAIS
-// ============================================
 let profCount = 0;
 
 function adicionarProfissional() {
@@ -785,9 +746,6 @@ function removerItem(id) {
   document.getElementById(id)?.remove();
 }
 
-// ============================================
-// FINALIZAR ONBOARDING
-// ============================================
 async function finalizarOnboarding() {
   if (!validarStep(currentStep)) return;
 
@@ -814,6 +772,9 @@ async function finalizarOnboarding() {
     }
 
     // 2. Salvar perfil
+    const { data: { session } } = await supabase.auth.getSession();
+    const userEmail = session?.user?.email || '';
+
     const { error: perfilError } = await supabase
       .from('perfis')
       .upsert({
@@ -821,7 +782,7 @@ async function finalizarOnboarding() {
         tenant_id: tenantId,
         role: 'dono',
         nome: document.getElementById('nomeEmpresa').value.trim(),
-        email: (await supabase.auth.getUser()).data.user.email,
+        email: userEmail,
         nome_empresa: document.getElementById('nomeEmpresa').value.trim(),
         segmento: document.getElementById('segmento').value,
         telefone: document.getElementById('telefone').value.trim(),
@@ -860,7 +821,7 @@ async function finalizarOnboarding() {
       }
     }
 
-    // 5. Salvar profissionais + enviar convites
+    // 5. Salvar profissionais
     const profCards = document.querySelectorAll('#profissionaisList .item-card');
     for (const card of profCards) {
       const nome = card.querySelector('.prof-nome')?.value?.trim();
@@ -875,12 +836,8 @@ async function finalizarOnboarding() {
           ativo: true
         });
 
-        // Enviar convite por email se informado
         if (email) {
-          await supabase.auth.admin?.inviteUserByEmail?.(email).catch(() => {
-            // Fallback: convite via signUp com senha temporária
-            console.log(`📧 Convite para ${email} será enviado manualmente`);
-          });
+          console.log(`📧 Convite para ${email} será enviado manualmente`);
         }
       }
     }
