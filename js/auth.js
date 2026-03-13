@@ -1,6 +1,6 @@
 /**
  * ============================================
- * AUTH MODULE - VERSÃO CORRIGIDA
+ * AUTH MODULE - VERSÃO ATUALIZADA COM ONBOARDING
  * ============================================
  */
 console.log('🔧 [Auth] Carregando módulo...');
@@ -98,14 +98,17 @@ const Auth = {
       if (error) throw error;
 
       const user = data.user;
+
+      // Cria perfil básico — onboarding_completo = false
       const { error: perfilError } = await supabase
         .from('perfis')
         .insert({
-          id:        user.id,
-          tenant_id: user.id,
-          role:      'dono',
-          nome:      nomeDaEmpresa || email,
-          email:     email
+          id:                  user.id,
+          tenant_id:           user.id,
+          role:                'dono',
+          nome:                nomeDaEmpresa || email,
+          email:               email,
+          onboarding_completo: false
         });
 
       if (perfilError) {
@@ -157,9 +160,10 @@ function configurarProtecaoRotas() {
   const paginasPublicas = [
     '/', '/index.html', '/login.html',
     '/aguardando-confirmacao.html', '/agendar.html',
-    '/teste-auth.html',
+    '/onboarding.html', '/teste-auth.html',
     'index.html', 'login.html',
-    'aguardando-confirmacao.html', 'agendar.html'
+    'aguardando-confirmacao.html', 'agendar.html',
+    'onboarding.html'
   ];
 
   const paginaAtual = window.location.pathname;
@@ -171,18 +175,28 @@ function configurarProtecaoRotas() {
 
   Auth.isAuthenticated().then(async autenticado => {
     if (!autenticado) {
+      console.warn('⚠️ [Auth] Não autenticado, redirecionando para login...');
       window.location.href = 'login.html';
       return;
     }
 
     const perfil = await Auth.getPerfil();
 
+    // Sem perfil = primeiro acesso → onboarding
     if (!perfil) {
-      console.warn('⚠️ [Auth] Perfil não encontrado, continuando para dashboard...');
-      window.location.href = 'dashboard.html';
+      console.warn('⚠️ [Auth] Perfil não encontrado → onboarding');
+      window.location.href = 'onboarding.html';
       return;
     }
 
+    // Perfil existe mas onboarding não foi concluído → onboarding
+    if (!perfil.onboarding_completo) {
+      console.warn('⚠️ [Auth] Onboarding incompleto → redirecionando...');
+      window.location.href = 'onboarding.html';
+      return;
+    }
+
+    // Tudo OK — expõe dados globais e dispara evento
     window.TENANT_ID = perfil.tenant_id;
     window.USER_ROLE = perfil.role;
     window.USER_NOME = perfil.nome;
