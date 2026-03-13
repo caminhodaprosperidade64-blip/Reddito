@@ -314,10 +314,13 @@
             const perfil = e.detail;
             if (!perfil) return;
 
-            const primeiraLetra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            const primeiraLetra = (perfil.nome_empresa || perfil.nome || perfil.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = primeiraLetra;
-            document.getElementById('userName').textContent = perfil.nome || perfil.email;
+            document.getElementById('userName').textContent = perfil.nome_empresa || perfil.nome || perfil.email;
             document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+
+            // Nome do estabelecimento no header
+            document.getElementById('tenantName').textContent = perfil.nome_empresa || perfil.nome || 'Meu Estabelecimento';
 
             // ✅ Só carrega o dashboard DEPOIS que o perfil (e DB) estão prontos
             await loadDashboard();
