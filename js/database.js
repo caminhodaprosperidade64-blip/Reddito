@@ -271,6 +271,9 @@ const DB = {
                     .insert({
                         tenant_id: tenantId,
                         nome: dados.nome,
+                        telefone: dados.telefone || null,
+                        email: dados.email || null,
+                        especialidade: dados.especialidade || null,
                         comissao_percentual: parseFloat(dados.comissao_percentual || 0),
                         cor_agenda: dados.cor_agenda || '#667eea'
                     })
@@ -293,6 +296,9 @@ const DB = {
                     .from('profissionais')
                     .update({
                         nome: dados.nome,
+                        telefone: dados.telefone || null,
+                        email: dados.email || null,
+                        especialidade: dados.especialidade || null,
                         comissao_percentual: parseFloat(dados.comissao_percentual || 0),
                         cor_agenda: dados.cor_agenda || '#667eea'
                     })
@@ -327,7 +333,6 @@ const DB = {
             }
         }
     },
-
     // ============================================
     // AGENDAMENTOS
     // ============================================
