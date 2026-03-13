@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Profissional - Reddito</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; background: #f9f9f9; }
+    h1 { color: #4f46e5; }
+    .section { background: white; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.5rem; border-bottom: 1px solid #ddd; text-align: left; }
+  </style>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/database.js"></script>
+</head>
+<body>
+  <h1>Bem-vindo, Profissional</h1>
+
+  <div class="section" id="agenda-section">
+    <h2>Agenda</h2>
+    <table id="agenda-table">
+      <thead>
+        <tr><th>Data</th><th>Hora</th><th>Cliente</th><th>Serviço</th><th>Status</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="faturamento-section">
+    <h2>Faturamento (Comissão)</h2>
+    <p>Valor total da sua comissão: <strong id="comissao-total">R$ 0,00</strong></p>
+  </div>
+
+  <script>
+    async function carregarDashboard() {
+      const supabase = window.getSupabase();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        alert('Usuário não autenticado. Faça login novamente.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Buscar perfil para pegar id do profissional e tenant_id
+      const { data: perfil, error: perfilError } = await supabase
+        .from('perfis')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (perfilError || !perfil) {
+        alert('Perfil não encontrado.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      if (perfil.role !== 'profissional') {
+        alert('Acesso negado. Esta página é apenas para profissionais.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Buscar id do profissional na tabela profissionais
+      const { data: profissional, error: profError } = await supabase
+        .from('profissionais')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profError || !profissional) {
+        alert('Profissional não encontrado.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Carregar agenda do profissional
+      const agendamentos = await DB.agendamentos.listar({ profissional_id: profissional.id });
+      const tbody = document.querySelector('#agenda-table tbody');
+      tbody.innerHTML = '';
+      agendamentos.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${a.data}</td>
+          <td>${a.hora}</td>
+          <td>${a.cliente?.nome || '-'}</td>
+          <td>${a.servico?.nome || '-'}</td>
+          <td>${a.status}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Calcular comissão total
+      let comissaoTotal = 0;
+      agendamentos.forEach(a => {
+        const valor = parseFloat(a.valor || 0);
+        const comissaoPerc = parseFloat(a.profissional?.comissao_percentual || 0);
+        comissaoTotal += (valor * comissaoPerc) / 100;
+      });
+
+      document.getElementById('comissao-total').innerText = `R$ ${comissaoTotal.toFixed(2)}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarDashboard);
+  </script>
+</body>
+</html>
