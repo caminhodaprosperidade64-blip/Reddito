@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Primeiro Acesso — Definir Senha</title>
+
+  <link rel="stylesheet" href="css/pro-design-system.css">
+  <link rel="stylesheet" href="css/pro-components.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="pro-page" style="max-width:720px;margin:48px auto;padding:24px;">
+    <h1>Primeiro Acesso</h1>
+    <p>Defina sua senha para acessar sua agenda e faturamento.</p>
+
+    <div id="infoBox" style="margin:12px 0;color:#374151;"></div>
+
+    <form id="firstAccessForm" onsubmit="handleFirstAccess(event)" style="display:grid;gap:12px;">
+      <label>
+        E-mail
+        <input id="emailInput" type="email" class="pro-input" required />
+      </label>
+
+      <label>
+        Nome (opcional)
+        <input id="nameInput" type="text" class="pro-input" />
+      </label>
+
+      <label>
+        Senha
+        <input id="passwordInput" type="password" class="pro-input" minlength="8" required />
+      </label>
+
+      <label>
+        Confirmar senha
+        <input id="passwordConfirmInput" type="password" class="pro-input" minlength="8" required />
+      </label>
+
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="pro-btn pro-btn-primary" type="submit">Criar conta e entrar</button>
+        <button class="pro-btn" type="button" onclick="window.location.href='login.html'">Voltar ao login</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Obtém query string 'email' (se houver) e preenche o campo
+    (function prefillEmail() {
+      const params = new URLSearchParams(window.location.search);
+      const email = params.get('email') || '';
+      if (email) {
+        document.getElementById('emailInput').value = decodeURIComponent(email);
+        document.getElementById('infoBox').textContent = "Verifique o e-mail já preenchido abaixo e defina sua senha.";
+      }
+    })();
+
+    async function handleFirstAccess(e) {
+      e.preventDefault();
+      const email = (document.getElementById('emailInput').value || '').trim().toLowerCase();
+      const nome  = (document.getElementById('nameInput').value || '').trim();
+      const pass  = document.getElementById('passwordInput').value;
+      const pass2 = document.getElementById('passwordConfirmInput').value;
+
+      if (!email) return alert('Por favor, preencha o e-mail.');
+      if (pass.length < 8) return alert('A senha deve ter pelo menos 8 caracteres.');
+      if (pass !== pass2) return alert('As senhas não conferem.');
+
+      try {
+        const supabase = window.getSupabase();
+
+        // 1) Criar usuário no Auth
+        const { data: signData, error: signErr } = await supabase.auth.signUp({
+          email,
+          password: pass
+        });
+
+        if (signErr) {
+          // Possíveis erros: email já usado, regras de senha, etc.
+          console.error('Erro signUp', signErr);
+          alert('Erro ao criar conta: ' + (signErr.message || signErr));
+          return;
+        }
+
+        // signUp normalmente envia confirmação por e-mail dependendo das configurações.
+        // Obtemos o user (pode ser null em flows com confirmações por e-mail). Vamos tentar obter session/usuario.
+        const sessionResult = await supabase.auth.getSession();
+        const user = sessionResult?.data?.session?.user ?? signData?.user ?? null;
+
+        // 2) Buscar o registro "profissionais" criado pelo dono (pelo e-mail)
+        const { data: prof, error: profErr } = await supabase
+          .from('profissionais')
+          .select('*')
+          .eq('email', email)
+          .limit(1)
+          .maybeSingle();
+
+        if (profErr) {
+          console.error('Erro ao buscar profissional:', profErr);
+          alert('Erro ao verificar cadastro do profissional. Contate o proprietário.');
+          return;
+        }
+
+        if (!prof) {
+          // Se não existe registro de profissional com esse e-mail, interrompe.
+          alert('Nenhum convite encontrado para este e‑mail. Peça ao proprietário para reenviar o convite.');
+          return;
+        }
+
+        // 3) Atualiza profissionais.user_id = user.id (se user exist)
+        if (!user) {
+          // Em alguns flows o signUp exige confirmação da conta por e-mail e user ainda não está logado.
+          // Neste caso, instruímos o usuário a confirmar o e-mail e depois logar.
+          alert('Conta criada. Você deve confirmar seu e‑mail antes de acessar. Verifique sua caixa de entrada.');
+          return;
+        }
+
+        // Atualizar registro do profissional para ligar ao user criado
+        const { error: updErr } = await supabase
+          .from('profissionais')
+          .update({ user_id: user.id })
+          .eq('id', prof.id);
+
+        if (updErr) {
+          console.error('Erro ao atualizar profissionais.user_id:', updErr);
+          // Não abortamos aqui — tentamos continuar para criar perfis
+        }
+
+        // 4) Inserir perfis (caso ainda não exista)
+        // Checamos se já existe perfis para esse user
+        const { data: perfilExist, error: perfilExistErr } = await supabase
+          .from('perfis')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (perfilExistErr) {
+          console.error('Erro ao checar perfis:', perfilExistErr);
+        } else if (!perfilExist) {
+          const perfilPayload = {
+            user_id: user.id,
+            tenant_id: prof.tenant_id,
+            role: 'profissional',
+            nome: nome || prof.nome || null,
+            email: email
+          };
+
+          const { error: perfCreateErr } = await supabase
+            .from('perfis')
+            .insert([perfilPayload]);
+
+          if (perfCreateErr) {
+            console.error('Erro ao criar perfil:', perfCreateErr);
+            // decorar: se RLS bloquear, proprietário deverá vincular manualmente
+            alert('Conta criada — mas não foi possível completar o cadastro interno. Peça ao proprietário para vincular seu perfil.');
+            return;
+          }
+        }
+
+        // 5) Tudo ok → redireciona para a dashboard (agenda)
+        mostrarToast('✅ Conta criada com sucesso! Você será redirecionado...','success');
+        setTimeout(() => {
+          window.location.href = 'agenda.html';
+        }, 1200);
+
+      } catch (err) {
+        console.error('Erro no primeiro acesso:', err);
+        alert('Erro inesperado. Veja o console para detalhes.');
+      }
+    }
+
+    // Toast simples (copiado do seu projeto)
+    function mostrarToast(msg, tipo = 'success') {
+      const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
+      const toast = document.createElement('div');
+      toast.textContent = msg;
+      toast.style.cssText = `
+        position:fixed;bottom:24px;right:24px;z-index:9999;
+        padding:14px 20px;border-radius:10px;
+        background:${cores[tipo]||cores.success};
+        color:#fff;font-weight:500;font-size:14px;
+        box-shadow:0 4px 16px rgba(0,0,0,0.15);
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+  </script>
+</body>
+</html>
