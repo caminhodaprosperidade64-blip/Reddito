@@ -1,133 +1,130 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Ativar Conta - Reddito</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Primeiro Acesso — Definir Senha</title>
+  <link rel="stylesheet" href="css/pro-design-system.css">
+  <link rel="stylesheet" href="css/pro-components.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/auth.js"></script>
 </head>
 <body>
-  <h1>Ativar sua Conta</h1>
-  <form id="formAtivarConta">
-    <label for="email">Seu E-mail</label>
-    <input type="email" id="email" name="email" readonly />
+  <div class="pro-page" style="max-width:450px;margin:80px auto;padding:32px;background:#fff;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.05);">
+    <div style="text-align:center;margin-bottom:24px;">
+        <h1 style="font-size:24px;margin-bottom:8px;">Ativar sua Conta</h1>
+        <p style="color:#6B7280;font-size:14px;">Defina sua senha de acesso abaixo.</p>
+    </div>
 
-    <label for="nome">Nome Completo</label>
-    <input type="text" id="nome" name="nome" required />
+    <form id="firstAccessForm" onsubmit="handleFirstAccess(event)" style="display:grid;gap:16px;">
+      <div class="pro-form-group">
+        <label class="pro-label">Seu E-mail</label>
+        <input id="emailInput" type="email" class="pro-input" readonly style="background:#F3F4F6;" />
+      </div>
 
-    <label for="senha">Nova Senha</label>
-    <input type="password" id="senha" name="senha" required />
+      <div class="pro-form-group">
+        <label class="pro-label">Nome Completo</label>
+        <input id="nameInput" type="text" class="pro-input" placeholder="Seu nome" required />
+      </div>
 
-    <label for="senhaConfirm">Confirmar Senha</label>
-    <input type="password" id="senhaConfirm" name="senhaConfirm" required />
+      <div class="pro-form-group">
+        <label class="pro-label">Nova Senha</label>
+        <input id="passwordInput" type="password" class="pro-input" minlength="8" placeholder="Mínimo 8 caracteres" required />
+      </div>
 
-    <button type="submit">Ativar Conta</button>
-  </form>
+      <div class="pro-form-group">
+        <label class="pro-label">Confirmar Senha</label>
+        <input id="passwordConfirmInput" type="password" class="pro-input" minlength="8" placeholder="Repita a senha" required />
+      </div>
+
+      <button class="pro-btn pro-btn-primary" type="submit" id="btnSubmit" style="width:100%;height:45px;">
+        Ativar minha Conta
+      </button>
+    </form>
+  </div>
 
   <script>
-    // Preenche o campo email com o parâmetro da URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const emailParam = urlParams.get('email');
-    if (emailParam) {
-      document.getElementById('email').value = emailParam;
-    }
+    // Pega o e-mail da URL e limpa espaços
+    (function prefillEmail() {
+      const params = new URLSearchParams(window.location.search);
+      let email = params.get('email') || '';
+      if (email) {
+        document.getElementById('emailInput').value = decodeURIComponent(email).trim().toLowerCase();
+      }
+    })();
 
     async function handleFirstAccess(e) {
       e.preventDefault();
-      const btn = e.target.querySelector('button');
+      const btn = document.getElementById('btnSubmit');
+      const email = document.getElementById('emailInput').value.trim().toLowerCase();
+      const nome  = document.getElementById('nameInput').value.trim();
+      const pass  = document.getElementById('passwordInput').value;
+      const pass2 = document.getElementById('passwordConfirmInput').value;
+
+      if (pass !== pass2) return alert('As senhas não conferem!');
+      
       btn.disabled = true;
-      btn.innerText = 'Processando...';
-
-      const email = document.getElementById('email').value;
-      const nome = document.getElementById('nome').value.trim();
-      const senha = document.getElementById('senha').value;
-      const senhaConfirm = document.getElementById('senhaConfirm').value;
-
-      if (senha !== senhaConfirm) {
-        alert('As senhas não coincidem!');
-        btn.disabled = false;
-        btn.innerText = 'Ativar Conta';
-        return;
-      }
-
-      if (!nome) {
-        alert('Por favor, preencha seu nome completo.');
-        btn.disabled = false;
-        btn.innerText = 'Ativar Conta';
-        return;
-      }
+      btn.innerHTML = 'Processando...';
 
       try {
         const supabase = window.getSupabase();
 
-        // 1. Criar o usuário no Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password: senha,
+        // --- DIAGNÓSTICO ---
+        // Vamos tentar buscar de um jeito mais "aberto" para ver se o registro existe
+        const { data: todos, error: errTodos } = await supabase.from('profissionais').select('email');
+        console.log("E-mails cadastrados no banco:", todos);
+        // -------------------
+
+        // 1. Buscar o convite (usando trim para garantir que não há espaços invisíveis)
+        const { data: prof, error: profErr } = await supabase
+          .from('profissionais')
+          .select('*')
+          .ilike('email', email)
+          .maybeSingle();
+
+        if (profErr || !prof) {
+          console.error('Erro detalhado:', profErr);
+          alert('ERRO: O e-mail "' + email + '" não foi encontrado na lista de profissionais.\n\nVerifique se você cadastrou este e-mail EXATAMENTE assim na tela de Profissionais do sistema.');
+          btn.disabled = false;
+          btn.innerHTML = 'Ativar minha Conta';
+          return;
+        }
+
+        // 2. Criar o usuário no Auth
+        const { data: signData, error: signErr } = await supabase.auth.signUp({
+          email: email,
+          password: pass,
           options: { data: { full_name: nome } }
         });
 
-        if (authError) throw authError;
-
-        if (authData.user) {
-          const userId = authData.user.id;
-
-          // 2. Verificar se é um profissional aceitando convite
-          const { data: profExistente, error: profError } = await supabase
-            .from('profissionais')
-            .select('id, tenant_id')
-            .eq('email', email)
-            .single();
-
-          let role = 'dono';
-          let tenantId = userId; // Se for dono, o tenant_id é o próprio ID
-
-          if (profExistente) {
-            role = 'profissional';
-            tenantId = profExistente.tenant_id;
-
-            // Vincula o usuário do Auth ao registro do profissional
-            const { error: updateProfError } = await supabase
-              .from('profissionais')
-              .update({ user_id: userId })
-              .eq('id', profExistente.id);
-
-            if (updateProfError) {
-              console.error('Erro ao vincular user_id ao profissional:', updateProfError);
-            }
-          }
-
-          // 3. Criar o Perfil (Tabela perfis)
-          const { error: perfilError } = await supabase
-            .from('perfis')
-            .insert({
-              id: userId,
-              tenant_id: tenantId,
-              role: role,
-              nome: nome,
-              email: email
-            });
-
-          if (perfilError) {
-            console.error('Erro ao criar perfil:', perfilError);
-            alert('Erro ao criar perfil: ' + perfilError.message);
-            btn.disabled = false;
-            btn.innerText = 'Ativar Conta';
-            return;
-          }
-
-          alert('Cadastro realizado! Verifique seu e-mail para confirmar e depois faça login.');
-          window.location.href = 'login.html';
+        if (signErr) {
+          alert('Erro no cadastro: ' + signErr.message);
+          btn.disabled = false;
+          btn.innerHTML = 'Ativar minha Conta';
+          return;
         }
+
+        const user = signData.user;
+
+        // 3. Vincular e Criar Perfil
+        await supabase.from('profissionais').update({ user_id: user.id }).eq('id', prof.id);
+        await supabase.from('perfis').insert([{
+          user_id: user.id,
+          tenant_id: prof.tenant_id,
+          role: 'profissional',
+          nome: nome,
+          email: email
+        }]);
+
+        alert('✅ Conta ativada! Verifique seu e-mail para confirmar o cadastro e depois faça login.');
+        window.location.href = 'login.html';
+
       } catch (error) {
         console.error('Erro detalhado:', error);
-        alert('Erro no cadastro: ' + (error.message || 'Erro desconhecido'));
-        btn.disabled = false;
-        btn.innerText = 'Ativar Conta';
+        alert('Erro ao processar o primeiro acesso: ' + (error.message || JSON.stringify(error) || error));
       }
     }
-
-    document.getElementById('formAtivarConta').addEventListener('submit', handleFirstAccess);
   </script>
 </body>
 </html>
