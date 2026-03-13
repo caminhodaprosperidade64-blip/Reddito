@@ -481,28 +481,27 @@
             if (!email) return;
 
             try {
-                const supabase = window.getSupabase();
-                const { data: { session } } = await supabase.auth.getSession();
-
                 const endpoint = 'https://ldnbivvqzpaqcdhxkywl.supabase.co/functions/v1/dynamic-action';
 
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${session?.access_token}`
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ email: email })
                 });
 
                 if (response.ok) {
-                    console.log(`📧 Convite enviado para ${email}`);
+                    console.log(`✅ Sucesso! Convite disparado para: ${email}`);
+                    mostrarToast(`📧 Convite enviado para ${email}`, 'success');
                 } else {
-                    const error = await response.json();
-                    console.error(`❌ Erro ao enviar convite para ${email}:`, error);
+                    const errorData = await response.json();
+                    console.error('❌ Erro na função:', errorData);
+                    mostrarToast('❌ Erro ao enviar convite', 'error');
                 }
             } catch (err) {
-                console.error(`❌ Erro na requisição de convite para ${email}:`, err);
+                console.error('❌ Falha crítica ao chamar convite:', err);
+                mostrarToast('❌ Falha ao enviar convite', 'error');
             }
         }
 
