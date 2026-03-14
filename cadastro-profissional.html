@@ -1,169 +1,216 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cadastro de Profissional</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="css/pro-design-system.css" />
-    <link rel="stylesheet" href="css/pro-components.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Profissional - Sistema Pro</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/pro-design-system.css">
+    <link rel="stylesheet" href="css/pro-components.css">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
+    
+    <style>
+        body { background-color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif; }
+        .auth-container { width: 100%; max-width: 440px; padding: 20px; }
+        .auth-card { background: white; border-radius: 16px; box-shadow: var(--pro-shadow); padding: 40px; }
+        .auth-header { text-align: center; margin-bottom: 32px; }
+        .auth-icon { width: 64px; height: 64px; background: var(--pro-primary-light); color: var(--pro-primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 20px; }
+        .auth-title { font-size: 24px; font-weight: 700; color: var(--pro-text-primary); margin-bottom: 8px; }
+        .auth-subtitle { color: var(--pro-text-secondary); font-size: 14px; }
+        .error-container { display: none; text-align: center; padding: 40px 20px; }
+        .error-icon { font-size: 48px; color: var(--pro-error); margin-bottom: 20px; }
+    </style>
 </head>
 <body>
-    <div id="container-cadastro" style="max-width: 400px; margin: 40px auto; padding: 20px; box-shadow: var(--pro-shadow); border-radius: 12px;">
-        <h2 style="text-align:center; margin-bottom: 20px;">Você foi convidado!</h2>
-        <p style="text-align:center; margin-bottom: 30px;">Complete seu cadastro para acessar o sistema.</p>
-        <form id="formCadastro" onsubmit="realizarCadastro(event)">
-            <div class="pro-form-group">
-                <label for="nome">Seu Nome Completo *</label>
-                <input type="text" id="nome" class="pro-input" required />
+    <div class="auth-container">
+        <!-- Formulário de Cadastro -->
+        <div id="cadastroCard" class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon"><i class="fas fa-user-plus"></i></div>
+                <h1 class="auth-title">Você foi convidado!</h1>
+                <p class="auth-subtitle">Complete seu cadastro para acessar o sistema.</p>
             </div>
-            <div class="pro-form-group">
-                <label for="email">Email *</label>
-                <input type="email" id="email" class="pro-input" required />
-                <small style="color: gray;">Use o mesmo email para o qual o convite foi enviado.</small>
-            </div>
-            <div class="pro-form-group">
-                <label for="senha">Senha *</label>
-                <input type="password" id="senha" class="pro-input" required minlength="6" />
-            </div>
-            <div class="pro-form-group">
-                <label for="confirmarSenha">Confirmar Senha *</label>
-                <input type="password" id="confirmarSenha" class="pro-input" required minlength="6" />
-            </div>
-            <div id="erroCadastro" style="color: red; margin-bottom: 10px; display: none;"></div>
-            <button type="submit" class="pro-btn pro-btn-primary w-full">Criar Minha Conta</button>
-        </form>
-    </div>
 
-    <div id="container-erro" style="display:none; max-width: 400px; margin: 40px auto; padding: 20px; text-align:center;">
-        <div style="font-size: 48px; color: #EF4444; margin-bottom: 20px;">&#10060;</div>
-        <h3>Convite inválido ou expirado</h3>
-        <p id="mensagem-erro" style="color: #555; margin-top: 10px;">
-            Este link de convite não é válido ou já expirou.<br />
-            Solicite um novo convite ao proprietário do estabelecimento.
-        </p>
+            <form id="formCadastro" onsubmit="realizarCadastro(event)">
+                <div class="pro-form-group">
+                    <label class="pro-label">Seu Nome Completo *</label>
+                    <input type="text" class="pro-input" id="nome" placeholder="Ex: João Silva" required>
+                </div>
+
+                <div class="pro-form-group">
+                    <label class="pro-label">Email *</label>
+                    <input type="email" class="pro-input" id="email" placeholder="seu@email.com" required>
+                    <p class="pro-input-help">Use o mesmo email para o qual o convite foi enviado.</p>
+                </div>
+
+                <div class="pro-form-group">
+                    <label class="pro-label">Senha *</label>
+                    <div style="position:relative">
+                        <input type="password" class="pro-input" id="senha" placeholder="••••••••" required minlength="6">
+                        <button type="button" class="pro-input-icon-btn" onclick="togglePassword('senha')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pro-form-group">
+                    <label class="pro-label">Confirmar Senha *</label>
+                    <div style="position:relative">
+                        <input type="password" class="pro-input" id="confirmarSenha" placeholder="••••••••" required minlength="6">
+                        <button type="button" class="pro-input-icon-btn" onclick="togglePassword('confirmarSenha')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="msgErro" class="pro-alert pro-alert-error" style="display:none; margin-bottom: 20px;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="textoErro">Erro ao cadastrar</span>
+                </div>
+
+                <button type="submit" class="pro-btn pro-btn-primary w-full" id="btnSubmit">
+                    <i class="fas fa-check-circle"></i> Criar Minha Conta
+                </button>
+            </form>
+
+            <div style="text-align:center; margin-top: 24px;">
+                <p class="pro-text-secondary" style="font-size: 14px;">Já tem uma conta? <a href="login.html" class="pro-link">Fazer login</a></p>
+            </div>
+        </div>
+
+        <!-- Tela de Erro de Convite -->
+        <div id="erroConviteCard" class="auth-card error-container">
+            <div class="error-icon"><i class="fas fa-times-circle"></i></div>
+            <h2 class="auth-title">Convite inválido ou expirado</h2>
+            <p class="auth-subtitle" id="msgErroConvite">Este link de convite não é válido ou já expirou. Solicite um novo convite ao proprietário.</p>
+            <div style="margin-top: 30px;">
+                <a href="login.html" class="pro-btn pro-btn-secondary w-full">Voltar para Login</a>
+            </div>
+        </div>
     </div>
 
     <script>
-        const supabase = window.getSupabase();
-
-        // Variável global para guardar dados do convite
+        // REMOVIDO: const supabase = ... (Pois já existe no auth.js)
         let dadosConvite = null;
 
-        // Função para mostrar erro no cadastro
-        function mostrarErro(msg) {
-            const divErro = document.getElementById('erroCadastro');
-            divErro.textContent = msg;
-            divErro.style.display = 'block';
-        }
-
-        // Função para limpar erro
-        function limparErro() {
-            const divErro = document.getElementById('erroCadastro');
-            divErro.textContent = '';
-            divErro.style.display = 'none';
-        }
-
-        // Função para mostrar erro de convite e esconder formulário
-        function mostrarErroConvite(msg) {
-            document.getElementById('container-cadastro').style.display = 'none';
-            document.getElementById('container-erro').style.display = 'block';
-            if (msg) {
-                document.getElementById('mensagem-erro').textContent = msg;
-            }
-        }
-
-        // Validar convite ao carregar a página
+        // 1. Validar o convite assim que a página abre
         (function validarConvite() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('convite');
 
             if (!token) {
-                mostrarErroConvite();
+                mostrarTelaErro("Link de convite ausente.");
                 return;
             }
 
             try {
+                // Decodifica o token Base64
                 dadosConvite = JSON.parse(atob(token));
 
+                // Verifica expiração
                 if (dadosConvite.expiry && Date.now() > dadosConvite.expiry) {
-                    mostrarErroConvite("Este convite expirou. Peça um novo ao proprietário.");
+                    mostrarTelaErro("Este convite expirou. Peça um novo link ao proprietário.");
                     return;
                 }
 
-                // Convite válido, habilita o formulário
-                document.getElementById('container-cadastro').style.display = 'block';
-                document.getElementById('container-erro').style.display = 'none';
-
-                // Se quiser, pode preencher o email automaticamente se existir no convite
+                // Se o convite tiver email (formato antigo), preenche e trava
                 if (dadosConvite.email) {
-                    const emailInput = document.getElementById('email');
-                    emailInput.value = dadosConvite.email;
-                    emailInput.readOnly = true;
+                    const inputEmail = document.getElementById('email');
+                    inputEmail.value = dadosConvite.email;
+                    inputEmail.readOnly = true;
                 }
+
+                console.log("Convite validado para o tenant:", dadosConvite.tenant_id);
+
             } catch (e) {
-                mostrarErroConvite();
-                console.error('Erro ao decodificar convite:', e);
+                console.error("Erro ao validar token:", e);
+                mostrarTelaErro("O link de convite está corrompido ou é inválido.");
             }
         })();
 
-        // Função para realizar o cadastro
-        async function realizarCadastro(event) {
-            event.preventDefault();
-            limparErro();
+        function mostrarTelaErro(mensagem) {
+            document.getElementById('cadastroCard').style.display = 'none';
+            document.getElementById('erroConviteCard').style.display = 'block';
+            if (mensagem) document.getElementById('msgErroConvite').textContent = mensagem;
+        }
+
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            const icon = input.nextElementSibling.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        async function realizarCadastro(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            const divErro = document.getElementById('msgErro');
+            const textoErro = document.getElementById('textoErro');
 
             const nome = document.getElementById('nome').value.trim();
             const email = document.getElementById('email').value.trim();
             const senha = document.getElementById('senha').value;
-            const confirmarSenha = document.getElementById('confirmarSenha').value;
+            const confirmar = document.getElementById('confirmarSenha').value;
 
-            if (senha !== confirmarSenha) {
-                mostrarErro('As senhas não coincidem.');
+            // Validações básicas
+            if (senha !== confirmar) {
+                textoErro.textContent = "As senhas não coincidem.";
+                divErro.style.display = "flex";
                 return;
             }
 
-            if (!dadosConvite || !dadosConvite.tenant_id) {
-                mostrarErro('Convite inválido. Atualize a página e tente novamente.');
-                return;
-            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
+            divErro.style.display = "none";
 
             try {
-                // Criar usuário no Supabase Auth
-                const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                    email,
-                    password: senha,
+                // 1. Criar o usuário no Auth do Supabase
+                // Usamos window.getSupabase() para garantir que pegamos a instância correta
+                const { data: authData, error: authError } = await window.getSupabase().auth.signUp({
+                    email: email,
+                    password: senha
                 });
 
-                if (signUpError) {
-                    mostrarErro(signUpError.message);
-                    return;
-                }
+                if (authError) throw authError;
 
-                // Inserir perfil na tabela perfis com tenant_id do convite
-                const { error: insertError } = await supabase
+                const user = authData.user;
+                if (!user) throw new Error("Erro ao criar usuário. Tente novamente.");
+
+                // 2. Criar o perfil na tabela 'perfis'
+                const { error: perfilError } = await window.getSupabase()
                     .from('perfis')
                     .insert({
-                        id: signUpData.user.id,
-                        nome,
-                        email,
+                        id: user.id,
+                        nome: nome,
+                        email: email,
                         tenant_id: dadosConvite.tenant_id,
-                        role: 'profissional',
+                        role: 'profissional'
                     });
 
-                if (insertError) {
-                    mostrarErro(insertError.message);
-                    return;
-                }
+                if (perfilError) throw perfilError;
 
-                alert('Cadastro realizado com sucesso! Você será redirecionado para o dashboard.');
+                // 3. Sucesso! Redirecionar
+                alert("Cadastro realizado com sucesso!");
                 window.location.href = 'dashboard-profissional.html';
 
             } catch (err) {
-                mostrarErro('Erro inesperado. Tente novamente.');
-                console.error(err);
+                console.error("Erro no cadastro:", err);
+                textoErro.textContent = err.message || "Erro ao realizar cadastro.";
+                divErro.style.display = "flex";
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Criar Minha Conta';
             }
         }
     </script>
