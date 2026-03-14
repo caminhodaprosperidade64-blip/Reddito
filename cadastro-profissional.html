@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cadastro de Profissional - Sistema Pro</title>
+    <title>Cadastro de Profissional - Reddito</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -34,7 +34,7 @@
         <div id="cadastroCard" class="auth-card">
             <div class="auth-header">
                 <div class="auth-icon"><i class="fas fa-user-plus"></i></div>
-                <h1 class="auth-title">Você foi convidado!</h1>
+                <h1 class="auth-title">Bem-vindo!</h1>
                 <p class="auth-subtitle">Complete seu cadastro para acessar o sistema.</p>
             </div>
 
@@ -47,7 +47,16 @@
                 <div class="pro-form-group">
                     <label class="pro-label">Email *</label>
                     <input type="email" class="pro-input" id="email" placeholder="seu@email.com" required />
-                    <p class="pro-input-help">Use o mesmo email para o qual o convite foi enviado.</p>
+                </div>
+
+                <div class="pro-form-group">
+                    <label class="pro-label">Telefone</label>
+                    <input type="tel" class="pro-input" id="telefone" placeholder="(11) 99999-9999" />
+                </div>
+
+                <div class="pro-form-group">
+                    <label class="pro-label">Especialidade</label>
+                    <input type="text" class="pro-input" id="especialidade" placeholder="Ex: Cabelo, Manicure" />
                 </div>
 
                 <div class="pro-form-group">
@@ -76,7 +85,7 @@
                 </div>
 
                 <button type="submit" class="pro-btn pro-btn-primary w-full" id="btnSubmit">
-                    <i class="fas fa-check-circle"></i> Criar Minha Conta
+                    <i class="fas fa-check-circle"></i> Finalizar Cadastro
                 </button>
             </form>
 
@@ -94,10 +103,18 @@
                 <a href="login.html" class="pro-btn pro-btn-secondary w-full">Voltar para Login</a>
             </div>
         </div>
+
+        <!-- Tela de Sucesso -->
+        <div id="sucessoCard" class="auth-card error-container">
+            <div style="font-size: 48px; color: #10b981; margin-bottom: 20px;"><i class="fas fa-check-circle"></i></div>
+            <h2 class="auth-title">Cadastro realizado com sucesso!</h2>
+            <p class="auth-subtitle">Você será redirecionado para seu dashboard em alguns segundos...</p>
+        </div>
     </div>
 
     <script>
         let dadosConvite = null;
+        let tenantId = null;
 
         function validarConvite() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -109,26 +126,30 @@
             }
 
             try {
-                dadosConvite = JSON.parse(atob(token));
+                // Decodificar o token
+                const decoded = JSON.parse(atob(token));
+                tenantId = decoded.tenant_id;
 
-                if (dadosConvite.expiry && Date.now() > dadosConvite.expiry) {
+                // Verificar expiração
+                if (decoded.expiry && Date.now() > decoded.expiry) {
                     mostrarTelaErro("Este convite expirou. Peça um novo link ao proprietário.");
                     return;
                 }
 
-                if (dadosConvite.email) {
-                    const inputEmail = document.getElementById('email');
-                    inputEmail.value = dadosConvite.email;
-                    inputEmail.readOnly = true;
+                // Se tiver email no convite, preencher automaticamente
+                if (decoded.email) {
+                    document.getElementById('email').value = decoded.email;
+                    document.getElementById('email').readOnly = true;
                 }
 
-                console.log("Convite validado para o tenant:", dadosConvite.tenant_id);
+                console.log("✓ Convite validado para o tenant:", tenantId);
             } catch (e) {
-                console.error("Erro ao validar token:", e);
+                console.error("✗ Erro ao validar token:", e);
                 mostrarTelaErro("O link de convite está corrompido ou é inválido.");
             }
         }
 
+        // Esperar Supabase estar pronto
         if (window.isSupabaseReady && window.isSupabaseReady()) {
             validarConvite();
         } else {
@@ -161,8 +182,17 @@
 
             const nome = document.getElementById('nome').value.trim();
             const email = document.getElementById('email').value.trim();
+            const telefone = document.getElementById('telefone').value.trim();
+            const especialidade = document.getElementById('especialidade').value.trim();
             const senha = document.getElementById('senha').value;
             const confirmar = document.getElementById('confirmarSenha').value;
+
+            // Validações
+            if (!tenantId) {
+                textoErro.textContent = "Convite inválido. Recarregue a página.";
+                divErro.style.display = "flex";
+                return;
+            }
 
             if (senha !== confirmar) {
                 textoErro.textContent = "As senhas não coincidem.";
@@ -175,7 +205,11 @@
             divErro.style.display = "none";
 
             try {
-                const { data: authData, error: authError } = await window.getSupabase().auth.signUp({
+                const supabase = window.getSupabase();
+
+                // 1. Criar usuário no Auth
+                console.log("📝 Criando usuário no Auth...");
+                const { data: authData, error: authError } = await supabase.auth.signUp({
                     email: email,
                     password: senha
                 });
@@ -183,29 +217,49 @@
                 if (authError) throw authError;
 
                 const user = authData.user;
-                if (!user) throw new Error("Erro ao criar usuário. Tente novamente.");
+                if (!user) throw new Error("Erro ao criar usuário.");
 
-                const { error: perfilError } = await window.getSupabase()
-                    .from('perfis')
+                console.log("✓ Usuário criado:", user.id);
+
+                // 2. Inserir profissional na tabela
+                console.log("📝 Registrando profissional...");
+                const { error: profError } = await supabase
+                    .from('profissionais')
                     .insert({
-                        id: user.id,
+                        tenant_id: tenantId,
+                        user_id: user.id,
                         nome: nome,
                         email: email,
-                        tenant_id: dadosConvite.tenant_id,
-                        role: 'profissional'
+                        telefone: telefone || null,
+                        especialidade: especialidade || null
                     });
 
-                if (perfilError) throw perfilError;
+                if (profError) {
+                    console.error("✗ Erro ao registrar profissional:", profError);
+                    throw new Error(profError.message || "Erro ao registrar profissional");
+                }
 
-                alert("Cadastro realizado com sucesso!");
-                window.location.href = 'dashboard-profissional.html';
+                console.log("✓ Profissional registrado com sucesso");
+
+                // 3. Fazer logout temporário para o usuário confirmar email
+                await supabase.auth.signOut();
+
+                // 4. Mostrar tela de sucesso
+                document.getElementById('cadastroCard').style.display = 'none';
+                document.getElementById('erroConviteCard').style.display = 'none';
+                document.getElementById('sucessoCard').style.display = 'block';
+
+                // 5. Redirecionar após 3 segundos
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000);
 
             } catch (err) {
-                console.error("Erro no cadastro:", err);
-                textoErro.textContent = err.message || "Erro ao realizar cadastro.";
+                console.error("✗ Erro no cadastro:", err);
+                textoErro.textContent = err.message || "Erro ao realizar cadastro. Tente novamente.";
                 divErro.style.display = "flex";
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-check-circle"></i> Criar Minha Conta';
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Finalizar Cadastro';
             }
         }
     </script>
