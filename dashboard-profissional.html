@@ -1,107 +1,290 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dashboard Profissional - Reddito</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; background: #f9f9f9; }
-    h1 { color: #4f46e5; }
-    .section { background: white; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 0.5rem; border-bottom: 1px solid #ddd; text-align: left; }
-  </style>
-  <script src="js/supabase-config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/database.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Profissional</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/pro-design-system.css">
+    <link rel="stylesheet" href="css/pro-components.css">
+    
+    <!-- FullCalendar para o Calendário Interativo -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script src="js/database.js"></script>
+    
+    <style>
+        .dash-container { padding: 24px; max-width: 1200px; margin: 0 auto; }
+        .welcome-section { margin-bottom: 32px; }
+        .logo-center { display: flex; justify-content: center; margin: 40px 0; }
+        .logo-center img { max-height: 120px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1)); }
+        
+        .grid-dash { display: grid; grid-template-columns: 1fr 350px; gap: 24px; }
+        @media (max-width: 992px) { .grid-dash { grid-template-columns: 1fr; } }
+        
+        .card-financeiro { background: white; border-radius: 16px; padding: 24px; box-shadow: var(--pro-shadow); }
+        .faturamento-valor { font-size: 32px; font-weight: 700; color: var(--pro-primary); margin: 12px 0; }
+        
+        #calendar { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--pro-shadow); height: 500px; }
+        .fc-event { cursor: pointer; }
+
+        /* Sidebar small tweak for dynamic name */
+        .pro-logo-text { font-weight: 600; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width:140px; display:inline-block; vertical-align:middle; }
+    </style>
 </head>
 <body>
-  <h1>Bem-vindo, Profissional</h1>
+    <div class="pro-app">
+        <!-- Sidebar Simplificada para Profissional -->
+        <aside class="pro-sidebar">
+            <div class="pro-sidebar-logo">
+                <div class="pro-logo">
+                    <div class="pro-logo-icon"><i class="fas fa-calendar-check"></i></div>
+                    <span class="pro-logo-text" id="proTenantName">Sistema Pro</span>
+                </div>
+            </div>
+            <nav class="pro-sidebar-nav">
+                <a href="dashboard-profissional.html" class="pro-nav-item active"><i class="fas fa-home"></i><span>Início</span></a>
+                <a href="agenda.html" class="pro-nav-item"><i class="fas fa-calendar-alt"></i><span>Minha Agenda</span></a>
+                <a href="perfil.html" class="pro-nav-item"><i class="fas fa-user"></i><span>Meu Perfil</span></a>
+            </nav>
+            <div class="pro-sidebar-footer">
+                <button class="pro-btn pro-btn-secondary w-full" onclick="Auth.signOut()">Sair</button>
+            </div>
+        </aside>
 
-  <div class="section" id="agenda-section">
-    <h2>Agenda</h2>
-    <table id="agenda-table">
-      <thead>
-        <tr><th>Data</th><th>Hora</th><th>Cliente</th><th>Serviço</th><th>Status</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+        <main class="pro-main">
+            <div class="dash-container">
+                
+                <div class="welcome-section">
+                    <h1 class="pro-page-title">Bem-vindo, <span id="profNome">...</span>!</h1>
+                    <p class="pro-page-subtitle">Aqui está o resumo do seu dia.</p>
+                </div>
 
-  <div class="section" id="faturamento-section">
-    <h2>Faturamento (Comissão)</h2>
-    <p>Valor total da sua comissão: <strong id="comissao-total">R$ 0,00</strong></p>
-  </div>
+                <!-- Logo do Estabelecimento Centralizado -->
+                <div class="logo-center">
+                    <img id="imgLogoLoja" src="https://placehold.co/400x120?text=Sua+Logo+Aqui" alt="Logo do Estabelecimento">
+                </div>
 
-  <script>
-    async function carregarDashboard() {
-      const supabase = window.getSupabase();
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        alert('Usuário não autenticado. Faça login novamente.');
-        window.location.href = 'login.html';
-        return;
-      }
+                <div class="grid-dash">
+                    <!-- Coluna Esquerda: Calendário -->
+                    <div class="card-calendar">
+                        <div id="calendar"></div>
+                    </div>
 
-      // Buscar perfil para pegar id do profissional e tenant_id
-      const { data: perfil, error: perfilError } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+                    <!-- Coluna Direita: Faturamento -->
+                    <div class="card-financeiro">
+                        <div class="pro-card-header" style="padding:0; margin-bottom:20px;">
+                            <h3 class="pro-card-title">Faturamento</h3>
+                            <select class="pro-select" id="filtroPeriodo" onchange="atualizarFaturamento()">
+                                <option value="dia">Hoje</option>
+                                <option value="semana">Esta Semana</option>
+                                <option value="quinzena">Quinzena</option>
+                                <option value="mes">Este Mês</option>
+                                <option value="personalizado">Personalizado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="faturamento-valor" id="valorFaturamento">R$ 0,00</div>
+                        <p class="pro-label" id="labelPeriodo">Total acumulado hoje</p>
+                        
+                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                        
+                        <div class="pro-nav-section-title">Próximos Clientes</div>
+                        <div id="listaProximos" style="margin-top:15px;">
+                            <p class="pro-label">Nenhum agendamento para agora.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
 
-      if (perfilError || !perfil) {
-        alert('Perfil não encontrado.');
-        window.location.href = 'login.html';
-        return;
-      }
+    <script>
+        let calendar;
+        let perfilLogado = null;
 
-      if (perfil.role !== 'profissional') {
-        alert('Acesso negado. Esta página é apenas para profissionais.');
-        window.location.href = 'login.html';
-        return;
-      }
+        window.addEventListener('perfilCarregado', async (e) => {
+            perfilLogado = e.detail;
+            document.getElementById('profNome').textContent = (perfilLogado.nome || perfilLogado.email || '').split(' ')[0] || 'Profissional';
+            
+            // Carrega nome e logo do estabelecimento, inicializa calendário e dados
+            await carregarNomeELogoLoja();
+            initCalendar();
+            atualizarFaturamento();
+            carregarProximos();
+        });
 
-      // Buscar id do profissional na tabela profissionais
-      const { data: profissional, error: profError } = await supabase
-        .from('profissionais')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
+        // Busca nome e logo de 'configuracoes' pelo tenant_id
+        async function carregarNomeELogoLoja() {
+            try {
+                const supabase = window.getSupabase();
+                const { data, error } = await supabase
+                    .from('configuracoes')
+                    .select('nome, logo_url')
+                    .eq('tenant_id', perfilLogado.tenant_id)
+                    .single();
 
-      if (profError || !profissional) {
-        alert('Profissional não encontrado.');
-        window.location.href = 'login.html';
-        return;
-      }
+                if (error && error.code !== 'PGRST116') {
+                    // PGRST116: no rows found (PostgREST) — tratamos com fallback
+                    console.warn('Aviso ao buscar configurações:', error.message || error);
+                }
 
-      // Carregar agenda do profissional
-      const agendamentos = await DB.agendamentos.listar({ profissional_id: profissional.id });
-      const tbody = document.querySelector('#agenda-table tbody');
-      tbody.innerHTML = '';
-      agendamentos.forEach(a => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${a.data}</td>
-          <td>${a.hora}</td>
-          <td>${a.cliente?.nome || '-'}</td>
-          <td>${a.servico?.nome || '-'}</td>
-          <td>${a.status}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+                let nome = null;
+                if (data && data.nome) {
+                    nome = data.nome;
+                } else {
+                    // fallback: tentar pegar do localStorage (caso exista)
+                    try {
+                        const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
+                        if (cfg.nome) nome = cfg.nome;
+                    } catch (_) {}
+                }
 
-      // Calcular comissão total
-      let comissaoTotal = 0;
-      agendamentos.forEach(a => {
-        const valor = parseFloat(a.valor || 0);
-        const comissaoPerc = parseFloat(a.profissional?.comissao_percentual || 0);
-        comissaoTotal += (valor * comissaoPerc) / 100;
-      });
+                // Atualiza texto no sidebar e título da página
+                const displayName = nome || 'Meu Estabelecimento';
+                document.getElementById('proTenantName').textContent = displayName;
+                document.title = `${displayName} — Dashboard`;
 
-      document.getElementById('comissao-total').innerText = `R$ ${comissaoTotal.toFixed(2)}`;
-    }
+                // Se houver logo, atualiza a imagem
+                if (data && data.logo_url) {
+                    document.getElementById('imgLogoLoja').src = data.logo_url;
+                }
+            } catch (err) {
+                console.error('Erro ao carregar nome/logo da loja:', err);
+            }
+        }
 
-    document.addEventListener('DOMContentLoaded', carregarDashboard);
-  </script>
+        function initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'pt-br',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridDay'
+                },
+                dateClick: function(info) {
+                    // Ao clicar no dia, redireciona para a agenda daquele dia
+                    window.location.href = `agenda.html?data=${info.dateStr}`;
+                },
+                events: async function(info, successCallback, failureCallback) {
+                    try {
+                        const supabase = window.getSupabase();
+                        const { data, error } = await supabase
+                            .from('agendamentos')
+                            .select('data, hora, clientes(nome)')
+                            .eq('profissional_id', perfilLogado.id)
+                            .gte('data', info.startStr)
+                            .lte('data', info.endStr);
+
+                        if (error) {
+                            console.error('Erro ao buscar eventos do calendário:', error);
+                            return successCallback([]);
+                        }
+
+                        const events = (data || []).map(a => ({
+                            title: a.clientes?.nome || 'Agendamento',
+                            start: `${a.data}T${a.hora}`,
+                            color: 'var(--pro-primary)'
+                        }));
+                        successCallback(events);
+                    } catch (err) {
+                        console.error('Erro ao carregar eventos:', err);
+                        successCallback([]);
+                    }
+                }
+            });
+            calendar.render();
+        }
+
+        async function atualizarFaturamento() {
+            if (!perfilLogado) return;
+            const periodo = document.getElementById('filtroPeriodo').value;
+            const valorEl = document.getElementById('valorFaturamento');
+            const labelEl = document.getElementById('labelPeriodo');
+            
+            // Calcula intervalo conforme filtro
+            const hoje = new Date();
+            let inicio = new Date(hoje);
+            inicio.setHours(0,0,0,0);
+
+            if (periodo === 'semana') {
+                inicio.setDate(inicio.getDate() - (hoje.getDay() || 7) + 1); // início da semana (segunda)
+            } else if (periodo === 'quinzena') {
+                const dia = hoje.getDate();
+                if (dia <= 15) inicio.setDate(1);
+                else inicio.setDate(16);
+            } else if (periodo === 'mes') {
+                inicio.setDate(1);
+            } else if (periodo === 'personalizado') {
+                // Para personalizado, poderia abrir um datepicker — por enquanto usar mês
+                inicio.setDate(1);
+            } // 'dia' mantém hoje 00:00
+
+            const dataInicioStr = inicio.toISOString().split('T')[0];
+
+            try {
+                const supabase = window.getSupabase();
+                const { data, error } = await supabase
+                    .from('financeiro')
+                    .select('valor')
+                    .eq('profissional_id', perfilLogado.id)
+                    .eq('tipo', 'receita')
+                    .gte('data', dataInicioStr);
+
+                if (error) {
+                    console.error('Erro ao buscar faturamento:', error);
+                    valorEl.textContent = 'R$ 0,00';
+                    labelEl.textContent = `Total acumulado (${periodo})`;
+                    return;
+                }
+
+                const total = (data || []).reduce((sum, item) => sum + parseFloat(item.valor || 0), 0);
+                valorEl.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+                labelEl.textContent = `Total acumulado (${periodo})`;
+            } catch (err) {
+                console.error('Erro ao calcular faturamento:', err);
+            }
+        }
+
+        async function carregarProximos() {
+            if (!perfilLogado) return;
+            const hoje = new Date().toISOString().split('T')[0];
+            try {
+                const supabase = window.getSupabase();
+                const { data, error } = await supabase
+                    .from('agendamentos')
+                    .select('hora, clientes(nome), servicos(nome)')
+                    .eq('profissional_id', perfilLogado.id)
+                    .eq('data', hoje)
+                    .order('hora', { ascending: true })
+                    .limit(3);
+
+                if (error) {
+                    console.error('Erro ao carregar próximos clientes:', error);
+                    return;
+                }
+
+                if (data && data.length > 0) {
+                    document.getElementById('listaProximos').innerHTML = data.map(a => `
+                        <div style="padding:10px; border-bottom:1px solid #eee;">
+                            <strong>${(a.hora || '').substring(0,5)}</strong> - ${a.clientes?.nome || 'Cliente'}
+                            <br><small style="color:gray">${a.servicos?.nome || ''}</small>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('listaProximos').innerHTML = '<p class="pro-label">Nenhum agendamento para agora.</p>';
+                }
+            } catch (err) {
+                console.error('Erro ao buscar próximos:', err);
+            }
+        }
+    </script>
 </body>
 </html>
