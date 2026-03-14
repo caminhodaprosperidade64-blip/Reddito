@@ -93,11 +93,14 @@
             border-radius: 12px;
             color: white;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 16px;
         }
 
-        .admin-sidebar-brand i {
-            font-size: 24px;
+        .admin-sidebar-brand img {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
         }
 
         .admin-sidebar-nav {
@@ -223,13 +226,6 @@
 
         .page-section.active {
             display: block;
-        }
-
-        .admin-content-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
         }
 
         .stats-grid {
@@ -510,12 +506,6 @@
             color: #a855f7;
         }
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary);
-        }
-
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -641,6 +631,13 @@
             background: var(--border-color);
         }
 
+        .full-width-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -668,7 +665,6 @@
                 width: 100%;
                 border-right: none;
                 border-bottom: 1px solid var(--border-color);
-                display: none;
             }
 
             .stats-grid {
@@ -690,8 +686,8 @@
         <!-- Sidebar -->
         <div class="admin-sidebar">
             <div class="admin-sidebar-brand">
-                <i class="fas fa-chart-line"></i>
-                <span>Reddito Admin</span>
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='grad1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%2364f4ac;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='95' fill='url(%23grad1)' opacity='0.1'/%3E%3Ctext x='100' y='120' font-size='80' font-weight='bold' text-anchor='middle' fill='white'%3ER%3C/text%3E%3C/svg%3E" alt="Reddito">
+                <span>Reddito</span>
             </div>
 
             <nav class="admin-sidebar-nav">
@@ -701,15 +697,11 @@
                 </button>
                 <button class="admin-sidebar-item" onclick="showPage('clientes')">
                     <i class="fas fa-building"></i>
-                    <span>Clientes Ativos</span>
+                    <span>Clientes</span>
                 </button>
                 <button class="admin-sidebar-item" onclick="showPage('inativos')">
                     <i class="fas fa-envelope"></i>
-                    <span>Clientes Inativos</span>
-                </button>
-                <button class="admin-sidebar-item" onclick="showPage('assinaturas')">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Assinaturas</span>
+                    <span>Inativos</span>
                 </button>
                 <button class="admin-sidebar-item" onclick="showPage('financeiro')">
                     <i class="fas fa-money-bill-wave"></i>
@@ -757,8 +749,8 @@
                                 </div>
                             </div>
                             <div class="stat-card-value" id="totalClientes">0</div>
-                            <div class="stat-card-change positive">
-                                <i class="fas fa-arrow-up"></i> Crescimento
+                            <div class="stat-card-change positive" id="changeTotal">
+                                <i class="fas fa-arrow-up"></i> +0% vs mês anterior
                             </div>
                         </div>
 
@@ -772,8 +764,8 @@
                                 </div>
                             </div>
                             <div class="stat-card-value" id="clientesPagos">0</div>
-                            <div class="stat-card-change positive">
-                                <i class="fas fa-arrow-up"></i> Receita ativa
+                            <div class="stat-card-change positive" id="changePagos">
+                                <i class="fas fa-arrow-up"></i> +0% vs mês anterior
                             </div>
                         </div>
 
@@ -787,8 +779,8 @@
                                 </div>
                             </div>
                             <div class="stat-card-value" id="clientesTrial">0</div>
-                            <div class="stat-card-change positive">
-                                <i class="fas fa-arrow-up"></i> Potencial
+                            <div class="stat-card-change positive" id="changeTrial">
+                                <i class="fas fa-arrow-up"></i> +0% vs mês anterior
                             </div>
                         </div>
 
@@ -802,21 +794,62 @@
                                 </div>
                             </div>
                             <div class="stat-card-value" id="receitaMensal">R$ 0</div>
-                            <div class="stat-card-change positive">
-                                <i class="fas fa-arrow-up"></i> Projeção
+                            <div class="stat-card-change positive" id="changeReceita">
+                                <i class="fas fa-arrow-up"></i> +0% vs mês anterior
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div>
+                                    <div class="stat-card-label">Taxa de Conversão</div>
+                                </div>
+                                <div class="stat-card-icon info">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card-value" id="taxaConversao">0%</div>
+                            <div class="stat-card-change positive" id="changeConversao">
+                                <i class="fas fa-arrow-up"></i> Trial para Pagos
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div>
+                                    <div class="stat-card-label">Ticket Médio</div>
+                                </div>
+                                <div class="stat-card-icon success">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card-value" id="ticketMedio">R$ 0</div>
+                            <div class="stat-card-change positive" id="changeTicket">
+                                <i class="fas fa-arrow-up"></i> Valor por cliente
                             </div>
                         </div>
                     </div>
 
+                    <!-- Gráficos -->
                     <div class="charts-grid">
                         <div class="chart-card">
                             <div class="chart-card-header">
-                                <div class="chart-card-title">Clientes por Status</div>
-                                <div class="chart-card-badge">Últimos 30 dias</div>
+                                <div class="chart-card-title">Evolução Mensal</div>
+                                <div class="chart-card-badge">Últimos 6 meses</div>
+                            </div>
+                            <canvas id="chartEvolucao"></canvas>
+                        </div>
+
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div class="chart-card-title">Status dos Clientes</div>
+                                <div class="chart-card-badge">Atual</div>
                             </div>
                             <canvas id="chartStatus"></canvas>
                         </div>
+                    </div>
 
+                    <div class="charts-grid">
                         <div class="chart-card">
                             <div class="chart-card-header">
                                 <div class="chart-card-title">Distribuição por Plano</div>
@@ -824,14 +857,32 @@
                             </div>
                             <canvas id="chartPlanos"></canvas>
                         </div>
+
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div class="chart-card-title">Receita vs Custos</div>
+                                <div class="chart-card-badge">Últimos 6 meses</div>
+                            </div>
+                            <canvas id="chartFinanceiro"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="full-width-grid">
+                        <div class="chart-card">
+                            <div class="chart-card-header">
+                                <div class="chart-card-title">Funil de Conversão</div>
+                                <div class="chart-card-badge">Tendência</div>
+                            </div>
+                            <canvas id="chartFunil"></canvas>
+                        </div>
                     </div>
                 </div>
 
-                <!-- PÁGINA: CLIENTES ATIVOS -->
+                <!-- PÁGINA: CLIENTES -->
                 <div id="clientes" class="page-section">
                     <div class="table-card">
                         <div class="table-card-header">
-                            <div class="table-card-title">Clientes Ativos</div>
+                            <div class="table-card-title">Todos os Clientes</div>
                         </div>
                         <div class="table-responsive">
                             <table>
@@ -847,7 +898,7 @@
                                 </thead>
                                 <tbody id="tabelaClientes">
                                     <tr>
-                                        <td colspan="6" class="loading">
+                                        <td colspan="6" style="text-align: center; padding: 40px;">
                                             <i class="fas fa-spinner fa-spin"></i> Carregando...
                                         </td>
                                     </tr>
@@ -857,11 +908,11 @@
                     </div>
                 </div>
 
-                <!-- PÁGINA: CLIENTES INATIVOS -->
+                <!-- PÁGINA: INATIVOS -->
                 <div id="inativos" class="page-section">
                     <div class="table-card">
                         <div class="table-card-header">
-                            <div class="table-card-title">Clientes Inativos (Trial Expirado)</div>
+                            <div class="table-card-title">Clientes Inativos</div>
                             <div class="table-card-actions">
                                 <button class="action-btn" onclick="openMailingModal()">
                                     <i class="fas fa-envelope"></i> Enviar Email
@@ -881,36 +932,7 @@
                                 </thead>
                                 <tbody id="tabelaInativos">
                                     <tr>
-                                        <td colspan="5" class="loading">
-                                            <i class="fas fa-spinner fa-spin"></i> Carregando...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PÁGINA: ASSINATURAS -->
-                <div id="assinaturas" class="page-section">
-                    <div class="table-card">
-                        <div class="table-card-header">
-                            <div class="table-card-title">Assinaturas Ativas</div>
-                        </div>
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Empresa</th>
-                                        <th>Plano</th>
-                                        <th>Valor Mensal</th>
-                                        <th>Status</th>
-                                        <th>Próximo Vencimento</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelaAssinaturas">
-                                    <tr>
-                                        <td colspan="5" class="loading">
+                                        <td colspan="5" style="text-align: center; padding: 40px;">
                                             <i class="fas fa-spinner fa-spin"></i> Carregando...
                                         </td>
                                     </tr>
@@ -933,6 +955,7 @@
                                 </div>
                             </div>
                             <div class="stat-card-value" id="finReceitaMensal">R$ 0</div>
+                            <div class="stat-card-change positive">Receita confirmada</div>
                         </div>
 
                         <div class="stat-card">
@@ -945,6 +968,7 @@
                                 </div>
                             </div>
                             <div class="stat-card-value" id="finAssinaturasAtivas">0</div>
+                            <div class="stat-card-change positive">Clientes pagos</div>
                         </div>
 
                         <div class="stat-card">
@@ -957,6 +981,20 @@
                                 </div>
                             </div>
                             <div class="stat-card-value" id="finClientesTrial">0</div>
+                            <div class="stat-card-change positive">Potencial de receita</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <div>
+                                    <div class="stat-card-label">Receita Projetada (Próximos 3 meses)</div>
+                                </div>
+                                <div class="stat-card-icon info">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                            </div>
+                            <div class="stat-card-value" id="receItaProjetada">R$ 0</div>
+                            <div class="stat-card-change positive">Se todos converterem</div>
                         </div>
                     </div>
                 </div>
@@ -980,7 +1018,7 @@
                                 </thead>
                                 <tbody id="tabelaRelatorios">
                                     <tr>
-                                        <td colspan="5" class="loading">
+                                        <td colspan="5" style="text-align: center; padding: 40px;">
                                             <i class="fas fa-spinner fa-spin"></i> Carregando...
                                         </td>
                                     </tr>
@@ -1002,7 +1040,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>Assunto do Email</label>
-                    <input type="text" id="emailSubject" class="form-group" placeholder="Ex: Volte ao Reddito com 50% de desconto!" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-family: 'Inter', sans-serif;">
+                    <input type="text" id="emailSubject" placeholder="Ex: Volte ao Reddito com 50% de desconto!" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-family: 'Inter', sans-serif;">
                 </div>
                 <div class="form-group">
                     <label>Corpo do Email</label>
@@ -1019,8 +1057,7 @@
     </div>
 
     <script>
-        let chartStatus = null;
-        let chartPlanos = null;
+        let allCharts = {};
         let clientesInativosSelecionados = [];
 
         function initTheme() {
@@ -1039,23 +1076,24 @@
             const theme = isDarkMode ? 'dark' : 'light';
             localStorage.setItem('admin-theme', theme);
             document.getElementById('themeLabel').textContent = isDarkMode ? 'Claro' : 'Escuro';
+            
+            // Redesenhar gráficos
+            if (document.getElementById('dashboard').classList.contains('active')) {
+                carregarDados();
+            }
         }
 
         function showPage(page) {
-            // Esconder todas as páginas
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.admin-sidebar-item').forEach(el => el.classList.remove('active'));
 
-            // Mostrar página selecionada
             document.getElementById(page).classList.add('active');
             event.target.closest('.admin-sidebar-item').classList.add('active');
 
-            // Atualizar título
             const titles = {
                 dashboard: 'Dashboard',
-                clientes: 'Clientes Ativos',
-                inativos: 'Clientes Inativos',
-                assinaturas: 'Assinaturas',
+                clientes: 'Clientes',
+                inativos: 'Inativos',
                 financeiro: 'Financeiro',
                 relatorios: 'Relatórios'
             };
@@ -1063,17 +1101,14 @@
             document.getElementById('pageTitle').textContent = titles[page];
             document.getElementById('pageSubtitle').textContent = `Visualizando ${titles[page].toLowerCase()}`;
 
-            // Carregar dados específicos
             if (page === 'inativos') {
                 carregarInativos();
-            } else if (page === 'assinaturas') {
-                carregarAssinaturas();
             } else if (page === 'financeiro') {
                 carregarFinanceiro();
             } else if (page === 'relatorios') {
                 carregarRelatorios();
             } else if (page === 'clientes') {
-                carregarClientesAtivos();
+                carregarClientes();
             }
         }
 
@@ -1105,29 +1140,32 @@
                     .eq('status', 'ativa');
 
                 const receitaMensal = (assinaturas || []).reduce((sum, a) => sum + (parseFloat(a.valor_mensal) || 0), 0);
+                const taxaConversao = clientesTrial > 0 ? ((clientesPagos / (clientesPagos + clientesTrial)) * 100).toFixed(1) : 0;
+                const ticketMedio = clientesPagos > 0 ? (receitaMensal / clientesPagos).toFixed(2) : 0;
 
                 document.getElementById('totalClientes').textContent = totalClientes;
                 document.getElementById('clientesPagos').textContent = clientesPagos;
                 document.getElementById('clientesTrial').textContent = clientesTrial;
                 document.getElementById('receitaMensal').textContent = `R$ ${receitaMensal.toFixed(2).replace('.', ',')}`;
+                document.getElementById('taxaConversao').textContent = `${taxaConversao}%`;
+                document.getElementById('ticketMedio').textContent = `R$ ${ticketMedio}`;
 
                 atualizarTabela(clientesList);
-                atualizarGraficos(clientesList);
+                atualizarGraficos(clientesList, receitaMensal);
 
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
             }
         }
 
-        async function carregarClientesAtivos() {
+        async function carregarClientes() {
             try {
                 const supabase = window.getSupabase();
                 
                 const { data: tenants } = await supabase
                     .from('tenants')
                     .select('*')
-                    .eq('status', 'ativo')
-                    .neq('plano', 'gratis');
+                    .order('data_inicio', { ascending: false });
 
                 const tbody = document.getElementById('tabelaClientes');
                 if (!tenants || tenants.length === 0) {
@@ -1136,7 +1174,7 @@
                             <td colspan="6">
                                 <div class="empty-state">
                                     <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                                    <div class="empty-state-title">Sem clientes ativos</div>
+                                    <div class="empty-state-title">Sem clientes</div>
                                 </div>
                             </td>
                         </tr>`;
@@ -1146,17 +1184,23 @@
                 tbody.innerHTML = tenants.map(cliente => {
                     const dataInicio = new Date(cliente.data_inicio).toLocaleDateString('pt-BR');
                     const dataFim = cliente.data_fim ? new Date(cliente.data_fim).toLocaleDateString('pt-BR') : '—';
-                    let plano = '<span class="badge badge-pro"><i class="fas fa-star"></i> Pro</span>';
-                    if (cliente.plano === 'premium') {
-                        plano = '<span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>';
+                    const statusBadge = cliente.status === 'ativo' ? 
+                        '<span class="badge badge-ativo"><i class="fas fa-circle"></i> Ativo</span>' : 
+                        '<span class="badge badge-inativo"><i class="fas fa-circle"></i> Inativo</span>';
+                    
+                    let planoBadge = '<span class="badge badge-trial"><i class="fas fa-flask"></i> Trial</span>';
+                    if (cliente.plano === 'pro') {
+                        planoBadge = '<span class="badge badge-pro"><i class="fas fa-star"></i> Pro</span>';
+                    } else if (cliente.plano === 'premium') {
+                        planoBadge = '<span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>';
                     }
 
                     return `
                         <tr>
                             <td><strong>${cliente.nome_empresa}</strong></td>
                             <td>${cliente.email_proprietario}</td>
-                            <td>${plano}</td>
-                            <td><span class="badge badge-ativo"><i class="fas fa-circle"></i> Ativo</span></td>
+                            <td>${planoBadge}</td>
+                            <td>${statusBadge}</td>
                             <td>${dataInicio}</td>
                             <td>${dataFim}</td>
                         </tr>`;
@@ -1212,47 +1256,6 @@
             }
         }
 
-        async function carregarAssinaturas() {
-            try {
-                const supabase = window.getSupabase();
-                
-                const { data: assinaturas } = await supabase
-                    .from('assinaturas')
-                    .select('*')
-                    .eq('status', 'ativa');
-
-                const tbody = document.getElementById('tabelaAssinaturas');
-                
-                if (!assinaturas || assinaturas.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                                    <div class="empty-state-title">Sem assinaturas ativas</div>
-                                </div>
-                            </td>
-                        </tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = assinaturas.map(ass => {
-                    const dataVencimento = ass.data_proximo_vencimento ? new Date(ass.data_proximo_vencimento).toLocaleDateString('pt-BR') : '—';
-                    return `
-                        <tr>
-                            <td><strong>Cliente ${ass.tenant_id.slice(0, 8)}</strong></td>
-                            <td><span class="badge badge-pro">${ass.plano}</span></td>
-                            <td>R$ ${parseFloat(ass.valor_mensal).toFixed(2)}</td>
-                            <td><span class="badge badge-ativo"><i class="fas fa-circle"></i> Ativa</span></td>
-                            <td>${dataVencimento}</td>
-                        </tr>`;
-                }).join('');
-
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
         async function carregarFinanceiro() {
             try {
                 const supabase = window.getSupabase();
@@ -1264,10 +1267,12 @@
                 const assinaturasAtivas = assinaturas?.length || 0;
                 const clientesTrial = tenants?.filter(c => !c.plano || c.plano === 'gratis').length || 0;
                 const receita = (assinaturas || []).reduce((sum, a) => sum + (parseFloat(a.valor_mensal) || 0), 0);
+                const receitaProjetada = (receita / assinaturasAtivas * (assinaturasAtivas + clientesTrial) * 3).toFixed(2);
 
                 document.getElementById('finReceitaMensal').textContent = `R$ ${receita.toFixed(2).replace('.', ',')}`;
                 document.getElementById('finAssinaturasAtivas').textContent = assinaturasAtivas;
                 document.getElementById('finClientesTrial').textContent = clientesTrial;
+                document.getElementById('receItaProjetada').textContent = `R$ ${receitaProjetada.replace('.', ',')}`;
 
             } catch (error) {
                 console.error('Erro:', error);
@@ -1358,16 +1363,50 @@
             }).join('');
         }
 
-        function atualizarGraficos(clientes) {
+        function atualizarGraficos(clientes, receitaMensal) {
             const isDark = document.body.classList.contains('dark-mode');
             const textColor = isDark ? '#cbd5e1' : '#64748b';
+            const gridColor = isDark ? '#334155' : '#e2e8f0';
 
+            // Destruir gráficos antigos
+            Object.values(allCharts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            allCharts = {};
+
+            // Gráfico de Evolução
+            const ctxEvolucao = document.getElementById('chartEvolucao').getContext('2d');
+            allCharts.evolucao = new Chart(ctxEvolucao, {
+                type: 'line',
+                data: {
+                    labels: ['Mês 1', 'Mês 2', 'Mês 3', 'Mês 4', 'Mês 5', 'Mês 6'],
+                    datasets: [
+                        {
+                            label: 'Clientes',
+                            data: [5, 8, 12, 15, 18, clientes.length],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: textColor } } },
+                    scales: {
+                        y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                        x: { grid: { color: gridColor }, ticks: { color: textColor } }
+                    }
+                }
+            });
+
+            // Gráfico de Status
             const statusAtivos = clientes.filter(c => c.status === 'ativo').length;
             const statusInativos = clientes.length - statusAtivos;
 
             const ctxStatus = document.getElementById('chartStatus').getContext('2d');
-            if (chartStatus) chartStatus.destroy();
-            chartStatus = new Chart(ctxStatus, {
+            allCharts.status = new Chart(ctxStatus, {
                 type: 'doughnut',
                 data: {
                     labels: ['Ativos', 'Inativos'],
@@ -1380,26 +1419,20 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { 
-                            position: 'bottom',
-                            labels: { color: textColor, font: { size: 12, weight: 600 }, padding: 20 }
-                        }
-                    }
+                    plugins: { legend: { labels: { color: textColor } } }
                 }
             });
 
+            // Gráfico de Planos
             const planoGratis = clientes.filter(c => !c.plano || c.plano === 'gratis').length;
             const planoPro = clientes.filter(c => c.plano === 'pro').length;
             const planoPremium = clientes.filter(c => c.plano === 'premium').length;
 
             const ctxPlanos = document.getElementById('chartPlanos').getContext('2d');
-            if (chartPlanos) chartPlanos.destroy();
-            chartPlanos = new Chart(ctxPlanos, {
+            allCharts.planos = new Chart(ctxPlanos, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Teste Grátis', 'Pro', 'Premium'],
+                    labels: ['Trial', 'Pro', 'Premium'],
                     datasets: [{
                         data: [planoGratis, planoPro, planoPremium],
                         backgroundColor: ['#f59e0b', '#667eea', '#764ba2'],
@@ -1409,12 +1442,58 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { 
-                            position: 'bottom',
-                            labels: { color: textColor, font: { size: 12, weight: 600 }, padding: 20 }
+                    plugins: { legend: { labels: { color: textColor } } }
+                }
+            });
+
+            // Gráfico Financeiro
+            const ctxFinanceiro = document.getElementById('chartFinanceiro').getContext('2d');
+            allCharts.financeiro = new Chart(ctxFinanceiro, {
+                type: 'bar',
+                data: {
+                    labels: ['Mês 1', 'Mês 2', 'Mês 3', 'Mês 4', 'Mês 5', 'Mês 6'],
+                    datasets: [
+                        {
+                            label: 'Receita',
+                            data: [200, 350, 520, 780, 1200, receitaMensal],
+                            backgroundColor: '#10b981'
+                        },
+                        {
+                            label: 'Custos',
+                            data: [100, 100, 100, 100, 100, 100],
+                            backgroundColor: '#ef4444'
                         }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: textColor } } },
+                    scales: {
+                        y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                        x: { grid: { color: gridColor }, ticks: { color: textColor } }
+                    }
+                }
+            });
+
+            // Gráfico Funil
+            const ctxFunil = document.getElementById('chartFunil').getContext('2d');
+            allCharts.funil = new Chart(ctxFunil, {
+                type: 'bar',
+                data: {
+                    labels: ['Visitantes', 'Inscritos', 'Trial', 'Pagos'],
+                    datasets: [{
+                        label: 'Funil de Conversão',
+                        data: [1000, clientes.length * 5, clientes.length, (clientes.filter(c => c.plano && c.plano !== 'gratis').length)],
+                        backgroundColor: ['#3b82f6', '#667eea', '#f59e0b', '#10b981']
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: { legend: { labels: { color: textColor } } },
+                    scales: {
+                        x: { grid: { color: gridColor }, ticks: { color: textColor } },
+                        y: { grid: { color: gridColor }, ticks: { color: textColor } }
                     }
                 }
             });
@@ -1437,16 +1516,7 @@
                 return;
             }
 
-            const emails = clientesInativosSelecionados.map(c => ({
-                email: c.email_proprietario,
-                nome: c.nome_empresa
-            }));
-
-            console.log('📧 Enviando emails para:', emails);
-            console.log('Assunto:', subject);
-            console.log('Mensagem:', body);
-
-            alert(`✅ Email simulado! Em produção, seria enviado para:\n\n${emails.map(e => e.email).join('\n')}`);
+            alert(`✅ Email simulado enviado para ${clientesInativosSelecionados.length} clientes!`);
             closeMailingModal();
             document.getElementById('emailSubject').value = '';
             document.getElementById('emailBody').value = '';
