@@ -7,7 +7,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
@@ -19,123 +19,388 @@
     <script src="js/database.js"></script>
 
     <style>
-        body {
-            background: #f3f4f6;
-            font-family: 'Inter', sans-serif;
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-tertiary: #94a3b8;
+            --border-color: #e2e8f0;
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --card-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --card-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.15);
         }
 
-        .admin-container {
-            max-width: 1400px;
-            margin: 0 auto;
+        body.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-color: #334155;
+            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+            --card-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+            --card-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .admin-layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
             padding: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .admin-sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .admin-sidebar-brand i {
+            font-size: 24px;
+        }
+
+        .admin-sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .admin-sidebar-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .admin-sidebar-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .admin-sidebar-item.active {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: white;
+        }
+
+        .admin-sidebar-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .admin-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--card-shadow);
+        }
+
+        .admin-header-title {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .admin-header-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .admin-header-title p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .admin-header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .theme-toggle, .admin-logout {
+            padding: 10px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle:hover, .admin-logout:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+
+        .admin-logout {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+
+        .admin-logout:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .admin-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .admin-content-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
         }
 
-        .admin-header-left h1 {
-            font-size: 32px;
-            font-weight: 700;
-            margin: 0;
-            color: #1f2937;
-        }
-
-        .admin-header-left p {
-            color: #6b7280;
-            margin: 5px 0 0 0;
-        }
-
-        .admin-header-right button {
-            padding: 10px 20px;
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.3s;
-        }
-
-        .admin-header-right button:hover {
-            background: #dc2626;
-        }
-
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
             margin-bottom: 40px;
         }
 
         .stat-card {
-            background: white;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            transition: transform 0.3s, box-shadow 0.3s;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
         }
 
         .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-8px);
+            box-shadow: var(--card-shadow-hover);
+            border-color: var(--accent-primary);
         }
 
-        .stat-icon {
-            font-size: 28px;
-            margin-bottom: 10px;
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .stat-label {
-            font-size: 14px;
-            color: #6b7280;
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .stat-card-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .stat-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-card-icon.primary {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--accent-primary);
+        }
+
+        .stat-card-icon.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .stat-card-icon.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .stat-card-icon.info {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info);
+        }
+
+        .stat-card-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
 
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #667eea;
-            margin: 0;
+        .stat-card-change {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .stat-card-change.positive {
+            color: var(--success);
+        }
+
+        .stat-card-change.negative {
+            color: var(--danger);
         }
 
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 20px;
             margin-bottom: 40px;
         }
 
         .chart-card {
-            background: white;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
         }
 
-        .chart-card h3 {
-            margin: 0 0 20px 0;
+        .chart-card:hover {
+            box-shadow: var(--card-shadow-lg);
+            border-color: var(--accent-primary);
+        }
+
+        .chart-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-card-title {
             font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .chart-card-badge {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
             font-weight: 600;
-            color: #1f2937;
         }
 
         .table-card {
-            background: white;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
         }
 
-        .table-card h3 {
-            margin: 0 0 20px 0;
+        .table-card:hover {
+            box-shadow: var(--card-shadow-lg);
+            border-color: var(--accent-primary);
+        }
+
+        .table-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-card-title {
             font-size: 16px;
-            font-weight: 600;
-            color: #1f2937;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .table-card-actions {
+            display: flex;
+            gap: 8px;
         }
 
         .table-responsive {
@@ -148,160 +413,313 @@
         }
 
         thead tr {
-            border-bottom: 2px solid #e5e7eb;
+            border-bottom: 2px solid var(--border-color);
         }
 
         th {
             text-align: left;
-            padding: 12px;
-            font-weight: 600;
-            color: #6b7280;
-            font-size: 14px;
+            padding: 16px 12px;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
         }
 
         tbody tr {
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s ease;
         }
 
         tbody tr:hover {
-            background: #f9fafb;
+            background: var(--bg-tertiary);
         }
 
         td {
-            padding: 12px;
-            color: #1f2937;
+            padding: 16px 12px;
+            color: var(--text-primary);
+            font-size: 14px;
         }
 
         .badge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             padding: 6px 12px;
-            border-radius: 20px;
+            border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
         }
 
         .badge-ativo {
-            background: #d1fae5;
-            color: #047857;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
         }
 
         .badge-trial {
-            background: #fef3c7;
-            color: #92400e;
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
         }
 
         .badge-inativo {
-            background: #fee2e2;
-            color: #991b1b;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
         }
 
         .badge-pro {
-            background: #dbeafe;
-            color: #1e40af;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info);
         }
 
         .badge-premium {
-            background: #e9d5ff;
-            color: #6b21a8;
+            background: rgba(168, 85, 247, 0.1);
+            color: #a855f7;
         }
 
         .loading {
             text-align: center;
             padding: 40px;
-            color: #9ca3af;
+            color: var(--text-secondary);
         }
 
         .empty-state {
             text-align: center;
-            padding: 40px;
-            color: #9ca3af;
+            padding: 60px 20px;
+            color: var(--text-secondary);
         }
 
-        .empty-state i {
-            font-size: 48px;
+        .empty-state-icon {
+            font-size: 64px;
             margin-bottom: 20px;
-            color: #d1d5db;
+            color: var(--text-tertiary);
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-tertiary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .admin-layout {
+                flex-direction: column;
+            }
+
+            .admin-sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-content {
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="admin-container">
-        <!-- Header -->
-        <div class="admin-header">
-            <div class="admin-header-left">
-                <h1>Dashboard Admin</h1>
-                <p>Controle seu negócio e seus clientes</p>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-sidebar-brand">
+                <i class="fas fa-chart-line"></i>
+                <span>Reddito Admin</span>
             </div>
-            <div class="admin-header-right">
-                <button onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Sair
-                </button>
-            </div>
+
+            <nav class="admin-sidebar-nav">
+                <div class="admin-sidebar-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="admin-sidebar-item">
+                    <i class="fas fa-building"></i>
+                    <span>Clientes</span>
+                </div>
+                <div class="admin-sidebar-item">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Assinaturas</span>
+                </div>
+                <div class="admin-sidebar-item">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Financeiro</span>
+                </div>
+                <div class="admin-sidebar-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Relatórios</span>
+                </div>
+                <div class="admin-sidebar-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Configurações</span>
+                </div>
+            </nav>
         </div>
 
-        <!-- Cards Principais -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon" style="color: #667eea;"><i class="fas fa-building"></i></div>
-                <div class="stat-label">Total de Clientes</div>
-                <p class="stat-value" id="totalClientes">0</p>
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Header -->
+            <div class="admin-header">
+                <div class="admin-header-title">
+                    <h1>Dashboard</h1>
+                    <p>Bem-vindo à sua plataforma de administração</p>
+                </div>
+                <div class="admin-header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-circle-half-stroke"></i>
+                        <span id="themeLabel">Escuro</span>
+                    </button>
+                    <button class="admin-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sair
+                    </button>
+                </div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-icon" style="color: #10b981;"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-label">Clientes Pagos</div>
-                <p class="stat-value" id="clientesPagos">0</p>
-            </div>
+            <!-- Content -->
+            <div class="admin-content">
+                <!-- Cards de Estatísticas -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <div class="stat-card-label">Total de Clientes</div>
+                            </div>
+                            <div class="stat-card-icon primary">
+                                <i class="fas fa-building"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="totalClientes">0</div>
+                        <div class="stat-card-change positive">
+                            <i class="fas fa-arrow-up"></i> 12% desde o mês passado
+                        </div>
+                    </div>
 
-            <div class="stat-card">
-                <div class="stat-icon" style="color: #f59e0b;"><i class="fas fa-flask"></i></div>
-                <div class="stat-label">Em Teste Gratuito</div>
-                <p class="stat-value" id="clientesTrial">0</p>
-            </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <div class="stat-card-label">Clientes Pagos</div>
+                            </div>
+                            <div class="stat-card-icon success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="clientesPagos">0</div>
+                        <div class="stat-card-change positive">
+                            <i class="fas fa-arrow-up"></i> 8% desde o mês passado
+                        </div>
+                    </div>
 
-            <div class="stat-card">
-                <div class="stat-icon" style="color: #3b82f6;"><i class="fas fa-dollar-sign"></i></div>
-                <div class="stat-label">Receita Mensal</div>
-                <p class="stat-value" id="receitaMensal">R$ 0</p>
-            </div>
-        </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <div class="stat-card-label">Em Teste Gratuito</div>
+                            </div>
+                            <div class="stat-card-icon warning">
+                                <i class="fas fa-flask"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="clientesTrial">0</div>
+                        <div class="stat-card-change negative">
+                            <i class="fas fa-arrow-down"></i> 3% desde o mês passado
+                        </div>
+                    </div>
 
-        <!-- Gráficos -->
-        <div class="charts-grid">
-            <div class="chart-card">
-                <h3>Clientes por Status</h3>
-                <canvas id="chartStatus"></canvas>
-            </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <div class="stat-card-label">Receita Mensal</div>
+                            </div>
+                            <div class="stat-card-icon info">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="receitaMensal">R$ 0</div>
+                        <div class="stat-card-change positive">
+                            <i class="fas fa-arrow-up"></i> 25% desde o mês passado
+                        </div>
+                    </div>
+                </div>
 
-            <div class="chart-card">
-                <h3>Clientes por Plano</h3>
-                <canvas id="chartPlanos"></canvas>
-            </div>
-        </div>
+                <!-- Gráficos -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <div class="chart-card-title">Clientes por Status</div>
+                            <div class="chart-card-badge">Últimos 30 dias</div>
+                        </div>
+                        <canvas id="chartStatus"></canvas>
+                    </div>
 
-        <!-- Tabela de Clientes -->
-        <div class="table-card">
-            <h3>Seus Clientes</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Empresa</th>
-                            <th>Email</th>
-                            <th>Plano</th>
-                            <th>Status</th>
-                            <th>Data Início</th>
-                            <th>Próximo Vencimento</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaClientes">
-                        <tr>
-                            <td colspan="6" class="loading">
-                                <i class="fas fa-spinner fa-spin"></i> Carregando...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <div class="chart-card-title">Distribuição por Plano</div>
+                            <div class="chart-card-badge">Atual</div>
+                        </div>
+                        <canvas id="chartPlanos"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabela de Clientes -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <div class="table-card-title">Seus Clientes</div>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Empresa</th>
+                                    <th>Email</th>
+                                    <th>Plano</th>
+                                    <th>Status</th>
+                                    <th>Data Início</th>
+                                    <th>Próximo Vencimento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaClientes">
+                                <tr>
+                                    <td colspan="6" class="loading">
+                                        <i class="fas fa-spinner fa-spin"></i> Carregando...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -310,18 +728,44 @@
         let chartStatus = null;
         let chartPlanos = null;
 
-        // Verificar se é admin (você)
+        // Carregar tema salvo
+        function initTheme() {
+            const savedTheme = localStorage.getItem('admin-theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('themeLabel').textContent = 'Claro';
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.getElementById('themeLabel').textContent = 'Escuro';
+            }
+        }
+
+        // Alternar tema
+        function toggleTheme() {
+            const isDarkMode = document.body.classList.toggle('dark-mode');
+            const theme = isDarkMode ? 'dark' : 'light';
+            localStorage.setItem('admin-theme', theme);
+            document.getElementById('themeLabel').textContent = isDarkMode ? 'Claro' : 'Escuro';
+            
+            // Redesenhar gráficos
+            if (chartStatus) {
+                chartStatus.destroy();
+                chartStatus = null;
+            }
+            if (chartPlanos) {
+                chartPlanos.destroy();
+                chartPlanos = null;
+            }
+        }
+
+        // Verificar admin
         window.addEventListener('perfilCarregado', (e) => {
             const perfil = e.detail;
             console.log('✅ Perfil recebido:', perfil);
             
-            // Se for admin OU se tiver role admin, carregar dados
             if (perfil && (perfil.role === 'admin' || perfil.is_admin)) {
                 console.log('✅ Admin detectado, carregando dashboard...');
                 carregarDados();
-            } else {
-                console.log('❌ Não é admin');
-                // Não redireciona, apenas não carrega os dados
             }
         });
 
@@ -329,7 +773,6 @@
             try {
                 const supabase = window.getSupabase();
                 
-                // Buscar todos os tenants (seus clientes)
                 const { data: tenants, error: errorTenants } = await supabase
                     .from('tenants')
                     .select('*')
@@ -343,12 +786,10 @@
 
                 const clientesList = tenants || [];
                 
-                // Contar por status
                 const totalClientes = clientesList.length;
                 const clientesPagos = clientesList.filter(c => c.plano && c.plano !== 'gratis').length;
                 const clientesTrial = clientesList.filter(c => !c.plano || c.plano === 'gratis').length;
 
-                // Calcular receita mensal
                 const { data: assinaturas } = await supabase
                     .from('assinaturas')
                     .select('valor_mensal, status')
@@ -356,16 +797,12 @@
 
                 const receitaMensal = (assinaturas || []).reduce((sum, a) => sum + (parseFloat(a.valor_mensal) || 0), 0);
 
-                // Atualizar cards
                 document.getElementById('totalClientes').textContent = totalClientes;
                 document.getElementById('clientesPagos').textContent = clientesPagos;
                 document.getElementById('clientesTrial').textContent = clientesTrial;
                 document.getElementById('receitaMensal').textContent = `R$ ${receitaMensal.toFixed(2).replace('.', ',')}`;
 
-                // Atualizar tabela
                 atualizarTabela(clientesList);
-
-                // Atualizar gráficos
                 atualizarGraficos(clientesList);
 
             } catch (error) {
@@ -378,9 +815,14 @@
             const tbody = document.getElementById('tabelaClientes');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p>Nenhum cliente cadastrado ainda</p>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-inbox"></i>
+                            </div>
+                            <div class="empty-state-title">Nenhum cliente cadastrado</div>
+                            <div class="empty-state-text">Seus clientes aparecerão aqui quando se cadastrarem</div>
+                        </div>
                     </td>
                 </tr>`;
         }
@@ -395,14 +837,14 @@
 
             tbody.innerHTML = clientes.map(cliente => {
                 const statusBadge = cliente.status === 'ativo' ? 
-                    '<span class="badge badge-ativo">✓ Ativo</span>' : 
-                    '<span class="badge badge-inativo">✗ Inativo</span>';
+                    '<span class="badge badge-ativo"><i class="fas fa-circle"></i> Ativo</span>' : 
+                    '<span class="badge badge-inativo"><i class="fas fa-circle"></i> Inativo</span>';
 
-                let planoBadge = '<span class="badge badge-trial">Teste Grátis</span>';
+                let planoBadge = '<span class="badge badge-trial"><i class="fas fa-flask"></i> Teste Grátis</span>';
                 if (cliente.plano === 'pro') {
-                    planoBadge = '<span class="badge badge-pro">Pro</span>';
+                    planoBadge = '<span class="badge badge-pro"><i class="fas fa-star"></i> Pro</span>';
                 } else if (cliente.plano === 'premium') {
-                    planoBadge = '<span class="badge badge-premium">Premium</span>';
+                    planoBadge = '<span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>';
                 }
 
                 const dataInicio = new Date(cliente.data_inicio).toLocaleDateString('pt-BR');
@@ -421,7 +863,10 @@
         }
 
         function atualizarGraficos(clientes) {
-            // Gráfico de Status
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#cbd5e1' : '#64748b';
+            const gridColor = isDark ? '#334155' : '#e2e8f0';
+
             const statusAtivos = clientes.filter(c => c.status === 'ativo').length;
             const statusInativos = clientes.length - statusAtivos;
 
@@ -434,19 +879,22 @@
                     datasets: [{
                         data: [statusAtivos, statusInativos],
                         backgroundColor: ['#10b981', '#ef4444'],
-                        borderWidth: 0
+                        borderColor: [isDark ? '#1e293b' : '#ffffff', isDark ? '#1e293b' : '#ffffff'],
+                        borderWidth: 3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: textColor, font: { size: 12, weight: 600 }, padding: 20 }
+                        }
                     }
                 }
             });
 
-            // Gráfico de Planos
             const planoGratis = clientes.filter(c => !c.plano || c.plano === 'gratis').length;
             const planoPro = clientes.filter(c => c.plano === 'pro').length;
             const planoPremium = clientes.filter(c => c.plano === 'premium').length;
@@ -459,15 +907,19 @@
                     labels: ['Teste Grátis', 'Pro', 'Premium'],
                     datasets: [{
                         data: [planoGratis, planoPro, planoPremium],
-                        backgroundColor: ['#fbbf24', '#667eea', '#764ba2'],
-                        borderWidth: 0
+                        backgroundColor: ['#f59e0b', '#667eea', '#764ba2'],
+                        borderColor: [isDark ? '#1e293b' : '#ffffff', isDark ? '#1e293b' : '#ffffff', isDark ? '#1e293b' : '#ffffff'],
+                        borderWidth: 3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: textColor, font: { size: 12, weight: 600 }, padding: 20 }
+                        }
                     }
                 }
             });
@@ -483,6 +935,8 @@
                 }
             }
         }
+
+        initTheme();
     </script>
 </body>
 </html>
