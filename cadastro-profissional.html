@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Cadastro de Profissional - Sistema Pro</title>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/pro-design-system.css">
-    <link rel="stylesheet" href="css/pro-components.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="css/pro-design-system.css" />
+    <link rel="stylesheet" href="css/pro-components.css" />
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
@@ -41,19 +41,19 @@
             <form id="formCadastro" onsubmit="realizarCadastro(event)">
                 <div class="pro-form-group">
                     <label class="pro-label">Seu Nome Completo *</label>
-                    <input type="text" class="pro-input" id="nome" placeholder="Ex: João Silva" required>
+                    <input type="text" class="pro-input" id="nome" placeholder="Ex: João Silva" required />
                 </div>
 
                 <div class="pro-form-group">
                     <label class="pro-label">Email *</label>
-                    <input type="email" class="pro-input" id="email" placeholder="seu@email.com" required>
+                    <input type="email" class="pro-input" id="email" placeholder="seu@email.com" required />
                     <p class="pro-input-help">Use o mesmo email para o qual o convite foi enviado.</p>
                 </div>
 
                 <div class="pro-form-group">
                     <label class="pro-label">Senha *</label>
                     <div style="position:relative">
-                        <input type="password" class="pro-input" id="senha" placeholder="••••••••" required minlength="6">
+                        <input type="password" class="pro-input" id="senha" placeholder="••••••••" required minlength="6" />
                         <button type="button" class="pro-input-icon-btn" onclick="togglePassword('senha')">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -63,7 +63,7 @@
                 <div class="pro-form-group">
                     <label class="pro-label">Confirmar Senha *</label>
                     <div style="position:relative">
-                        <input type="password" class="pro-input" id="confirmarSenha" placeholder="••••••••" required minlength="6">
+                        <input type="password" class="pro-input" id="confirmarSenha" placeholder="••••••••" required minlength="6" />
                         <button type="button" class="pro-input-icon-btn" onclick="togglePassword('confirmarSenha')">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -97,11 +97,9 @@
     </div>
 
     <script>
-        // REMOVIDO: const supabase = ... (Pois já existe no auth.js)
         let dadosConvite = null;
 
-        // 1. Validar o convite assim que a página abre
-        (function validarConvite() {
+        function validarConvite() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('convite');
 
@@ -111,16 +109,13 @@
             }
 
             try {
-                // Decodifica o token Base64
                 dadosConvite = JSON.parse(atob(token));
 
-                // Verifica expiração
                 if (dadosConvite.expiry && Date.now() > dadosConvite.expiry) {
                     mostrarTelaErro("Este convite expirou. Peça um novo link ao proprietário.");
                     return;
                 }
 
-                // Se o convite tiver email (formato antigo), preenche e trava
                 if (dadosConvite.email) {
                     const inputEmail = document.getElementById('email');
                     inputEmail.value = dadosConvite.email;
@@ -128,12 +123,17 @@
                 }
 
                 console.log("Convite validado para o tenant:", dadosConvite.tenant_id);
-
             } catch (e) {
                 console.error("Erro ao validar token:", e);
                 mostrarTelaErro("O link de convite está corrompido ou é inválido.");
             }
-        })();
+        }
+
+        if (window.isSupabaseReady && window.isSupabaseReady()) {
+            validarConvite();
+        } else {
+            window.addEventListener('supabaseReady', validarConvite);
+        }
 
         function mostrarTelaErro(mensagem) {
             document.getElementById('cadastroCard').style.display = 'none';
@@ -164,7 +164,6 @@
             const senha = document.getElementById('senha').value;
             const confirmar = document.getElementById('confirmarSenha').value;
 
-            // Validações básicas
             if (senha !== confirmar) {
                 textoErro.textContent = "As senhas não coincidem.";
                 divErro.style.display = "flex";
@@ -176,8 +175,6 @@
             divErro.style.display = "none";
 
             try {
-                // 1. Criar o usuário no Auth do Supabase
-                // Usamos window.getSupabase() para garantir que pegamos a instância correta
                 const { data: authData, error: authError } = await window.getSupabase().auth.signUp({
                     email: email,
                     password: senha
@@ -188,7 +185,6 @@
                 const user = authData.user;
                 if (!user) throw new Error("Erro ao criar usuário. Tente novamente.");
 
-                // 2. Criar o perfil na tabela 'perfis'
                 const { error: perfilError } = await window.getSupabase()
                     .from('perfis')
                     .insert({
@@ -201,7 +197,6 @@
 
                 if (perfilError) throw perfilError;
 
-                // 3. Sucesso! Redirecionar
                 alert("Cadastro realizado com sucesso!");
                 window.location.href = 'dashboard-profissional.html';
 
