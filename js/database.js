@@ -271,6 +271,8 @@ const DB = {
                         telefone: dados.telefone || null,
                         email: dados.email || null,
                         especialidade: dados.especialidade || null,
+                        status: dados.status || 'ativo',
+                        comissao_tipo: dados.comissao_tipo || 'percentual',
                         comissao_percentual: parseFloat(dados.comissao_percentual || 0),
                         cor_agenda: dados.cor_agenda || '#667eea'
                     })
@@ -289,16 +291,23 @@ const DB = {
             try {
                 const tenantId = await Auth.getTenantId();
                 const supabase = window.getSupabase();
+                
+                const updateData = {
+                    nome: dados.nome,
+                    telefone: dados.telefone || null,
+                    email: dados.email || null,
+                    especialidade: dados.especialidade || null
+                };
+
+                // Campos opcionais
+                if (dados.status !== undefined) updateData.status = dados.status;
+                if (dados.comissao_tipo !== undefined) updateData.comissao_tipo = dados.comissao_tipo;
+                if (dados.comissao_percentual !== undefined) updateData.comissao_percentual = parseFloat(dados.comissao_percentual || 0);
+                if (dados.cor_agenda !== undefined) updateData.cor_agenda = dados.cor_agenda || '#667eea';
+
                 const { data, error } = await supabase
                     .from('profissionais')
-                    .update({
-                        nome: dados.nome,
-                        telefone: dados.telefone || null,
-                        email: dados.email || null,
-                        especialidade: dados.especialidade || null,
-                        comissao_percentual: parseFloat(dados.comissao_percentual || 0),
-                        cor_agenda: dados.cor_agenda || '#667eea'
-                    })
+                    .update(updateData)
                     .eq('id', id)
                     .eq('tenant_id', tenantId)
                     .select()
