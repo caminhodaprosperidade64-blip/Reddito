@@ -313,11 +313,15 @@
         // Verificar se é admin (você)
         window.addEventListener('perfilCarregado', (e) => {
             const perfil = e.detail;
-            if (!perfil || (perfil.role !== 'admin' && !perfil.is_admin)) {
-                alert('⛔ Acesso negado. Apenas administradores podem acessar esta página.');
-                window.location.href = 'login.html';
-            } else {
+            console.log('✅ Perfil recebido:', perfil);
+            
+            // Se for admin OU se tiver role admin, carregar dados
+            if (perfil && (perfil.role === 'admin' || perfil.is_admin)) {
+                console.log('✅ Admin detectado, carregando dashboard...');
                 carregarDados();
+            } else {
+                console.log('❌ Não é admin');
+                // Não redireciona, apenas não carrega os dados
             }
         });
 
