@@ -1,4 +1,4 @@
-/**
+/
  * Auth Guard - Proteção de Rotas e Controle de Acesso por Role (Versão Completa)
  */
 (function() {
@@ -13,6 +13,13 @@
         const path = window.location.pathname.split('/').pop() || 'index.html';
         const isPublic = PAGINAS_PUBLICAS.includes(path);
 
+        // ALTERAÇÃO: Se estivermos na página de cadastro do profissional, não execute NENHUMA lógica de redirect/guard.
+        // Isso evita que o guard "intercepte" o fluxo público de cadastro (especialmente em abas anônimas).
+        if (path === 'cadastro-profissional.html') {
+            // Apenas atualiza nada — sai imediatamente
+            return;
+        }
+
         if (!session) {
             if (!isPublic) {
                 window.location.href = 'index.html';
@@ -24,8 +31,8 @@
         try {
             const { data: perfil, error } = await supabase
                 .from('perfis')
-                .select('*')
-                .eq('id', session.user.id)  // <-- Alteração feita aqui
+                .select('')
+                .eq('id', session.user.id)  // <-- Mantive a correção feita anteriormente
                 .single();
 
             if (error || !perfil) {
