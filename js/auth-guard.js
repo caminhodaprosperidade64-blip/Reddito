@@ -1,4 +1,4 @@
-/
+/**
  * Auth Guard - Proteção de Rotas e Controle de Acesso por Role (Versão Completa)
  */
 (function() {
@@ -13,10 +13,8 @@
         const path = window.location.pathname.split('/').pop() || 'index.html';
         const isPublic = PAGINAS_PUBLICAS.includes(path);
 
-        // ALTERAÇÃO: Se estivermos na página de cadastro do profissional, não execute NENHUMA lógica de redirect/guard.
-        // Isso evita que o guard "intercepte" o fluxo público de cadastro (especialmente em abas anônimas).
+        // Se estivermos na página de cadastro do profissional, não execute nenhuma lógica
         if (path === 'cadastro-profissional.html') {
-            // Apenas atualiza nada — sai imediatamente
             return;
         }
 
@@ -29,25 +27,50 @@
 
         // Usuário logado: buscar perfil completo
         try {
-            const { data: perfil, error } = await supabase
-                .from('perfis')
-                .select('')
-                .eq('id', session.user.id)  // <-- Mantive a correção feita anteriormente
-                .single();
+            // PRIMEIRO: Verificar se é ADMIN no metadata
+            const userMetadata = session.user.user_metadata || {};
+            const roleFromMetadata = userMetadata.role;
 
-            if (error || !perfil) {
-                console.error("Erro ao carregar perfil no Guard:", error);
-                return;
+            let role = 'dono'; // padrão
+            let perfil = null;
+
+            // Se for admin, usar esse role
+            if (roleFromMetadata === 'admin') {
+                role = 'admin';
+                perfil = {
+                    id: session.user.id,
+                    email: session.user.email,
+                    nome: session.user.user_metadata?.name || 'Admin',
+                    role: 'admin',
+                    tenant_id: session.user.id
+                };
+            } else {
+                // Se não for admin, buscar do banco de dados
+                const { data: perfilBD, error } = await supabase
+                    .from('perfis')
+                    .select('')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (error || !perfilBD) {
+                    console.error("Erro ao carregar perfil no Guard:", error);
+                    return;
+                }
+
+                perfil = perfilBD;
+                role = (perfil.role || 'dono').toLowerCase();
             }
 
-            const role = (perfil.role || 'dono').toLowerCase();
+            console.log('✅ Role detectado:', role);
 
             // --- LÓGICA DE REDIRECIONAMENTO POR ROLE ---
             
-            // 1. Se está em página de login/cadastro mas já está logado, vai para a dash correta
+            // 1. Se está em página de login/cadastro mas já está logado
             if (isPublic) {
                 if (role === 'profissional') {
                     window.location.href = 'dashboard-profissional.html';
+                } else if (role === 'admin') {
+                    window.location.href = 'dashboard-admin.html';
                 } else {
                     window.location.href = 'dashboard.html';
                 }
@@ -66,15 +89,29 @@
                 return;
             }
 
-            // --- MANIPULAÇÃO DE UI (O QUE MANTÉM O RESTO DO SITE FUNCIONANDO) ---
+            // 4. Se for ADMIN e entrar em página de cliente, vai para dashboard-admin
+            if (role === 'admin' && path === 'dashboard.html') {
+                window.location.href = 'dashboard-admin.html';
+                return;
+            }
 
-            // Atualiza elementos de interface se existirem na página
+            // --- MANIPULAÇÃO DE UI ---
+
+            // Atualiza elementos de interface
             const userNameEl = document.getElementById('userName');
             const userRoleEl = document.getElementById('userRole');
             const userAvatarEl = document.getElementById('userAvatar');
 
             if (userNameEl) userNameEl.textContent = perfil.nome || 'Usuário';
-            if (userRoleEl) userRoleEl.textContent = role === 'dono' ? 'Administrador' : 'Profissional';
+            if (userRoleEl) {
+                if (role === 'admin') {
+                    userRoleEl.textContent = 'Administrador';
+                } else if (role === 'dono') {
+                    userRoleEl.textContent = 'Proprietário';
+                } else {
+                    userRoleEl.textContent = 'Profissional';
+                }
+            }
             if (userAvatarEl && perfil.avatar_url) userAvatarEl.src = perfil.avatar_url;
 
             // Esconde itens de menu restritos para profissionais
@@ -93,7 +130,7 @@
                 });
             }
 
-            // Dispara o evento que as outras páginas (agenda.html, clientes.html) esperam
+            // Dispara o evento que as outras páginas esperam
             window.dispatchEvent(new CustomEvent('perfilCarregado', { 
                 detail: perfil 
             }));
