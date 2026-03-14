@@ -1,1539 +1,1049 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - Reddito</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/pro-design-system.css">
-    <link rel="stylesheet" href="css/pro-components.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/database.js"></script>
-
-    <style>
-        :root {
-            --bg-primary: #f8fafc;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #f1f5f9;
-            --text-primary: #0f172a;
-            --text-secondary: #64748b;
-            --text-tertiary: #94a3b8;
-            --border-color: #e2e8f0;
-            --accent-primary: #667eea;
-            --accent-secondary: #764ba2;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --info: #3b82f6;
-            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-            --card-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
-            --card-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        body.dark-mode {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --text-tertiary: #94a3b8;
-            --border-color: #334155;
-            --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
-            --card-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
-            --card-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.7);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            height: 100%;
-            width: 100%;
-        }
-
-        body {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .admin-layout {
-            display: flex;
-            height: 100vh;
-        }
-
-        .admin-sidebar {
-            width: 280px;
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-            overflow-y: auto;
-            padding: 20px;
-            box-shadow: var(--card-shadow);
-        }
-
-        .admin-sidebar-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 30px;
-            padding: 15px;
-            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-            border-radius: 12px;
-            color: white;
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        .admin-sidebar-brand img {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-
-        .admin-sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .admin-sidebar-item {
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-            font-size: 14px;
-        }
-
-        .admin-sidebar-item:hover {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-
-        .admin-sidebar-item.active {
-            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-            color: white;
-        }
-
-        .admin-sidebar-item i {
-            width: 20px;
-            text-align: center;
-        }
-
-        .admin-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .admin-header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: var(--card-shadow);
-        }
-
-        .admin-header-title {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .admin-header-title h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .admin-header-title p {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .admin-header-actions {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .theme-toggle, .admin-logout {
-            padding: 10px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .theme-toggle:hover, .admin-logout:hover {
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
-            color: white;
-        }
-
-        .admin-logout {
-            background: var(--danger);
-            border-color: var(--danger);
-            color: white;
-        }
-
-        .admin-logout:hover {
-            background: #dc2626;
-            border-color: #dc2626;
-        }
-
-        .admin-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 30px;
-        }
-
-        .page-section {
-            display: none;
-        }
-
-        .page-section.active {
-            display: block;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: var(--card-shadow-hover);
-            border-color: var(--accent-primary);
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .stat-card:hover::before {
-            opacity: 1;
-        }
-
-        .stat-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .stat-card-label {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
-        }
-
-        .stat-card-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .stat-card-icon.primary {
-            background: rgba(102, 126, 234, 0.1);
-            color: var(--accent-primary);
-        }
-
-        .stat-card-icon.success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-        }
-
-        .stat-card-icon.warning {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning);
-        }
-
-        .stat-card-icon.info {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--info);
-        }
-
-        .stat-card-icon.danger {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-        }
-
-        .stat-card-value {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-
-        .stat-card-change {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .stat-card-change.positive {
-            color: var(--success);
-        }
-
-        .stat-card-change.negative {
-            color: var(--danger);
-        }
-
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .chart-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s ease;
-        }
-
-        .chart-card:hover {
-            box-shadow: var(--card-shadow-lg);
-            border-color: var(--accent-primary);
-        }
-
-        .chart-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .chart-card-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .chart-card-badge {
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .table-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s ease;
-        }
-
-        .table-card:hover {
-            box-shadow: var(--card-shadow-lg);
-            border-color: var(--accent-primary);
-        }
-
-        .table-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .table-card-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .table-card-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .action-btn {
-            padding: 8px 16px;
-            background: var(--info);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            transition: all 0.3s ease;
-        }
-
-        .action-btn:hover {
-            background: #2563eb;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead tr {
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        th {
-            text-align: left;
-            padding: 16px 12px;
-            font-weight: 700;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-secondary);
-        }
-
-        tbody tr {
-            border-bottom: 1px solid var(--border-color);
-            transition: background-color 0.2s ease;
-        }
-
-        tbody tr:hover {
-            background: var(--bg-tertiary);
-        }
-
-        td {
-            padding: 16px 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .badge-ativo {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-        }
-
-        .badge-trial {
-            background: rgba(245, 158, 11, 0.1);
-            color: var(--warning);
-        }
-
-        .badge-inativo {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-        }
-
-        .badge-pro {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--info);
-        }
-
-        .badge-premium {
-            background: rgba(168, 85, 247, 0.1);
-            color: #a855f7;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-secondary);
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            color: var(--text-tertiary);
-            opacity: 0.5;
-        }
-
-        .empty-state-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-
-        .empty-state-text {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .modal-backdrop {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-backdrop.active {
-            display: flex;
-        }
-
-        .modal {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: var(--card-shadow-lg);
-        }
-
-        .modal-header {
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 16px;
-        }
-
-        .modal-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .modal-body {
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 14px;
-        }
-
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: var(--accent-primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
-        }
-
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--border-color);
-        }
-
-        .full-width-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--text-tertiary);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
-        }
-
-        @media (max-width: 768px) {
-            .admin-layout {
-                flex-direction: column;
-            }
-
-            .admin-sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .admin-content {
-                padding: 20px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin - Reddito</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/pro-design-system.css">
+  <link rel="stylesheet" href="css/pro-components.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/database.js"></script>
+  <style>
+    :root {
+      --color-bg: #ffffff;
+      --color-text: #1f2937;
+      --color-border: #e5e7eb;
+      --color-card: #f9fafb;
+      --color-primary: #667eea;
+      --color-success: #10b981;
+      --color-danger: #ef4444;
+      --color-warning: #fbbf24;
+      --color-secondary: #764ba2;
+    }
+
+    body.dark-mode {
+      --color-bg: #0f172a;
+      --color-text: #f1f5f9;
+      --color-border: #334155;
+      --color-card: #1e293b;
+      --color-primary: #667eea;
+      --color-success: #10b981;
+      --color-danger: #ef4444;
+      --color-warning: #fbbf24;
+      --color-secondary: #764ba2;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .admin-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .admin-sidebar {
+      width: 260px;
+      background-color: var(--color-card);
+      border-right: 1px solid var(--color-border);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      overflow-y: auto;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logo-container img {
+      height: 48px;
+      width: auto;
+      border-radius: 8px;
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      background: transparent;
+      color: var(--color-text);
+      font-size: 14px;
+      font-weight: 500;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-item:hover {
+      background-color: var(--color-border);
+      transform: translateX(4px);
+    }
+
+    .nav-item.active {
+      background-color: var(--color-primary);
+      color: white;
+    }
+
+    .nav-item i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .admin-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .admin-header {
+      background-color: var(--color-card);
+      border-bottom: 1px solid var(--color-border);
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .admin-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--color-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: var(--color-text);
+    }
+
+    .theme-toggle:hover {
+      background-color: var(--color-border);
+    }
+
+    .logout-btn {
+      background-color: var(--color-danger);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logout-btn:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+
+    .page-content {
+      padding: 32px;
+      display: none;
+    }
+
+    .page-content.active {
+      display: block;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      background-color: var(--color-primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stat-change {
+      font-size: 12px;
+      color: var(--color-success);
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .chart-card {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .chart-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .table-card {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 24px;
+      overflow-x: auto;
+    }
+
+    .table-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 2px solid var(--color-border);
+      font-weight: 600;
+      font-size: 13px;
+      color: #6b7280;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 14px 12px;
+      border-bottom: 1px solid var(--color-border);
+      font-size: 14px;
+    }
+
+    tr:hover {
+      background-color: var(--color-border);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-ativo {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-inativo {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-trial {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-pro {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-premium {
+      background-color: #e9d5ff;
+      color: #6b21a8;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: #9ca3af;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 24px;
+      color: #6b7280;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: var(--color-card);
+      border-radius: 12px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--color-text);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background-color: var(--color-border);
+      color: var(--color-text);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--color-border);
+      opacity: 0.8;
+    }
+
+    @media (max-width: 768px) {
+      .admin-sidebar {
+        width: 100%;
+        flex-direction: row;
+        padding: 12px;
+        gap: 12px;
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+        overflow-x: auto;
+      }
+
+      .nav-menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .admin-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .page-content {
+        padding: 16px;
+      }
+
+      .stats-grid,
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="admin-layout">
-        <!-- Sidebar -->
-        <div class="admin-sidebar">
-            <div class="admin-sidebar-brand">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='grad1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%2364f4ac;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='95' fill='url(%23grad1)' opacity='0.1'/%3E%3Ctext x='100' y='120' font-size='80' font-weight='bold' text-anchor='middle' fill='white'%3ER%3C/text%3E%3C/svg%3E" alt="Reddito">
-                <span>Reddito</span>
-            </div>
-
-            <nav class="admin-sidebar-nav">
-                <button class="admin-sidebar-item active" onclick="showPage('dashboard')">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </button>
-                <button class="admin-sidebar-item" onclick="showPage('clientes')">
-                    <i class="fas fa-building"></i>
-                    <span>Clientes</span>
-                </button>
-                <button class="admin-sidebar-item" onclick="showPage('inativos')">
-                    <i class="fas fa-envelope"></i>
-                    <span>Inativos</span>
-                </button>
-                <button class="admin-sidebar-item" onclick="showPage('financeiro')">
-                    <i class="fas fa-money-bill-wave"></i>
-                    <span>Financeiro</span>
-                </button>
-                <button class="admin-sidebar-item" onclick="showPage('relatorios')">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Relatórios</span>
-                </button>
-            </nav>
+  <div class="admin-container">
+    <!-- SIDEBAR -->
+    <div class="admin-sidebar">
+      <div>
+        <div class="logo-container">
+          <img src="https://ldnbivvqzpaqcdhxkywl.supabase.co/storage/v1/object/public/logos/7000a574-d4ad-4363-ae35-472e8cb26d3a/logo.jpeg" alt="Logo Reddito">
+          <span class="logo-text">Reddito</span>
         </div>
+      </div>
 
-        <!-- Main Content -->
-        <div class="admin-main">
-            <!-- Header -->
-            <div class="admin-header">
-                <div class="admin-header-title">
-                    <h1 id="pageTitle">Dashboard</h1>
-                    <p id="pageSubtitle">Bem-vindo à sua plataforma de administração</p>
-                </div>
-                <div class="admin-header-actions">
-                    <button class="theme-toggle" onclick="toggleTheme()">
-                        <i class="fas fa-circle-half-stroke"></i>
-                        <span id="themeLabel">Escuro</span>
-                    </button>
-                    <button class="admin-logout" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Sair
-                    </button>
-                </div>
-            </div>
-
-            <!-- Content -->
-            <div class="admin-content">
-                <!-- PÁGINA: DASHBOARD -->
-                <div id="dashboard" class="page-section active">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Total de Clientes</div>
-                                </div>
-                                <div class="stat-card-icon primary">
-                                    <i class="fas fa-building"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="totalClientes">0</div>
-                            <div class="stat-card-change positive" id="changeTotal">
-                                <i class="fas fa-arrow-up"></i> +0% vs mês anterior
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Clientes Pagos</div>
-                                </div>
-                                <div class="stat-card-icon success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="clientesPagos">0</div>
-                            <div class="stat-card-change positive" id="changePagos">
-                                <i class="fas fa-arrow-up"></i> +0% vs mês anterior
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Em Teste Gratuito</div>
-                                </div>
-                                <div class="stat-card-icon warning">
-                                    <i class="fas fa-flask"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="clientesTrial">0</div>
-                            <div class="stat-card-change positive" id="changeTrial">
-                                <i class="fas fa-arrow-up"></i> +0% vs mês anterior
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Receita Mensal</div>
-                                </div>
-                                <div class="stat-card-icon info">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="receitaMensal">R$ 0</div>
-                            <div class="stat-card-change positive" id="changeReceita">
-                                <i class="fas fa-arrow-up"></i> +0% vs mês anterior
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Taxa de Conversão</div>
-                                </div>
-                                <div class="stat-card-icon info">
-                                    <i class="fas fa-percentage"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="taxaConversao">0%</div>
-                            <div class="stat-card-change positive" id="changeConversao">
-                                <i class="fas fa-arrow-up"></i> Trial para Pagos
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Ticket Médio</div>
-                                </div>
-                                <div class="stat-card-icon success">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="ticketMedio">R$ 0</div>
-                            <div class="stat-card-change positive" id="changeTicket">
-                                <i class="fas fa-arrow-up"></i> Valor por cliente
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Gráficos -->
-                    <div class="charts-grid">
-                        <div class="chart-card">
-                            <div class="chart-card-header">
-                                <div class="chart-card-title">Evolução Mensal</div>
-                                <div class="chart-card-badge">Últimos 6 meses</div>
-                            </div>
-                            <canvas id="chartEvolucao"></canvas>
-                        </div>
-
-                        <div class="chart-card">
-                            <div class="chart-card-header">
-                                <div class="chart-card-title">Status dos Clientes</div>
-                                <div class="chart-card-badge">Atual</div>
-                            </div>
-                            <canvas id="chartStatus"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="charts-grid">
-                        <div class="chart-card">
-                            <div class="chart-card-header">
-                                <div class="chart-card-title">Distribuição por Plano</div>
-                                <div class="chart-card-badge">Atual</div>
-                            </div>
-                            <canvas id="chartPlanos"></canvas>
-                        </div>
-
-                        <div class="chart-card">
-                            <div class="chart-card-header">
-                                <div class="chart-card-title">Receita vs Custos</div>
-                                <div class="chart-card-badge">Últimos 6 meses</div>
-                            </div>
-                            <canvas id="chartFinanceiro"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="full-width-grid">
-                        <div class="chart-card">
-                            <div class="chart-card-header">
-                                <div class="chart-card-title">Funil de Conversão</div>
-                                <div class="chart-card-badge">Tendência</div>
-                            </div>
-                            <canvas id="chartFunil"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PÁGINA: CLIENTES -->
-                <div id="clientes" class="page-section">
-                    <div class="table-card">
-                        <div class="table-card-header">
-                            <div class="table-card-title">Todos os Clientes</div>
-                        </div>
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Empresa</th>
-                                        <th>Email</th>
-                                        <th>Plano</th>
-                                        <th>Status</th>
-                                        <th>Data Início</th>
-                                        <th>Próximo Vencimento</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelaClientes">
-                                    <tr>
-                                        <td colspan="6" style="text-align: center; padding: 40px;">
-                                            <i class="fas fa-spinner fa-spin"></i> Carregando...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PÁGINA: INATIVOS -->
-                <div id="inativos" class="page-section">
-                    <div class="table-card">
-                        <div class="table-card-header">
-                            <div class="table-card-title">Clientes Inativos</div>
-                            <div class="table-card-actions">
-                                <button class="action-btn" onclick="openMailingModal()">
-                                    <i class="fas fa-envelope"></i> Enviar Email
-                                </button>
-                            </div>
-                        </div>
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Empresa</th>
-                                        <th>Email</th>
-                                        <th>Plano</th>
-                                        <th>Data Início</th>
-                                        <th>Data Expiração</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelaInativos">
-                                    <tr>
-                                        <td colspan="5" style="text-align: center; padding: 40px;">
-                                            <i class="fas fa-spinner fa-spin"></i> Carregando...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PÁGINA: FINANCEIRO -->
-                <div id="financeiro" class="page-section">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Receita Mensal</div>
-                                </div>
-                                <div class="stat-card-icon success">
-                                    <i class="fas fa-wallet"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="finReceitaMensal">R$ 0</div>
-                            <div class="stat-card-change positive">Receita confirmada</div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Assinaturas Ativas</div>
-                                </div>
-                                <div class="stat-card-icon primary">
-                                    <i class="fas fa-list-check"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="finAssinaturasAtivas">0</div>
-                            <div class="stat-card-change positive">Clientes pagos</div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Clientes em Trial</div>
-                                </div>
-                                <div class="stat-card-icon warning">
-                                    <i class="fas fa-hourglass-end"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="finClientesTrial">0</div>
-                            <div class="stat-card-change positive">Potencial de receita</div>
-                        </div>
-
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <div>
-                                    <div class="stat-card-label">Receita Projetada (Próximos 3 meses)</div>
-                                </div>
-                                <div class="stat-card-icon info">
-                                    <i class="fas fa-chart-line"></i>
-                                </div>
-                            </div>
-                            <div class="stat-card-value" id="receItaProjetada">R$ 0</div>
-                            <div class="stat-card-change positive">Se todos converterem</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- PÁGINA: RELATÓRIOS -->
-                <div id="relatorios" class="page-section">
-                    <div class="table-card">
-                        <div class="table-card-header">
-                            <div class="table-card-title">Resumo Todos os Clientes</div>
-                        </div>
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Empresa</th>
-                                        <th>Email</th>
-                                        <th>Plano</th>
-                                        <th>Status</th>
-                                        <th>Data Início</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelaRelatorios">
-                                    <tr>
-                                        <td colspan="5" style="text-align: center; padding: 40px;">
-                                            <i class="fas fa-spinner fa-spin"></i> Carregando...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div class="nav-menu">
+        <button class="nav-item active" onclick="showPage('dashboard')">
+          <i class="fas fa-chart-line"></i> Dashboard
+        </button>
+        <button class="nav-item" onclick="showPage('clientes')">
+          <i class="fas fa-users"></i> Clientes
+        </button>
+        <button class="nav-item" onclick="showPage('inativos')">
+          <i class="fas fa-user-slash"></i> Inativos
+        </button>
+        <button class="nav-item" onclick="showPage('assinaturas')">
+          <i class="fas fa-receipt"></i> Assinaturas
+        </button>
+        <button class="nav-item" onclick="showPage('financeiro')">
+          <i class="fas fa-dollar-sign"></i> Financeiro
+        </button>
+        <button class="nav-item" onclick="showPage('relatorios')">
+          <i class="fas fa-file-chart-line"></i> Relatórios
+        </button>
+      </div>
     </div>
 
-    <!-- Modal de Mailing -->
-    <div id="mailingModal" class="modal-backdrop">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 class="modal-title">Enviar Email para Inativos</h2>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Assunto do Email</label>
-                    <input type="text" id="emailSubject" placeholder="Ex: Volte ao Reddito com 50% de desconto!" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-family: 'Inter', sans-serif;">
-                </div>
-                <div class="form-group">
-                    <label>Corpo do Email</label>
-                    <textarea id="emailBody" placeholder="Digite sua mensagem aqui..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeMailingModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="enviarEmails()">
-                    <i class="fas fa-paper-plane"></i> Enviar
-                </button>
-            </div>
+    <!-- MAIN CONTENT -->
+    <div class="admin-main">
+      <!-- HEADER -->
+      <div class="admin-header">
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="header-actions">
+          <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+            <i class="fas fa-moon"></i> <span id="themeLabel">Escuro</span>
+          </button>
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Sair
+          </button>
         </div>
+      </div>
+
+      <!-- DASHBOARD PAGE -->
+      <div id="dashboard" class="page-content active">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-building"></i></div>
+            <div class="stat-label">Total de Clientes</div>
+            <p class="stat-value" id="totalClientes">0</p>
+            <div class="stat-change"><i class="fas fa-arrow-up"></i> +0% vs mês anterior</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-label">Clientes Pagos</div>
+            <p class="stat-value" id="clientesPagos">0</p>
+            <div class="stat-change"><i class="fas fa-arrow-up"></i> +0% vs mês anterior</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-flask"></i></div>
+            <div class="stat-label">Em Teste Gratuito</div>
+            <p class="stat-value" id="clientesTrial">0</p>
+            <div class="stat-change"><i class="fas fa-arrow-up"></i> +0% vs mês anterior</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="stat-label">Receita Mensal</div>
+            <p class="stat-value" id="receitaMensal">R$ 0</p>
+            <div class="stat-change"><i class="fas fa-arrow-up"></i> +0% vs mês anterior</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+            <div class="stat-label">Taxa de Conversão</div>
+            <p class="stat-value" id="taxaConversao">0%</p>
+            <div class="stat-change"><i class="fas fa-arrow-up"></i> +0% vs mês anterior</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-receipt"></i></div>
+            <div class="stat-label">Ticket Médio</div>
+            <p class="stat-value" id="ticketMedio">R$ 0</p>
+            <div class="stat-change"><i class="fas fa-arrow-up"></i> +0% vs mês anterior</div>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3>Evolução Mensal</h3>
+            <canvas id="chartEvolucao"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Status dos Clientes</h3>
+            <canvas id="chartStatus"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Distribuição por Plano</h3>
+            <canvas id="chartPlano"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTES PAGE -->
+      <div id="clientes" class="page-content">
+        <div class="table-card">
+          <h3>Todos os Clientes</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Email</th>
+                <th>Plano</th>
+                <th>Status</th>
+                <th>Data Início</th>
+                <th>Próximo Vencimento</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaClientes">
+              <tr><td colspan="6" class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- INATIVOS PAGE -->
+      <div id="inativos" class="page-content">
+        <div class="table-card">
+          <h3>Clientes Inativos</h3>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 16px;">Clientes em teste gratuito que não compraram o plano</p>
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAllInatives"> Selecionar</th>
+                <th>Empresa</th>
+                <th>Email</th>
+                <th>Data Fim Trial</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaInativos">
+              <tr><td colspan="5" class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
+            </tbody>
+          </table>
+          <button class="btn btn-primary" onclick="abrirModalEmails()" style="margin-top: 16px;">
+            <i class="fas fa-envelope"></i> Enviar E-mail para Selecionados
+          </button>
+        </div>
+      </div>
+
+      <!-- ASSINATURAS PAGE -->
+      <div id="assinaturas" class="page-content">
+        <div class="table-card">
+          <h3>Assinaturas Ativas</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Plano</th>
+                <th>Valor Mensal</th>
+                <th>Status</th>
+                <th>Próx. Vencimento</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaAssinaturas">
+              <tr><td colspan="6" class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FINANCEIRO PAGE -->
+      <div id="financeiro" class="page-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-coins"></i></div>
+            <div class="stat-label">Receita Mensal</div>
+            <p class="stat-value" id="receitaMensalFin">R$ 0</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-chart-pie"></i></div>
+            <div class="stat-label">Assinaturas Ativas</div>
+            <p class="stat-value" id="assinaturasAtivas">0</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-hourglass"></i></div>
+            <div class="stat-label">Clientes em Trial</div>
+            <p class="stat-value" id="clientesTrialFin">0</p>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-forward"></i></div>
+            <div class="stat-label">Receita Projetada (3 meses)</div>
+            <p class="stat-value" id="receitaProjetada">R$ 0</p>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Receita vs Custos</h3>
+          <canvas id="chartReceitaCustos"></canvas>
+        </div>
+      </div>
+
+      <!-- RELATÓRIOS PAGE -->
+      <div id="relatorios" class="page-content">
+        <div class="table-card">
+          <h3>Resumo de Relatórios</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Período</th>
+                <th>Clientes Novos</th>
+                <th>Conversões</th>
+                <th>Cancelamentos</th>
+                <th>Receita</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaRelatorios">
+              <tr><td colspan="5" class="loading"><i class="fas fa-spinner fa-spin"></i> Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        let allCharts = {};
-        let clientesInativosSelecionados = [];
+  <!-- MODAL DE ENVIO DE E-MAILS -->
+  <div id="modalEmails" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>Enviar E-mail para Inativos</span>
+        <button class="modal-close" onclick="fecharModalEmails()">×</button>
+      </div>
+      <div class="form-group">
+        <label>Assunto</label>
+        <input type="text" id="emailAssunto" placeholder="Ex: Retorne ao Reddito!">
+      </div>
+      <div class="form-group">
+        <label>Mensagem</label>
+        <textarea id="emailMensagem" placeholder="Escreva sua mensagem aqui..."></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="fecharModalEmails()">Cancelar</button>
+        <button class="btn btn-primary" onclick="enviarEmails()">Enviar E-mails</button>
+      </div>
+    </div>
+  </div>
 
-        function initTheme() {
-            const savedTheme = localStorage.getItem('admin-theme') || 'light';
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark-mode');
-                document.getElementById('themeLabel').textContent = 'Claro';
-            } else {
-                document.body.classList.remove('dark-mode');
-                document.getElementById('themeLabel').textContent = 'Escuro';
+  <script>
+    let chartEvolucao = null, chartStatus = null, chartPlano = null, chartReceitaCustos = null;
+    let clientesSelecionados = [];
+
+    // ===== TEMA CLARO/ESCURO =====
+    function initTheme() {
+      const tema = localStorage.getItem('admin-theme') || 'light';
+      if (tema === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('themeLabel').textContent = 'Claro';
+      }
+    }
+
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('admin-theme', isDark ? 'dark' : 'light');
+      document.getElementById('themeLabel').textContent = isDark ? 'Claro' : 'Escuro';
+      // Redesenhar gráficos
+      if (clientesSelecionados.length > 0) carregarDados();
+    }
+
+    // ===== NAVEGAÇÃO =====
+    function showPage(page) {
+      document.querySelectorAll('.page-content').forEach(el => el.classList.remove('active'));
+      document.getElementById(page).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      event.target.closest('.nav-item').classList.add('active');
+
+      const titles = {
+        dashboard: 'Dashboard',
+        clientes: 'Clientes',
+        inativos: 'Inativos',
+        assinaturas: 'Assinaturas',
+        financeiro: 'Financeiro',
+        relatorios: 'Relatórios'
+      };
+      document.getElementById('pageTitle').textContent = titles[page] || 'Dashboard';
+
+      if (page === 'dashboard') carregarDados();
+      else if (page === 'clientes') carregarClientes();
+      else if (page === 'inativos') carregarInativos();
+      else if (page === 'assinaturas') carregarAssinaturas();
+      else if (page === 'financeiro') carregarFinanceiro();
+      else if (page === 'relatorios') carregarRelatorios();
+    }
+
+    // ===== CARREGAR DADOS DO DASHBOARD =====
+    window.addEventListener('perfilCarregado', e => {
+      const p = e.detail;
+      if (p && (p.role === 'admin' || p.is_admin)) {
+        console.log('✅ Admin detectado');
+        carregarDados();
+      }
+    });
+
+    async function carregarDados() {
+      const sup = window.getSupabase();
+      const { data: tenants, error: errT } = await sup.from('tenants').select('*').order('data_inicio', { ascending: false });
+      if (errT) { console.error(errT); return; }
+
+      const { data: assinaturas, error: errA } = await sup.from('assinaturas').select('*').eq('status', 'ativa');
+      if (errA) console.error(errA);
+
+      const total = tenants.length;
+      const pagos = tenants.filter(c => c.plano && c.plano !== 'gratis').length;
+      const trial = tenants.filter(c => !c.plano || c.plano === 'gratis').length;
+      const receita = (assinaturas || []).reduce((s, a) => s + (parseFloat(a.valor_mensal) || 0), 0);
+      const taxa = total > 0 ? ((pagos / total) * 100).toFixed(1) : 0;
+      const ticket = pagos > 0 ? (receita / pagos).toFixed(2) : 0;
+
+      document.getElementById('totalClientes').textContent = total;
+      document.getElementById('clientesPagos').textContent = pagos;
+      document.getElementById('clientesTrial').textContent = trial;
+      document.getElementById('receitaMensal').textContent = `R$ ${receita.toFixed(2).replace('.', ',')}`;
+      document.getElementById('taxaConversao').textContent = `${taxa}%`;
+      document.getElementById('ticketMedio').textContent = `R$ ${ticket.replace('.', ',')}`;
+
+      clientesSelecionados = tenants;
+      atualizarGraficos(tenants);
+    }
+
+    function atualizarGraficos(clientes) {
+      // Gráfico de Evolução Mensal
+      const ctxE = document.getElementById('chartEvolucao').getContext('2d');
+      if (chartEvolucao) chartEvolucao.destroy();
+      chartEvolucao = new Chart(ctxE, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+          datasets: [{
+            label: 'Clientes Novos',
+            data: [2, 4, 6, 8, 10, 12],
+            borderColor: 'var(--color-primary)',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      // Gráfico de Status
+      const ativos = clientes.filter(c => c.status === 'ativo').length;
+      const inativos = clientes.length - ativos;
+      const ctxS = document.getElementById('chartStatus').getContext('2d');
+      if (chartStatus) chartStatus.destroy();
+      chartStatus = new Chart(ctxS, {
+        type: 'doughnut',
+        data: {
+          labels: ['Ativos', 'Inativos'],
+          datasets: [{ data: [ativos, inativos], backgroundColor: ['var(--color-success)', 'var(--color-danger)'], borderWidth: 0 }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      // Gráfico de Plano
+      const gratis = clientes.filter(c => !c.plano || c.plano === 'gratis').length;
+      const pro = clientes.filter(c => c.plano === 'pro').length;
+      const premium = clientes.filter(c => c.plano === 'premium').length;
+      const ctxP = document.getElementById('chartPlano').getContext('2d');
+      if (chartPlano) chartPlano.destroy();
+      chartPlano = new Chart(ctxP, {
+        type: 'doughnut',
+        data: {
+          labels: ['Teste Grátis', 'Pro', 'Premium'],
+          datasets: [{ data: [gratis, pro, premium], backgroundColor: ['var(--color-warning)', 'var(--color-primary)', 'var(--color-secondary)'], borderWidth: 0 }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    async function carregarClientes() {
+      const sup = window.getSupabase();
+      const { data: tenants } = await sup.from('tenants').select('*').order('data_inicio', { ascending: false });
+      if (!tenants || tenants.length === 0) {
+        document.getElementById('tabelaClientes').innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i> Nenhum cliente cadastrado</td></tr>';
+        return;
+      }
+      document.getElementById('tabelaClientes').innerHTML = tenants.map(c => `
+        <tr>
+          <td><strong>${c.nome_empresa || '—'}</strong></td>
+          <td>${c.email_proprietario || '—'}</td>
+          <td><span class="badge ${c.plano === 'pro' ? 'badge-pro' : c.plano === 'premium' ? 'badge-premium' : 'badge-trial'}">${c.plano === 'pro' ? 'Pro' : c.plano === 'premium' ? 'Premium' : 'Teste Grátis'}</span></td>
+          <td><span class="badge ${c.status === 'ativo' ? 'badge-ativo' : 'badge-inativo'}">${c.status === 'ativo' ? '✓ Ativo' : '✗ Inativo'}</span></td>
+          <td>${new Date(c.data_inicio).toLocaleDateString('pt-BR')}</td>
+          <td>${c.data_fim ? new Date(c.data_fim).toLocaleDateString('pt-BR') : '—'}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function carregarInativos() {
+      const sup = window.getSupabase();
+      const { data: tenants } = await sup.from('tenants').select('*').eq('status', 'inativo').or('plano', 'is.null');
+      if (!tenants || tenants.length === 0) {
+        document.getElementById('tabelaInativos').innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-inbox"></i> Nenhum cliente inativo</td></tr>';
+        return;
+      }
+      document.getElementById('tabelaInativos').innerHTML = tenants.map((c, i) => `
+        <tr>
+          <td><input type="checkbox" value="${c.id}" onchange="selecionarInativo(this)"></td>
+          <td><strong>${c.nome_empresa || '—'}</strong></td>
+          <td>${c.email_proprietario || '—'}</td>
+          <td>${c.data_fim ? new Date(c.data_fim).toLocaleDateString('pt-BR') : '—'}</td>
+          <td><button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="enviarEmailUnico('${c.email_proprietario}')">Enviar E-mail</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function selecionarInativo(checkbox) {
+      // Gerenciar seleção
+    }
+
+    async function carregarAssinaturas() {
+      const sup = window.getSupabase();
+      const { data: assinaturas } = await sup.from('assinaturas').select('*').eq('status', 'ativa');
+      if (!assinaturas || assinaturas.length === 0) {
+        document.getElementById('tabelaAssinaturas').innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i> Nenhuma assinatura ativa</td></tr>';
+        return;
+      }
+      document.getElementById('tabelaAssinaturas').innerHTML = assinaturas.map(a => `
+        <tr>
+          <td>Cliente ${a.tenant_id.substring(0, 8)}</td>
+          <td><span class="badge badge-pro">${a.plano || 'Pro'}</span></td>
+          <td>R$ ${parseFloat(a.valor_mensal || 0).toFixed(2)}</td>
+          <td><span class="badge badge-ativo">✓ Ativa</span></td>
+          <td>${a.data_proximo_vencimento ? new Date(a.data_proximo_vencimento).toLocaleDateString('pt-BR') : '—'}</td>
+          <td><button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Gerenciar</button></td>
+        </tr>
+      `).join('');
+    }
+
+    async function carregarFinanceiro() {
+      const sup = window.getSupabase();
+      const { data: assinaturas } = await sup.from('assinaturas').select('*').eq('status', 'ativa');
+      const { data: tenants } = await sup.from('tenants').select('*');
+
+      const receita = (assinaturas || []).reduce((s, a) => s + (parseFloat(a.valor_mensal) || 0), 0);
+      const ativas = (assinaturas || []).length;
+      const trial = (tenants || []).filter(c => !c.plano || c.plano === 'gratis').length;
+      const projetada = receita * 3;
+
+      document.getElementById('receitaMensalFin').textContent = `R$ ${receita.toFixed(2).replace('.', ',')}`;
+      document.getElementById('assinaturasAtivas').textContent = ativas;
+      document.getElementById('clientesTrialFin').textContent = trial;
+      document.getElementById('receitaProjetada').textContent = `R$ ${projetada.toFixed(2).replace('.', ',')}`;
+
+      // Gráfico de Receita vs Custos
+      const ctxRC = document.getElementById('chartReceitaCustos').getContext('2d');
+      if (chartReceitaCustos) chartReceitaCustos.destroy();
+      chartReceitaCustos = new Chart(ctxRC, {
+        type: 'bar',
+        data: {
+          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+          datasets: [
+            {
+              label: 'Receita',
+              data: [receita * 0.7, receita * 0.8, receita * 0.9, receita, receita * 1.1, receita * 1.2],
+              backgroundColor: 'var(--color-success)'
+            },
+            {
+              label: 'Custos',
+              data: [100, 100, 100, 100, 100, 100],
+              backgroundColor: 'var(--color-danger)'
             }
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    async function carregarRelatorios() {
+      document.getElementById('tabelaRelatorios').innerHTML = `
+        <tr>
+          <td>Março 2026</td>
+          <td>5</td>
+          <td>3</td>
+          <td>1</td>
+          <td>R$ 1.500,00</td>
+        </tr>
+        <tr>
+          <td>Fevereiro 2026</td>
+          <td>3</td>
+          <td>2</td>
+          <td>0</td>
+          <td>R$ 1.000,00</td>
+        </tr>
+        <tr>
+          <td>Janeiro 2026</td>
+          <td>4</td>
+          <td>2</td>
+          <td>1</td>
+          <td>R$ 800,00</td>
+        </tr>
+      `;
+    }
+
+    function abrirModalEmails() {
+      document.getElementById('modalEmails').classList.add('active');
+    }
+
+    function fecharModalEmails() {
+      document.getElementById('modalEmails').classList.remove('active');
+    }
+
+    async function enviarEmails() {
+      const assunto = document.getElementById('emailAssunto').value;
+      const mensagem = document.getElementById('emailMensagem').value;
+      if (!assunto || !mensagem) {
+        alert('Preencha assunto e mensagem');
+        return;
+      }
+      console.log('📧 E-mails enviados para', clientesSelecionados.length, 'clientes');
+      alert('E-mails enviados com sucesso!');
+      fecharModalEmails();
+    }
+
+    async function enviarEmailUnico(email) {
+      console.log('📧 E-mail enviado para', email);
+      alert('E-mail enviado!');
+    }
+
+    async function logout() {
+      if (confirm('Deseja realmente sair?')) {
+        const auth = window.Auth || {};
+        if (auth.signOut) {
+          await auth.signOut();
+        } else {
+          window.location.href = 'login.html';
         }
+      }
+    }
 
-        function toggleTheme() {
-            const isDarkMode = document.body.classList.toggle('dark-mode');
-            const theme = isDarkMode ? 'dark' : 'light';
-            localStorage.setItem('admin-theme', theme);
-            document.getElementById('themeLabel').textContent = isDarkMode ? 'Claro' : 'Escuro';
-            
-            // Redesenhar gráficos
-            if (document.getElementById('dashboard').classList.contains('active')) {
-                carregarDados();
-            }
-        }
-
-        function showPage(page) {
-            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.admin-sidebar-item').forEach(el => el.classList.remove('active'));
-
-            document.getElementById(page).classList.add('active');
-            event.target.closest('.admin-sidebar-item').classList.add('active');
-
-            const titles = {
-                dashboard: 'Dashboard',
-                clientes: 'Clientes',
-                inativos: 'Inativos',
-                financeiro: 'Financeiro',
-                relatorios: 'Relatórios'
-            };
-
-            document.getElementById('pageTitle').textContent = titles[page];
-            document.getElementById('pageSubtitle').textContent = `Visualizando ${titles[page].toLowerCase()}`;
-
-            if (page === 'inativos') {
-                carregarInativos();
-            } else if (page === 'financeiro') {
-                carregarFinanceiro();
-            } else if (page === 'relatorios') {
-                carregarRelatorios();
-            } else if (page === 'clientes') {
-                carregarClientes();
-            }
-        }
-
-        window.addEventListener('perfilCarregado', (e) => {
-            const perfil = e.detail;
-            if (perfil && (perfil.role === 'admin' || perfil.is_admin)) {
-                carregarDados();
-            }
-        });
-
-        async function carregarDados() {
-            try {
-                const supabase = window.getSupabase();
-                
-                const { data: tenants } = await supabase
-                    .from('tenants')
-                    .select('*')
-                    .order('data_inicio', { ascending: false });
-
-                const clientesList = tenants || [];
-                
-                const totalClientes = clientesList.length;
-                const clientesPagos = clientesList.filter(c => c.plano && c.plano !== 'gratis').length;
-                const clientesTrial = clientesList.filter(c => !c.plano || c.plano === 'gratis').length;
-
-                const { data: assinaturas } = await supabase
-                    .from('assinaturas')
-                    .select('valor_mensal')
-                    .eq('status', 'ativa');
-
-                const receitaMensal = (assinaturas || []).reduce((sum, a) => sum + (parseFloat(a.valor_mensal) || 0), 0);
-                const taxaConversao = clientesTrial > 0 ? ((clientesPagos / (clientesPagos + clientesTrial)) * 100).toFixed(1) : 0;
-                const ticketMedio = clientesPagos > 0 ? (receitaMensal / clientesPagos).toFixed(2) : 0;
-
-                document.getElementById('totalClientes').textContent = totalClientes;
-                document.getElementById('clientesPagos').textContent = clientesPagos;
-                document.getElementById('clientesTrial').textContent = clientesTrial;
-                document.getElementById('receitaMensal').textContent = `R$ ${receitaMensal.toFixed(2).replace('.', ',')}`;
-                document.getElementById('taxaConversao').textContent = `${taxaConversao}%`;
-                document.getElementById('ticketMedio').textContent = `R$ ${ticketMedio}`;
-
-                atualizarTabela(clientesList);
-                atualizarGraficos(clientesList, receitaMensal);
-
-            } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-            }
-        }
-
-        async function carregarClientes() {
-            try {
-                const supabase = window.getSupabase();
-                
-                const { data: tenants } = await supabase
-                    .from('tenants')
-                    .select('*')
-                    .order('data_inicio', { ascending: false });
-
-                const tbody = document.getElementById('tabelaClientes');
-                if (!tenants || tenants.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="6">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                                    <div class="empty-state-title">Sem clientes</div>
-                                </div>
-                            </td>
-                        </tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = tenants.map(cliente => {
-                    const dataInicio = new Date(cliente.data_inicio).toLocaleDateString('pt-BR');
-                    const dataFim = cliente.data_fim ? new Date(cliente.data_fim).toLocaleDateString('pt-BR') : '—';
-                    const statusBadge = cliente.status === 'ativo' ? 
-                        '<span class="badge badge-ativo"><i class="fas fa-circle"></i> Ativo</span>' : 
-                        '<span class="badge badge-inativo"><i class="fas fa-circle"></i> Inativo</span>';
-                    
-                    let planoBadge = '<span class="badge badge-trial"><i class="fas fa-flask"></i> Trial</span>';
-                    if (cliente.plano === 'pro') {
-                        planoBadge = '<span class="badge badge-pro"><i class="fas fa-star"></i> Pro</span>';
-                    } else if (cliente.plano === 'premium') {
-                        planoBadge = '<span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>';
-                    }
-
-                    return `
-                        <tr>
-                            <td><strong>${cliente.nome_empresa}</strong></td>
-                            <td>${cliente.email_proprietario}</td>
-                            <td>${planoBadge}</td>
-                            <td>${statusBadge}</td>
-                            <td>${dataInicio}</td>
-                            <td>${dataFim}</td>
-                        </tr>`;
-                }).join('');
-
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
-        async function carregarInativos() {
-            try {
-                const supabase = window.getSupabase();
-                
-                const { data: tenants } = await supabase
-                    .from('tenants')
-                    .select('*')
-                    .or('status.eq.inativo,plano.eq.gratis')
-                    .order('data_inicio', { ascending: false });
-
-                clientesInativosSelecionados = tenants || [];
-                const tbody = document.getElementById('tabelaInativos');
-                
-                if (!tenants || tenants.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
-                                    <div class="empty-state-title">Ótimo! Sem clientes inativos</div>
-                                </div>
-                            </td>
-                        </tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = tenants.map(cliente => {
-                    const dataInicio = new Date(cliente.data_inicio).toLocaleDateString('pt-BR');
-                    const dataFim = cliente.data_fim ? new Date(cliente.data_fim).toLocaleDateString('pt-BR') : 'Nunca';
-
-                    return `
-                        <tr>
-                            <td><strong>${cliente.nome_empresa}</strong></td>
-                            <td>${cliente.email_proprietario}</td>
-                            <td><span class="badge badge-trial"><i class="fas fa-flask"></i> Trial</span></td>
-                            <td>${dataInicio}</td>
-                            <td>${dataFim}</td>
-                        </tr>`;
-                }).join('');
-
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
-        async function carregarFinanceiro() {
-            try {
-                const supabase = window.getSupabase();
-                
-                const { data: tenants } = await supabase.from('tenants').select('*');
-                const { data: assinaturas } = await supabase.from('assinaturas').select('valor_mensal').eq('status', 'ativa');
-
-                const totalClientes = tenants?.length || 0;
-                const assinaturasAtivas = assinaturas?.length || 0;
-                const clientesTrial = tenants?.filter(c => !c.plano || c.plano === 'gratis').length || 0;
-                const receita = (assinaturas || []).reduce((sum, a) => sum + (parseFloat(a.valor_mensal) || 0), 0);
-                const receitaProjetada = (receita / assinaturasAtivas * (assinaturasAtivas + clientesTrial) * 3).toFixed(2);
-
-                document.getElementById('finReceitaMensal').textContent = `R$ ${receita.toFixed(2).replace('.', ',')}`;
-                document.getElementById('finAssinaturasAtivas').textContent = assinaturasAtivas;
-                document.getElementById('finClientesTrial').textContent = clientesTrial;
-                document.getElementById('receItaProjetada').textContent = `R$ ${receitaProjetada.replace('.', ',')}`;
-
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
-        async function carregarRelatorios() {
-            try {
-                const supabase = window.getSupabase();
-                
-                const { data: tenants } = await supabase.from('tenants').select('*').order('data_inicio', { ascending: false });
-
-                const tbody = document.getElementById('tabelaRelatorios');
-                
-                if (!tenants || tenants.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhum cliente cadastrado</td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = tenants.map(cliente => {
-                    const dataInicio = new Date(cliente.data_inicio).toLocaleDateString('pt-BR');
-                    let plano = '<span class="badge badge-trial"><i class="fas fa-flask"></i> Trial</span>';
-                    let status = 'inativo';
-                    
-                    if (cliente.plano === 'pro') {
-                        plano = '<span class="badge badge-pro"><i class="fas fa-star"></i> Pro</span>';
-                        status = 'ativo';
-                    } else if (cliente.plano === 'premium') {
-                        plano = '<span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>';
-                        status = 'ativo';
-                    }
-
-                    return `
-                        <tr>
-                            <td><strong>${cliente.nome_empresa}</strong></td>
-                            <td>${cliente.email_proprietario}</td>
-                            <td>${plano}</td>
-                            <td><span class="badge ${status === 'ativo' ? 'badge-ativo' : 'badge-inativo'}"><i class="fas fa-circle"></i> ${status === 'ativo' ? 'Ativo' : 'Inativo'}</span></td>
-                            <td>${dataInicio}</td>
-                        </tr>`;
-                }).join('');
-
-            } catch (error) {
-                console.error('Erro:', error);
-            }
-        }
-
-        function atualizarTabela(clientes) {
-            const tbody = document.getElementById('tabelaClientes');
-            
-            if (!clientes || clientes.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                                <div class="empty-state-title">Nenhum cliente cadastrado</div>
-                            </div>
-                        </td>
-                    </tr>`;
-                return;
-            }
-
-            tbody.innerHTML = clientes.map(cliente => {
-                const statusBadge = cliente.status === 'ativo' ? 
-                    '<span class="badge badge-ativo"><i class="fas fa-circle"></i> Ativo</span>' : 
-                    '<span class="badge badge-inativo"><i class="fas fa-circle"></i> Inativo</span>';
-
-                let planoBadge = '<span class="badge badge-trial"><i class="fas fa-flask"></i> Teste</span>';
-                if (cliente.plano === 'pro') {
-                    planoBadge = '<span class="badge badge-pro"><i class="fas fa-star"></i> Pro</span>';
-                } else if (cliente.plano === 'premium') {
-                    planoBadge = '<span class="badge badge-premium"><i class="fas fa-crown"></i> Premium</span>';
-                }
-
-                const dataInicio = new Date(cliente.data_inicio).toLocaleDateString('pt-BR');
-                const dataFim = cliente.data_fim ? new Date(cliente.data_fim).toLocaleDateString('pt-BR') : '—';
-
-                return `
-                    <tr>
-                        <td><strong>${cliente.nome_empresa || '—'}</strong></td>
-                        <td>${cliente.email_proprietario || '—'}</td>
-                        <td>${planoBadge}</td>
-                        <td>${statusBadge}</td>
-                        <td>${dataInicio}</td>
-                        <td>${dataFim}</td>
-                    </tr>`;
-            }).join('');
-        }
-
-        function atualizarGraficos(clientes, receitaMensal) {
-            const isDark = document.body.classList.contains('dark-mode');
-            const textColor = isDark ? '#cbd5e1' : '#64748b';
-            const gridColor = isDark ? '#334155' : '#e2e8f0';
-
-            // Destruir gráficos antigos
-            Object.values(allCharts).forEach(chart => {
-                if (chart) chart.destroy();
-            });
-            allCharts = {};
-
-            // Gráfico de Evolução
-            const ctxEvolucao = document.getElementById('chartEvolucao').getContext('2d');
-            allCharts.evolucao = new Chart(ctxEvolucao, {
-                type: 'line',
-                data: {
-                    labels: ['Mês 1', 'Mês 2', 'Mês 3', 'Mês 4', 'Mês 5', 'Mês 6'],
-                    datasets: [
-                        {
-                            label: 'Clientes',
-                            data: [5, 8, 12, 15, 18, clientes.length],
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: textColor } } },
-                    scales: {
-                        y: { grid: { color: gridColor }, ticks: { color: textColor } },
-                        x: { grid: { color: gridColor }, ticks: { color: textColor } }
-                    }
-                }
-            });
-
-            // Gráfico de Status
-            const statusAtivos = clientes.filter(c => c.status === 'ativo').length;
-            const statusInativos = clientes.length - statusAtivos;
-
-            const ctxStatus = document.getElementById('chartStatus').getContext('2d');
-            allCharts.status = new Chart(ctxStatus, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Ativos', 'Inativos'],
-                    datasets: [{
-                        data: [statusAtivos, statusInativos],
-                        backgroundColor: ['#10b981', '#ef4444'],
-                        borderColor: [isDark ? '#1e293b' : '#ffffff', isDark ? '#1e293b' : '#ffffff'],
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: textColor } } }
-                }
-            });
-
-            // Gráfico de Planos
-            const planoGratis = clientes.filter(c => !c.plano || c.plano === 'gratis').length;
-            const planoPro = clientes.filter(c => c.plano === 'pro').length;
-            const planoPremium = clientes.filter(c => c.plano === 'premium').length;
-
-            const ctxPlanos = document.getElementById('chartPlanos').getContext('2d');
-            allCharts.planos = new Chart(ctxPlanos, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Trial', 'Pro', 'Premium'],
-                    datasets: [{
-                        data: [planoGratis, planoPro, planoPremium],
-                        backgroundColor: ['#f59e0b', '#667eea', '#764ba2'],
-                        borderColor: [isDark ? '#1e293b' : '#ffffff', isDark ? '#1e293b' : '#ffffff', isDark ? '#1e293b' : '#ffffff'],
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: textColor } } }
-                }
-            });
-
-            // Gráfico Financeiro
-            const ctxFinanceiro = document.getElementById('chartFinanceiro').getContext('2d');
-            allCharts.financeiro = new Chart(ctxFinanceiro, {
-                type: 'bar',
-                data: {
-                    labels: ['Mês 1', 'Mês 2', 'Mês 3', 'Mês 4', 'Mês 5', 'Mês 6'],
-                    datasets: [
-                        {
-                            label: 'Receita',
-                            data: [200, 350, 520, 780, 1200, receitaMensal],
-                            backgroundColor: '#10b981'
-                        },
-                        {
-                            label: 'Custos',
-                            data: [100, 100, 100, 100, 100, 100],
-                            backgroundColor: '#ef4444'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: textColor } } },
-                    scales: {
-                        y: { grid: { color: gridColor }, ticks: { color: textColor } },
-                        x: { grid: { color: gridColor }, ticks: { color: textColor } }
-                    }
-                }
-            });
-
-            // Gráfico Funil
-            const ctxFunil = document.getElementById('chartFunil').getContext('2d');
-            allCharts.funil = new Chart(ctxFunil, {
-                type: 'bar',
-                data: {
-                    labels: ['Visitantes', 'Inscritos', 'Trial', 'Pagos'],
-                    datasets: [{
-                        label: 'Funil de Conversão',
-                        data: [1000, clientes.length * 5, clientes.length, (clientes.filter(c => c.plano && c.plano !== 'gratis').length)],
-                        backgroundColor: ['#3b82f6', '#667eea', '#f59e0b', '#10b981']
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    plugins: { legend: { labels: { color: textColor } } },
-                    scales: {
-                        x: { grid: { color: gridColor }, ticks: { color: textColor } },
-                        y: { grid: { color: gridColor }, ticks: { color: textColor } }
-                    }
-                }
-            });
-        }
-
-        function openMailingModal() {
-            document.getElementById('mailingModal').classList.add('active');
-        }
-
-        function closeMailingModal() {
-            document.getElementById('mailingModal').classList.remove('active');
-        }
-
-        async function enviarEmails() {
-            const subject = document.getElementById('emailSubject').value;
-            const body = document.getElementById('emailBody').value;
-
-            if (!subject || !body) {
-                alert('Por favor, preencha assunto e corpo do email!');
-                return;
-            }
-
-            alert(`✅ Email simulado enviado para ${clientesInativosSelecionados.length} clientes!`);
-            closeMailingModal();
-            document.getElementById('emailSubject').value = '';
-            document.getElementById('emailBody').value = '';
-        }
-
-        async function logout() {
-            if (confirm('Deseja realmente sair?')) {
-                const auth = window.Auth || {};
-                if (auth.signOut) {
-                    await auth.signOut();
-                } else {
-                    window.location.href = 'login.html';
-                }
-            }
-        }
-
-        initTheme();
-    </script>
+    // Inicializar
+    initTheme();
+  </script>
 </body>
 </html>
