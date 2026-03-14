@@ -25,7 +25,7 @@
             const { data: perfil, error } = await supabase
                 .from('perfis')
                 .select('*')
-                .eq('user_id', session.user.id)
+                .eq('id', session.user.id)  // <-- Alteração feita aqui
                 .single();
 
             if (error || !perfil) {
