@@ -134,13 +134,14 @@
                                         <th>Especialidade</th>
                                         <th>Telefone</th>
                                         <th>Email</th>
+                                        <th>Comissão</th>
                                         <th>Status</th>
                                         <th id="colunaAcoes">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody id="profissionaisTable">
                                     <tr>
-                                        <td colspan="6" class="pro-empty-state">
+                                        <td colspan="7" class="pro-empty-state">
                                             <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
                                             <p>Carregando profissionais...</p>
                                         </td>
@@ -192,6 +193,12 @@
                             </select>
                         </div>
                     </div>
+                    <div class="pro-form-row">
+                        <div class="pro-form-group">
+                            <label class="pro-label">Comissão (%)</label>
+                            <input type="number" class="pro-input" id="professionalCommission" min="0" step="0.01" placeholder="15">
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="pro-modal-footer">
@@ -238,28 +245,21 @@
         async function loadProfissionais() {
             try {
                 const agora = new Date();
-                const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
-                const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
+                const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString().split('T')[0];
+                const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).toISOString().split('T')[0];
 
-                const [profissionais, agendamentos] = await Promise.all([
-                    DB.profissionais.listar(),
-                    DB.agendamentos.listar({ inicio: inicioMes, fim: fimMes })
-                ]);
+                const profissionais = await DB.profissionais.listar();
+                const agendamentos = await DB.agendamentos.listarPorPeriodo(inicioMes, fimMes);
 
                 todosProfissionais = Array.isArray(profissionais) ? profissionais : [];
                 agendamentosMes = Array.isArray(agendamentos) ? agendamentos : [];
-
-                // Se for profissional, filtrar apenas ele mesmo
-                if (perfilAtual?.role === 'profissional') {
-                    todosProfissionais = todosProfissionais.filter(p => p.user_id === perfilAtual.id || p.id === perfilAtual.id);
-                }
 
                 atualizarMetricas(todosProfissionais);
                 filtrarLocalmente();
             } catch (error) {
                 console.error('Erro ao carregar profissionais:', error);
                 document.getElementById('profissionaisTable').innerHTML = `
-                    <tr><td colspan="6" class="pro-empty-state">
+                    <tr><td colspan="7" class="pro-empty-state">
                         <i class="fas fa-exclamation-circle pro-empty-state-icon"></i>
                         <p>Erro ao carregar profissionais</p>
                     </td></tr>`;
@@ -300,7 +300,7 @@
             if (lista.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="pro-empty-state">
+                        <td colspan="7" class="pro-empty-state">
                             <i class="fas fa-user-tie pro-empty-state-icon"></i>
                             <p>${isDono ? 'Nenhum profissional cadastrado. Clique em "Gerar Link de Convite"!' : 'Carregando...'}</p>
                         </td>
@@ -309,6 +309,8 @@
             }
 
             tbody.innerHTML = lista.map(prof => {
+                const comissao = prof.comissao_percentual ? parseFloat(prof.comissao_percentual).toFixed(1) + '%' : '—';
+                
                 const acoesHtml = isDono ? `
                     <div class="pro-table-actions">
                         <button class="pro-action-btn" title="Editar" onclick="editProfessional('${prof.id}')">
@@ -332,6 +334,7 @@
                         <td>${prof.especialidade || '—'}</td>
                         <td>${prof.telefone || '—'}</td>
                         <td>${prof.email || '—'}</td>
+                        <td>${comissao}</td>
                         <td>
                             <span class="pro-badge pro-badge-${prof.status === 'ativo' ? 'success' : 'error'}">
                                 ${prof.status === 'ativo' ? 'Ativo' : 'Inativo'}
@@ -364,6 +367,7 @@
             document.getElementById('professionalEmail').value = prof.email || '';
             document.getElementById('professionalSpecialty').value = prof.especialidade || '';
             document.getElementById('professionalStatus').value = prof.status || 'ativo';
+            document.getElementById('professionalCommission').value = prof.comissao_percentual || '';
 
             document.getElementById('professionalModal').style.display = 'flex';
         }
@@ -380,7 +384,8 @@
                     telefone: document.getElementById('professionalPhone').value.trim(),
                     email: document.getElementById('professionalEmail').value.trim(),
                     especialidade: document.getElementById('professionalSpecialty').value.trim(),
-                    status: document.getElementById('professionalStatus').value
+                    status: document.getElementById('professionalStatus').value,
+                    comissao_percentual: parseFloat(document.getElementById('professionalCommission').value) || 0
                 };
 
                 const resultado = await DB.profissionais.atualizar(id, dados);
