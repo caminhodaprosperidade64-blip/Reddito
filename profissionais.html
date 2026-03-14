@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profissionais - Sistema Profissional</title>
+    <title>Profissionais - Reddito</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +25,7 @@
             <div class="pro-sidebar-logo">
                 <a href="dashboard.html" class="pro-logo">
                     <div class="pro-logo-icon"><i class="fas fa-calendar-check"></i></div>
-                    <span class="pro-logo-text">Sistema Pro</span>
+                    <span class="pro-logo-text">Reddito</span>
                 </a>
             </div>
             <nav class="pro-sidebar-nav">
@@ -84,9 +84,8 @@
                             <h1 class="pro-page-title">Profissionais</h1>
                             <p class="pro-page-subtitle">Gerencie sua equipe</p>
                         </div>
-                        <!-- Botão visível apenas para dono: agora gera convite -->
                         <button id="btnNovoProfissional" class="pro-btn pro-btn-primary" onclick="gerarConvite()" style="display:none;">
-                            <i class="fas fa-link"></i> Gerar Convite
+                            <i class="fas fa-link"></i> Gerar Link de Convite
                         </button>
                     </div>
                 </div>
@@ -106,13 +105,6 @@
                             <div class="pro-metric-icon success"><i class="fas fa-check-circle"></i></div>
                         </div>
                         <div class="pro-metric-value" id="profissionaisAtivos">0</div>
-                    </div>
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Comissão Média</span>
-                            <div class="pro-metric-icon warning"><i class="fas fa-percentage"></i></div>
-                        </div>
-                        <div class="pro-metric-value" id="comissaoMedia">0%</div>
                     </div>
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
@@ -141,15 +133,14 @@
                                         <th>Nome</th>
                                         <th>Especialidade</th>
                                         <th>Telefone</th>
-                                        <th>Comissão</th>
-                                        <th>Agend. (mês)</th>
+                                        <th>Email</th>
                                         <th>Status</th>
                                         <th id="colunaAcoes">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody id="profissionaisTable">
                                     <tr>
-                                        <td colspan="7" class="pro-empty-state">
+                                        <td colspan="6" class="pro-empty-state">
                                             <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
                                             <p>Carregando profissionais...</p>
                                         </td>
@@ -163,12 +154,12 @@
         </main>
     </div>
 
-    <!-- Modal Profissional (mantido para edição) -->
+    <!-- Modal Editar Profissional -->
     <div class="pro-modal" id="professionalModal" style="display:none;">
         <div class="pro-modal-overlay" onclick="closeProfessionalModal()"></div>
         <div class="pro-modal-content">
             <div class="pro-modal-header">
-                <h2 class="pro-modal-title" id="modalTitle">Novo Profissional</h2>
+                <h2 class="pro-modal-title" id="modalTitle">Editar Profissional</h2>
                 <button class="pro-modal-close" onclick="closeProfessionalModal()"><i class="fas fa-times"></i></button>
             </div>
             <div class="pro-modal-body">
@@ -190,8 +181,8 @@
                     </div>
                     <div class="pro-form-row">
                         <div class="pro-form-group">
-                            <label class="pro-label">Especialidade *</label>
-                            <input type="text" class="pro-input" id="professionalSpecialty" required>
+                            <label class="pro-label">Especialidade</label>
+                            <input type="text" class="pro-input" id="professionalSpecialty">
                         </div>
                         <div class="pro-form-group">
                             <label class="pro-label">Status</label>
@@ -199,19 +190,6 @@
                                 <option value="ativo">Ativo</option>
                                 <option value="inativo">Inativo</option>
                             </select>
-                        </div>
-                    </div>
-                    <div class="pro-form-row">
-                        <div class="pro-form-group">
-                            <label class="pro-label">Tipo de Comissão</label>
-                            <select class="pro-select" id="professionalCommissionType" onchange="updateCommissionLabel()">
-                                <option value="percentual">Percentual (%)</option>
-                                <option value="fixo">Valor Fixo (R$)</option>
-                            </select>
-                        </div>
-                        <div class="pro-form-group">
-                            <label class="pro-label" id="commissionLabel">Comissão (%)</label>
-                            <input type="number" class="pro-input" id="professionalCommission" min="0" step="0.01" required>
                         </div>
                     </div>
                 </form>
@@ -226,13 +204,12 @@
     </div>
 
     <script>
-        // ─── Estado ────────────────────────────────────────────────────
         let currentFilter = 'todos';
         let todosProfissionais = [];
         let agendamentosMes = [];
         let perfilAtual = null;
 
-        // ─── Perfil na sidebar + controle de acesso ────────────────────
+        // Carregar perfil e inicializar
         window.addEventListener('perfilCarregado', (e) => {
             const perfil = e.detail;
             if (!perfil) return;
@@ -240,14 +217,15 @@
 
             const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = letra;
-            document.getElementById('userName').textContent   = perfil.nome || perfil.email;
-            document.getElementById('userRole').textContent   = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+            document.getElementById('userName').textContent = perfil.nome || perfil.email;
+            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
 
             try {
                 const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
                 if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
             } catch (_) {}
 
+            // Mostrar botão de convite apenas para donos
             if (perfil.role === 'dono') {
                 document.getElementById('btnNovoProfissional').style.display = 'inline-flex';
             } else {
@@ -257,12 +235,11 @@
             loadProfissionais();
         });
 
-        // ─── Carregar dados do banco ───────────────────────────────────
         async function loadProfissionais() {
             try {
-                const agora     = new Date();
+                const agora = new Date();
                 const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
-                const fimMes    = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
+                const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
                 const [profissionais, agendamentos] = await Promise.all([
                     DB.profissionais.listar(),
@@ -270,27 +247,25 @@
                 ]);
 
                 todosProfissionais = Array.isArray(profissionais) ? profissionais : [];
-                agendamentosMes    = Array.isArray(agendamentos)  ? agendamentos  : [];
+                agendamentosMes = Array.isArray(agendamentos) ? agendamentos : [];
 
+                // Se for profissional, filtrar apenas ele mesmo
                 if (perfilAtual?.role === 'profissional') {
-                    todosProfissionais = todosProfissionais.filter(
-                        p => p.id === perfilAtual.id
-                    );
+                    todosProfissionais = todosProfissionais.filter(p => p.user_id === perfilAtual.id || p.id === perfilAtual.id);
                 }
 
                 atualizarMetricas(todosProfissionais);
                 filtrarLocalmente();
             } catch (error) {
                 console.error('Erro ao carregar profissionais:', error);
-                document.getElementById('profissionaisTable').innerHTML =
-                    `<tr><td colspan="7" class="pro-empty-state">
+                document.getElementById('profissionaisTable').innerHTML = `
+                    <tr><td colspan="6" class="pro-empty-state">
                         <i class="fas fa-exclamation-circle pro-empty-state-icon"></i>
                         <p>Erro ao carregar profissionais</p>
                     </td></tr>`;
             }
         }
 
-        // ─── Filtrar localmente ────────────────────────────────────────
         function filtrarLocalmente() {
             const search = (document.getElementById('searchInput').value || '').toLowerCase();
             let lista = [...todosProfissionais];
@@ -301,63 +276,45 @@
             if (search) {
                 lista = lista.filter(p =>
                     (p.nome || '').toLowerCase().includes(search) ||
-                    (p.especialidade || '').toLowerCase().includes(search)
+                    (p.especialidade || '').toLowerCase().includes(search) ||
+                    (p.email || '').toLowerCase().includes(search)
                 );
             }
 
             renderTable(lista);
         }
 
-        // ─── Métricas ──────────────────────────────────────────────────
         function atualizarMetricas(lista) {
             document.getElementById('totalProfissionais').textContent = lista.length;
 
-            const ativos = lista.filter(p => p.status === 'ativo');
-            document.getElementById('profissionaisAtivos').textContent = ativos.length;
-
-            const avgComissao = lista.length > 0
-                ? lista.reduce((sum, p) => sum + parseFloat(p.comissao_percentual || 0), 0) / lista.length
-                : 0;
-            document.getElementById('comissaoMedia').textContent = avgComissao.toFixed(1) + '%';
+            const ativos = lista.filter(p => p.status === 'ativo').length;
+            document.getElementById('profissionaisAtivos').textContent = ativos;
 
             document.getElementById('totalAgendamentos').textContent = agendamentosMes.length;
         }
 
-        // ─── Renderizar tabela ─────────────────────────────────────────
         function renderTable(lista) {
-            const tbody  = document.getElementById('profissionaisTable');
+            const tbody = document.getElementById('profissionaisTable');
             const isDono = perfilAtual?.role === 'dono';
 
             if (lista.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="pro-empty-state">
+                        <td colspan="6" class="pro-empty-state">
                             <i class="fas fa-user-tie pro-empty-state-icon"></i>
-                            <p>Nenhum profissional encontrado</p>
+                            <p>${isDono ? 'Nenhum profissional cadastrado. Clique em "Gerar Link de Convite"!' : 'Carregando...'}</p>
                         </td>
                     </tr>`;
                 return;
             }
 
             tbody.innerHTML = lista.map(prof => {
-                const comissaoText = prof.comissao_percentual
-                    ? parseFloat(prof.comissao_percentual).toFixed(1) + '%'
-                    : '—';
-                const statusClass = prof.status === 'ativo' ? 'success' : 'error';
-                const telefone    = prof.telefone || '—';
-
-                const agendProf = agendamentosMes.filter(
-                    a => a.profissional_id === prof.id
-                ).length;
-
                 const acoesHtml = isDono ? `
                     <div class="pro-table-actions">
-                        <button class="pro-action-btn" title="Editar"
-                            onclick="editProfessional('${prof.id}')">
+                        <button class="pro-action-btn" title="Editar" onclick="editProfessional('${prof.id}')">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="pro-action-btn danger" title="Excluir"
-                            onclick="deleteProfessional('${prof.id}')">
+                        <button class="pro-action-btn danger" title="Excluir" onclick="deleteProfessional('${prof.id}')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>` : '—';
@@ -372,12 +329,11 @@
                                 <strong>${prof.nome || '—'}</strong>
                             </div>
                         </td>
-                        <td><span class="pro-badge pro-badge-primary">${prof.especialidade || '—'}</span></td>
-                        <td>${telefone}</td>
-                        <td><strong>${comissaoText}</strong></td>
-                        <td>${agendProf}</td>
+                        <td>${prof.especialidade || '—'}</td>
+                        <td>${prof.telefone || '—'}</td>
+                        <td>${prof.email || '—'}</td>
                         <td>
-                            <span class="pro-badge pro-badge-${statusClass}">
+                            <span class="pro-badge pro-badge-${prof.status === 'ativo' ? 'success' : 'error'}">
                                 ${prof.status === 'ativo' ? 'Ativo' : 'Inativo'}
                             </span>
                         </td>
@@ -386,7 +342,6 @@
             }).join('');
         }
 
-        // ─── Filtro por chip ───────────────────────────────────────────
         function setFilter(filter, btn) {
             currentFilter = filter;
             document.querySelectorAll('.pro-filter-chip').forEach(c => c.classList.remove('active'));
@@ -394,44 +349,25 @@
             filtrarLocalmente();
         }
 
-        // ─── Modal ─────────────────────────────────────────────────────
-        function openProfessionalModal() {
-            document.getElementById('modalTitle').textContent = 'Novo Profissional';
-            document.getElementById('professionalForm').reset();
-            document.getElementById('professionalId').value = '';
-            document.getElementById('professionalStatus').value = 'ativo';
-            document.getElementById('professionalCommissionType').value = 'percentual';
-            updateCommissionLabel();
-            document.getElementById('professionalModal').style.display = 'flex';
-        }
-
         function closeProfessionalModal() {
             document.getElementById('professionalModal').style.display = 'none';
-        }
-
-        function updateCommissionLabel() {
-            const type = document.getElementById('professionalCommissionType').value;
-            document.getElementById('commissionLabel').textContent =
-                type === 'percentual' ? 'Comissão (%)' : 'Comissão (R$)';
         }
 
         function editProfessional(id) {
             const prof = todosProfissionais.find(p => p.id === id);
             if (!prof) return;
+
             document.getElementById('modalTitle').textContent = 'Editar Profissional';
-            document.getElementById('professionalId').value              = prof.id;
-            document.getElementById('professionalName').value            = prof.nome || '';
-            document.getElementById('professionalPhone').value           = prof.telefone || '';
-            document.getElementById('professionalEmail').value           = prof.email || '';
-            document.getElementById('professionalSpecialty').value       = prof.especialidade || '';
-            document.getElementById('professionalStatus').value          = prof.status || 'ativo';
-            document.getElementById('professionalCommissionType').value  = prof.comissao_tipo || 'percentual';
-            document.getElementById('professionalCommission').value      = prof.comissao_percentual || '';
-            updateCommissionLabel();
+            document.getElementById('professionalId').value = prof.id;
+            document.getElementById('professionalName').value = prof.nome || '';
+            document.getElementById('professionalPhone').value = prof.telefone || '';
+            document.getElementById('professionalEmail').value = prof.email || '';
+            document.getElementById('professionalSpecialty').value = prof.especialidade || '';
+            document.getElementById('professionalStatus').value = prof.status || 'ativo';
+
             document.getElementById('professionalModal').style.display = 'flex';
         }
 
-        // ─── Salvar profissional (NÃO gera convite automático) ────────
         async function saveProfessional(e) {
             e.preventDefault();
             const btn = document.querySelector('#professionalModal .pro-btn-primary');
@@ -440,21 +376,17 @@
             try {
                 const id = document.getElementById('professionalId').value;
                 const dados = {
-                    nome:                document.getElementById('professionalName').value.trim(),
-                    telefone:            document.getElementById('professionalPhone').value.trim(),
-                    email:               document.getElementById('professionalEmail').value.trim(),
-                    especialidade:       document.getElementById('professionalSpecialty').value.trim(),
-                    status:              document.getElementById('professionalStatus').value,
-                    comissao_tipo:       document.getElementById('professionalCommissionType').value,
-                    comissao_percentual: parseFloat(document.getElementById('professionalCommission').value) || 0
+                    nome: document.getElementById('professionalName').value.trim(),
+                    telefone: document.getElementById('professionalPhone').value.trim(),
+                    email: document.getElementById('professionalEmail').value.trim(),
+                    especialidade: document.getElementById('professionalSpecialty').value.trim(),
+                    status: document.getElementById('professionalStatus').value
                 };
 
-                const resultado = id
-                    ? await DB.profissionais.atualizar(id, dados)
-                    : await DB.profissionais.criar(dados);
+                const resultado = await DB.profissionais.atualizar(id, dados);
 
                 if (resultado.success) {
-                    mostrarToast(id ? '✅ Profissional atualizado!' : '✅ Profissional criado!', 'success');
+                    mostrarToast('✅ Profissional atualizado!', 'success');
                     closeProfessionalModal();
                     await loadProfissionais();
                 } else {
@@ -468,70 +400,6 @@
             }
         }
 
-        // ─── Nova função: gerar convite sem email (dono copia e envia) ──
-        function gerarConvite() {
-            if (!perfilAtual) {
-                mostrarToast('❌ Perfil não carregado', 'error');
-                return;
-            }
-
-            try {
-                const dadosConvite = {
-                    tenant_id: perfilAtual.tenant_id || perfilAtual.id,
-                    // sem email: link genérico. Profissional preencherá email ao acessar.
-                    expiry: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 dias
-                };
-                const token = window.btoa(JSON.stringify(dadosConvite));
-                const urlConvite = `${window.location.origin}/cadastro-profissional.html?convite=${token}`;
-
-                // Tenta copiar automaticamente para a área de transferência
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(urlConvite).then(() => {
-                        window.prompt('Convite gerado e copiado para a área de transferência. Cole para enviar ao profissional:', urlConvite);
-                        mostrarToast('🔗 Link copiado! Envie para o profissional.', 'success');
-                    }).catch(() => {
-                        window.prompt('Convite gerado! Copie o link abaixo e envie para o profissional:', urlConvite);
-                        mostrarToast('🔗 Link gerado! Copie e envie ao profissional.', 'info');
-                    });
-                } else {
-                    window.prompt('Convite gerado! Copie o link abaixo e envie para o profissional:', urlConvite);
-                    mostrarToast('🔗 Link gerado! Copie e envie ao profissional.', 'info');
-                }
-            } catch (err) {
-                console.error('Erro ao gerar convite:', err);
-                mostrarToast('❌ Erro ao gerar convite', 'error');
-            }
-        }
-
-        // ─── (Opcional) Função que tenta enviar convite via Edge Function — mantida se quiser usar depois
-        async function enviarConvite(email) {
-            if (!email) return;
-
-            try {
-                const endpoint = 'https://ldnbivvqzpaqcdhxkywl.supabase.co/functions/v1/dynamic-action';
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email: email })
-                });
-
-                if (response.ok) {
-                    console.log(`✅ Sucesso! Convite disparado para: ${email}`);
-                    mostrarToast(`📧 Convite enviado para ${email}`, 'success');
-                } else {
-                    const errorData = await response.json();
-                    console.error('❌ Erro na função:', errorData);
-                    mostrarToast('❌ Erro ao enviar convite', 'error');
-                }
-            } catch (err) {
-                console.error('❌ Falha crítica ao chamar convite:', err);
-                mostrarToast('❌ Falha ao enviar convite', 'error');
-            }
-        }
-
-        // ─── Excluir profissional ──────────────────────────────────────
         async function deleteProfessional(id) {
             if (!confirm('Deseja realmente excluir este profissional?\nEsta ação não pode ser desfeita.')) return;
             try {
@@ -548,15 +416,43 @@
             }
         }
 
-        // ─── Toast ─────────────────────────────────────────────────────
+        function gerarConvite() {
+            if (!perfilAtual) {
+                mostrarToast('❌ Perfil não carregado', 'error');
+                return;
+            }
+
+            try {
+                const dadosConvite = {
+                    tenant_id: perfilAtual.tenant_id || perfilAtual.id,
+                    expiry: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 dias
+                };
+
+                const token = btoa(JSON.stringify(dadosConvite));
+                const urlConvite = `${window.location.origin}/cadastro-profissional.html?convite=${token}`;
+
+                // Copiar para clipboard
+                navigator.clipboard.writeText(urlConvite).then(() => {
+                    mostrarToast('🔗 Link copiado! Envie para o profissional.', 'success');
+                    alert(`Link gerado e copiado:\n\n${urlConvite}\n\nEste link é válido por 7 dias.`);
+                }).catch(() => {
+                    alert(`Link gerado:\n\n${urlConvite}\n\nCopie e envie para o profissional. Válido por 7 dias.`);
+                });
+
+            } catch (err) {
+                console.error('Erro ao gerar convite:', err);
+                mostrarToast('❌ Erro ao gerar convite', 'error');
+            }
+        }
+
         function mostrarToast(msg, tipo = 'success') {
-            const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
+            const cores = { success: '#10B981', error: '#EF4444', warning: '#F59E0B', info: '#6366F1' };
             const toast = document.createElement('div');
             toast.textContent = msg;
             toast.style.cssText = `
                 position:fixed;bottom:24px;right:24px;z-index:9999;
                 padding:14px 20px;border-radius:10px;
-                background:${cores[tipo]||cores.success};
+                background:${cores[tipo] || cores.success};
                 color:#fff;font-weight:500;font-size:14px;
                 box-shadow:0 4px 16px rgba(0,0,0,0.15);
             `;
@@ -564,7 +460,6 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
