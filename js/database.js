@@ -626,6 +626,38 @@ const DB = {
                 console.error('❌ Erro ao obter estatísticas:', error);
                 return { totalClientes: 0, totalServicos: 0, totalProfissionais: 0, agendamentosHoje: 0, faturamentoDia: 0, faturamentoMes: 0 };
             }
+        },
+
+        async obterTodosTenants() {
+            try {
+                const supabase = window.getSupabase();
+                const { data, error } = await supabase
+                    .from('tenants')
+                    .select('*')
+                    .order('data_inicio', { ascending: false });
+                if (error) throw error;
+                console.log('✅ Tenants carregados:', data.length);
+                return data || [];
+            } catch (error) {
+                console.error('❌ Erro ao listar tenants:', error);
+                return [];
+            }
+        },
+
+        async obterAssinaturasAtivas() {
+            try {
+                const supabase = window.getSupabase();
+                const { data, error } = await supabase
+                    .from('assinaturas')
+                    .select('*')
+                    .eq('status', 'ativa');
+                if (error) throw error;
+                console.log('✅ Assinaturas carregadas:', data.length);
+                return data || [];
+            } catch (error) {
+                console.error('❌ Erro ao listar assinaturas:', error);
+                return [];
+            }
         }
     }
 };
