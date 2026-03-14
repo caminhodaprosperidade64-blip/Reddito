@@ -108,7 +108,7 @@
         <div id="sucessoCard" class="auth-card error-container">
             <div style="font-size: 48px; color: #10b981; margin-bottom: 20px;"><i class="fas fa-check-circle"></i></div>
             <h2 class="auth-title">Cadastro realizado com sucesso!</h2>
-            <p class="auth-subtitle">Você será redirecionado para seu dashboard em alguns segundos...</p>
+            <p class="auth-subtitle">Você será redirecionado para fazer login em alguns segundos...</p>
         </div>
     </div>
 
@@ -134,12 +134,6 @@
                 if (decoded.expiry && Date.now() > decoded.expiry) {
                     mostrarTelaErro("Este convite expirou. Peça um novo link ao proprietário.");
                     return;
-                }
-
-                // Se tiver email no convite, preencher automaticamente
-                if (decoded.email) {
-                    document.getElementById('email').value = decoded.email;
-                    document.getElementById('email').readOnly = true;
                 }
 
                 console.log("✓ Convite validado para o tenant:", tenantId);
@@ -231,7 +225,8 @@
                         nome: nome,
                         email: email,
                         telefone: telefone || null,
-                        especialidade: especialidade || null
+                        especialidade: especialidade || null,
+                        status: 'ativo'
                     });
 
                 if (profError) {
@@ -241,7 +236,7 @@
 
                 console.log("✓ Profissional registrado com sucesso");
 
-                // 3. Fazer logout temporário para o usuário confirmar email
+                // 3. Fazer logout temporário
                 await supabase.auth.signOut();
 
                 // 4. Mostrar tela de sucesso
