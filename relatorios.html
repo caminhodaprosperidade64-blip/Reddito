@@ -56,9 +56,6 @@
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
-                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <div class="pro-user-profile">
                     <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
@@ -233,11 +230,10 @@
         let todosProfissionais = [];
         let todosClientes      = [];
         let perfilAtual        = null;
-        let profissionalIdAtual = null; // ✅ ID na tabela profissionais (não o user_id do perfil)
+        let profissionalIdAtual = null;
 
         const charts = {};
 
-        // ─── Inicializar dark mode ────────────────────────────────────
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
         });
@@ -257,7 +253,7 @@
         }
 
         // ─── Perfil na sidebar + controle de acesso ────────────────────
-        window.addEventListener('perfilCarregado', async (e) => { // ✅ window, não document
+        window.addEventListener('perfilCarregado', async (e) => {
             perfilAtual = e.detail;
             if (!perfilAtual) return;
 
@@ -272,14 +268,12 @@
             } catch (_) {}
 
             if (perfilAtual.role !== 'dono') {
-                // ✅ Busca o ID correto na tabela profissionais pelo user_id do perfil
                 try {
                     const todos = await DB.profissionais.listar();
                     const meu   = (todos || []).find(p => p.user_id === perfilAtual.id);
                     profissionalIdAtual = meu ? meu.id : null;
                 } catch (_) {}
 
-                // Oculta seções exclusivas do dono
                 document.getElementById('secaoProfissionaisServicos').style.display = 'none';
                 document.getElementById('cardTopClientes').style.display            = 'none';
             }
@@ -311,7 +305,6 @@
                 todosProfissionais = profissionais || [];
                 todosClientes      = clientes      || [];
 
-                // ✅ Para profissional: filtra usando profissionalIdAtual (ID correto da tabela)
                 let baseAgendamentos = [...todosAgendamentos];
                 if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
                     baseAgendamentos = baseAgendamentos.filter(
@@ -586,6 +579,13 @@
                 await Auth.signOut();
             }
         }
+
+        // Sincronizar dark mode entre abas
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sispro_theme') {
+                location.reload();
+            }
+        });
     </script>
 </body>
 </html>
