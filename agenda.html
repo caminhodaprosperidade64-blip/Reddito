@@ -1475,6 +1475,7 @@
             container.innerHTML = '';
         }
 
+        // ✅ ALTERADO: agora gera QR com qrcodejs (new QRCode) e usa a div #pixQr
         async function generatePixQrForCurrentAppointment() {
             try {
                 if (!viewingAppointment) return;
@@ -1499,8 +1500,19 @@
 
                 document.getElementById('pixCopiaCola').value = brcode;
 
-                const canvas = document.getElementById('pixQrCanvas');
-                await QRCode.toCanvas(canvas, brcode, { width: 220, margin: 2 });
+                const container = document.getElementById('pixQr');
+                if (!container) return;
+
+                clearPixQr();
+
+                new QRCode(container, {
+                    text: brcode,
+                    width: 220,
+                    height: 220,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
 
             } catch (err) {
                 console.error('Erro ao gerar QR Pix:', err);
