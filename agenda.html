@@ -1495,7 +1495,7 @@
                     return;
                 }
 
-                // ✅ CORREÇÃO: Garante que o valor é um número válido
+                // Converter e validar valor
                 let valor = parseFloat(apt.valor);
                 
                 if (isNaN(valor) || valor <= 0) {
@@ -1507,7 +1507,9 @@
                 valor = valor.toFixed(2);
                 console.log('✅ Valor formatado:', valor);
 
+                // Gerar TXID
                 const txid = normalizeTxid(`AGEND${String(apt.id).replace(/[^0-9A-Za-z]/g, '').slice(0, 12)}`);
+                console.log('✅ TXID gerado:', txid);
 
                 console.log('📝 Gerando BR Code com:', {
                     chave: paymentConfig.pix_chave,
@@ -1517,6 +1519,7 @@
                     txid: txid
                 });
 
+                // Construir payload Pix
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
                     nome: paymentConfig.pix_nome,
@@ -1536,29 +1539,41 @@
 
                 console.log('✅ BR Code gerado com sucesso!');
                 console.log('📏 Tamanho:', brcodeForQr.length, 'caracteres');
+                console.log('📝 Código:', brcodeForQr);
 
+                // Preencher textarea
                 document.getElementById('pixCopiaCola').value = brcodeForQr;
 
+                // Obter container
                 const container = document.getElementById('pixQr');
                 if (!container) {
                     console.error('❌ Container #pixQr não encontrado');
                     return;
                 }
 
-                clearPixQr();
-                await new Promise(r => setTimeout(r, 100));
+                // Limpar conteúdo anterior
+                container.innerHTML = '';
 
-                // Gera QR Code com QRCode.js
-                currentQRCode = new QRCode(container, {
-                    text: brcodeForQr,
-                    width: 280,
-                    height: 280,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
+                // Aguardar um pouco para o DOM atualizar
+                await new Promise(resolve => setTimeout(resolve, 150));
 
-                console.log('✅ QR Code renderizado com sucesso!');
+                // Gerar QR Code com QRCode.js
+                try {
+                    currentQRCode = new QRCode(container, {
+                        text: brcodeForQr,
+                        width: 280,
+                        height: 280,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+
+                    console.log('✅ QR Code renderizado com sucesso!');
+                } catch (qrError) {
+                    console.error('❌ Erro ao criar QR Code:', qrError);
+                    container.innerHTML = '<div style="color: red; text-align: center; padding: 20px;">Erro ao gerar QR Code</div>';
+                    throw qrError;
+                }
 
             } catch (err) {
                 console.error('❌ Erro completo:', err);
