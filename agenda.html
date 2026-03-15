@@ -1470,9 +1470,9 @@
         }
 
         function clearPixQr() {
-            const canvas = document.getElementById('pixQrCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const container = document.getElementById('pixQr');
+            if (!container) return;
+            container.innerHTML = '';
         }
 
         async function generatePixQrForCurrentAppointment() {
