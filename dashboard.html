@@ -1,1144 +1,1134 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - RedditoApp</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="css/pro-design-system.css">
-    <link rel="stylesheet" href="css/pro-components.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/auth-guard.js"></script>
-    <script src="js/database.js"></script>
-    <script src="js/pro-ui.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - RedditoApp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/auth-guard.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --color-primary: #667eea;
+      --color-secondary: #764ba2;
+      --color-bg: #ffffff;
+      --color-bg-secondary: #f9fafb;
+      --color-text: #1f2937;
+      --color-text-light: #6b7280;
+      --color-border: #e5e7eb;
+      --color-card: #ffffff;
+      --sidebar-bg: #1e293b;
+      --sidebar-text: #f1f5f9;
+    }
+
+    body.dark-mode {
+      --color-bg: #0f172a;
+      --color-bg-secondary: #1e293b;
+      --color-text: #f1f5f9;
+      --color-text-light: #cbd5e1;
+      --color-border: #334155;
+      --color-card: #1e293b;
+      --sidebar-bg: #0f172a;
+      --sidebar-text: #f1f5f9;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 24px;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      left: 0;
+      top: 0;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      text-decoration: none;
+      color: var(--sidebar-text);
+    }
+
+    .sidebar-logo img {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+    }
+
+    .sidebar-logo span {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .sidebar-section {
+      margin-bottom: 24px;
+    }
+
+    .sidebar-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      padding: 0 12px;
+    }
+
+    .sidebar-nav a, .sidebar-nav button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: none;
+      border: none;
+      color: var(--sidebar-text);
+      cursor: pointer;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 14px;
+      transition: background 0.3s;
+      width: 100%;
+      text-align: left;
+    }
+
+    .sidebar-nav a:hover, .sidebar-nav button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-nav a.active {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .sidebar-profile {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      right: 24px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .sidebar-profile-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
+
+    .sidebar-profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-profile-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-profile-role {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    /* MAIN CONTENT */
+    .main {
+      flex: 1;
+      margin-left: 280px;
+      background: var(--color-bg);
+    }
+
+    /* HEADER */
+    .header {
+      background: var(--color-card);
+      border-bottom: 1px solid var(--color-border);
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .theme-toggle {
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--color-text);
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    .theme-toggle:hover {
+      background: var(--color-border);
+    }
+
+    /* TENANT CARD */
+    .tenant-card {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 40px;
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    .tenant-logo {
+      width: 100px;
+      height: 100px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: var(--color-bg-secondary);
+    }
+
+    .tenant-info {
+      flex: 1;
+    }
+
+    .tenant-name {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--color-text);
+    }
+
+    .tenant-details {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 16px;
+    }
+
+    .tenant-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tenant-detail-label {
+      font-size: 12px;
+      color: var(--color-text-light);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .tenant-detail-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .trial-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .trial-badge i {
+      font-size: 14px;
+    }
+
+    .plan-badge {
+      display: inline-block;
+      background: var(--color-primary);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* CONTENT */
+    .content {
+      padding: 40px;
+    }
+
+    .section {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--color-text);
+    }
+
+    .section-subtitle {
+      font-size: 14px;
+      color: var(--color-text-light);
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--color-text);
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--color-text);
+      background: var(--color-bg);
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+    }
+
+    .form-group input:disabled, .form-group textarea:disabled {
+      background: var(--color-bg-secondary);
+      cursor: not-allowed;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .horario-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .horario-item {
+      display: grid;
+      grid-template-columns: 100px 1fr 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      background: var(--color-bg-secondary);
+      border-radius: 8px;
+    }
+
+    .horario-dia {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .horario-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--color-primary);
+    }
+
+    .horario-time {
+      padding: 8px 10px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .horario-time:disabled {
+      background: var(--color-border);
+      cursor: not-allowed;
+    }
+
+    .logo-upload-area {
+      border: 2px dashed var(--color-border);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .logo-upload-area:hover {
+      border-color: var(--color-primary);
+      background: var(--color-bg-secondary);
+    }
+
+    .logo-upload-area input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .logo-preview {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      object-fit: cover;
+      margin: 0 auto 12px;
+      display: none;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: var(--color-bg-secondary);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+
+    .btn-danger {
+      background: #ef4444;
+    }
+
+    .btn-success {
+      background: #10b981;
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .message.error {
+      background: #fee2e2;
+      color: #dc2626;
+      border-left: 4px solid #dc2626;
+    }
+
+    .message.success {
+      background: #dcfce7;
+      color: #15803d;
+      border-left: 4px solid #15803d;
+    }
+
+    .link-generator {
+      background: var(--color-bg-secondary);
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+
+    .link-input {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .link-input input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .link-input button {
+      padding: 8px 12px;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 24px;
+      gap: 0;
+    }
+
+    .tab {
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--color-text-light);
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .tab.active {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 240px;
+      }
+      .main {
+        margin-left: 240px;
+      }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      .tenant-details {
+        gap: 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: -280px;
+        z-index: 1000;
+        transition: left 0.3s;
+      }
+      .main {
+        margin-left: 0;
+      }
+      .header {
+        padding: 16px 20px;
+      }
+      .content {
+        padding: 20px;
+      }
+      .tenant-card {
+        margin: 16px 20px;
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="pro-app">
-        <!-- Sidebar -->
-        <aside class="pro-sidebar">
-            <div class="pro-sidebar-logo">
-                <a href="dashboard.html" class="pro-logo" id="sidebarLogo">
-                    <div class="pro-logo-icon" id="logoIcon">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
-                    <span class="pro-logo-text">RedditoApp</span>
-                </a>
-            </div>
+  <div class="container">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <a href="dashboard.html" class="sidebar-logo">
+        <img src="https://ldnbivvqzpaqcdhxkywl.supabase.co/storage/v1/object/public/logos/7000a574-d4ad-4363-ae35-472e8cb26d3a/logo.jpeg" alt="RedditoApp">
+        <span>Reddito</span>
+      </a>
 
-            <nav class="pro-sidebar-nav">
-                <div class="pro-nav-section">
-                    <a href="dashboard.html" class="pro-nav-item active">
-                        <i class="fas fa-home"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="agenda.html" class="pro-nav-item">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Agenda</span>
-                    </a>
-                </div>
+      <div class="sidebar-section">
+        <nav class="sidebar-nav">
+          <a href="#dashboard" onclick="mostrarTab('dashboard')" class="nav-link active">
+            <i class="fas fa-chart-line"></i> Dashboard
+          </a>
+          <a href="#agenda" onclick="mostrarTab('agenda')" class="nav-link">
+            <i class="fas fa-calendar"></i> Agenda
+          </a>
+        </nav>
+      </div>
 
-                <div class="pro-nav-section">
-                    <div class="pro-nav-section-title">Gestão</div>
-                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item">
-                        <i class="fas fa-users"></i>
-                        <span>Clientes</span>
-                    </a>
-                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item">
-                        <i class="fas fa-cut"></i>
-                        <span>Serviços</span>
-                    </a>
-                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item">
-                        <i class="fas fa-user-tie"></i>
-                        <span>Profissionais</span>
-                    </a>
-                </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">GESTÃO</div>
+        <nav class="sidebar-nav">
+          <a href="#clientes" onclick="mostrarTab('clientes')" class="nav-link">
+            <i class="fas fa-users"></i> Clientes
+          </a>
+          <a href="#servicos" onclick="mostrarTab('servicos')" class="nav-link">
+            <i class="fas fa-scissors"></i> Serviços
+          </a>
+          <a href="#profissionais" onclick="mostrarTab('profissionais')" class="nav-link">
+            <i class="fas fa-user-tie"></i> Profissionais
+          </a>
+        </nav>
+      </div>
 
-                <div class="pro-nav-section">
-                    <div class="pro-nav-section-title">Financeiro</div>
-                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Financeiro</span>
-                    </a>
-                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Relatórios</span>
-                    </a>
-                </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">FINANCEIRO</div>
+        <nav class="sidebar-nav">
+          <a href="#financeiro" onclick="mostrarTab('financeiro')" class="nav-link">
+            <i class="fas fa-money-bill-wave"></i> Financeiro
+          </a>
+          <a href="#relatorios" onclick="mostrarTab('relatorios')" class="nav-link">
+            <i class="fas fa-chart-bar"></i> Relatórios
+          </a>
+        </nav>
+      </div>
 
-                <div class="pro-nav-section">
-                    <div class="pro-nav-section-title">Automação</div>
-                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item">
-                        <i class="fab fa-whatsapp"></i>
-                        <span>Conectar WhatsApp</span>
-                    </a>
-                </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">AUTOMAÇÃO</div>
+        <nav class="sidebar-nav">
+          <a href="#whatsapp" onclick="mostrarTab('whatsapp')" class="nav-link">
+            <i class="fas fa-comments"></i> WhatsApp
+          </a>
+        </nav>
+      </div>
 
-                <div class="pro-nav-section">
-                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item">
-                        <i class="fas fa-cog"></i>
-                        <span>Configurações</span>
-                    </a>
-                </div>
-            </nav>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">GERAL</div>
+        <nav class="sidebar-nav">
+          <a href="#configuracoes" onclick="mostrarTab('configuracoes')" class="nav-link">
+            <i class="fas fa-cog"></i> Configurações
+          </a>
+        </nav>
+      </div>
 
-            <div class="pro-sidebar-footer">
-                <div class="pro-user-profile">
-                    <div class="pro-user-avatar" id="userAvatar">A</div>
-                    <div class="pro-user-info">
-                        <div class="pro-user-name" id="userName">Carregando...</div>
-                        <div class="pro-user-role" id="userRole">...</div>
-                    </div>
-                    <button class="pro-user-logout" onclick="logout()" title="Sair">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="pro-main">
-            <header class="pro-header">
-                <div class="pro-search">
-                    <i class="fas fa-search pro-search-icon"></i>
-                    <input 
-                        type="text" 
-                        class="pro-search-input" 
-                        placeholder="Buscar clientes, agendamentos..."
-                        id="globalSearch"
-                    >
-                    <div id="searchResults" class="search-results-dropdown" style="display: none;"></div>
-                </div>
-                <div class="pro-header-actions">
-                    <button class="pro-header-btn notifications-btn" id="notificacoesBtn" title="Notificações" onclick="toggleNotificacoes()">
-                        <i class="fas fa-bell"></i>
-                        <span id="notificacoesBadge" style="display: none;" class="badge">0</span>
-                    </button>
-                    <div id="notificacoesDropdown" class="notifications-dropdown" style="display: none;">
-                        <div class="notifications-header">
-                            <h3>Notificações</h3>
-                            <button class="close-btn" onclick="toggleNotificacoes()"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div id="notificacoesList" class="notifications-list">
-                            <p style="text-align: center; color: #999; padding: 20px;">Nenhuma notificação</p>
-                        </div>
-                    </div>
-                    <div class="pro-header-divider"></div>
-                    <button class="pro-header-btn" id="themeToogle" title="Alternar Tema" onclick="toggleDarkMode()">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
-                </div>
-            </header>
-
-            <div class="pro-content">
-                <div class="pro-page-header">
-                    <div class="pro-page-header-top">
-                        <div>
-                            <h1 class="pro-page-title">Dashboard</h1>
-                            <p class="pro-page-subtitle">Visão geral do seu negócio</p>
-                        </div>
-                        <div class="header-controls">
-                            <select id="periodoFiltro" onchange="atualizarPeriodo()" class="pro-select period-select">
-                                <option value="7d">Últimos 7 dias</option>
-                                <option value="14d">Últimas 2 semanas</option>
-                                <option value="30d">Últimos 30 dias</option>
-                                <option value="mes">Este mês</option>
-                            </select>
-                            <button class="pro-btn pro-btn-primary" onclick="abrirModalAgendamento()">
-                                <i class="fas fa-plus"></i>
-                                Novo Agendamento
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Comparação com período anterior -->
-                <div class="pro-comparison-card" id="comparisonCard" style="display: none;">
-                    <div class="comparison-content">
-                        <i class="fas fa-arrow-trending-up"></i>
-                        <span id="comparisonText"></span>
-                    </div>
-                </div>
-
-                <!-- Metrics Grid -->
-                <div class="pro-metrics-grid">
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Agendamentos Hoje</span>
-                            <div class="pro-metric-icon primary">
-                                <i class="fas fa-calendar-day"></i>
-                            </div>
-                        </div>
-                        <div class="pro-metric-value" id="appointmentsToday">0</div>
-                        <div class="pro-metric-change" id="appointmentsTodayChange"></div>
-                    </div>
-
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Agendamentos Amanhã</span>
-                            <div class="pro-metric-icon primary">
-                                <i class="fas fa-calendar-plus"></i>
-                            </div>
-                        </div>
-                        <div class="pro-metric-value" id="appointmentsTomorrow">0</div>
-                        <div class="pro-metric-change" id="appointmentsTomorrowChange"></div>
-                    </div>
-
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Faturamento Hoje</span>
-                            <div class="pro-metric-icon success">
-                                <i class="fas fa-dollar-sign"></i>
-                            </div>
-                        </div>
-                        <div class="pro-metric-value" id="revenueToday">R$ 0</div>
-                        <div class="pro-metric-change" id="revenueTodayChange"></div>
-                    </div>
-
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Faturamento Período</span>
-                            <div class="pro-metric-icon success">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                        </div>
-                        <div class="pro-metric-value" id="revenuePeriod">R$ 0</div>
-                        <div class="pro-metric-change" id="revenuePeriodChange"></div>
-                    </div>
-                </div>
-
-                <!-- Charts Grid -->
-                <div class="pro-grid-2">
-                    <div class="pro-card">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Faturamento</h3>
-                            <span class="chart-period" id="revenuePeriodLabel">Últimos 7 dias</span>
-                        </div>
-                        <div class="pro-card-body">
-                            <div style="height: 300px;" id="revenueChartContainer">
-                                <canvas id="revenueChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="pro-card">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Agendamentos por Dia</h3>
-                            <span class="chart-period" id="appointmentsPeriodLabel">Últimos 7 dias</span>
-                        </div>
-                        <div class="pro-card-body">
-                            <div style="height: 300px;" id="appointmentsChartContainer">
-                                <canvas id="appointmentsChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Upcoming Appointments -->
-                <div class="pro-card" style="margin-top: 24px;">
-                    <div class="pro-card-header">
-                        <h3 class="pro-card-title">Próximos Agendamentos</h3>
-                        <a href="agenda.html" class="pro-btn pro-btn-ghost pro-btn-sm">
-                            Ver todos <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                    <div class="pro-card-body">
-                        <div class="pro-table-container">
-                            <table class="pro-table">
-                                <thead>
-                                    <tr>
-                                        <th>Cliente</th>
-                                        <th>Serviço</th>
-                                        <th>Profissional</th>
-                                        <th>Data/Hora</th>
-                                        <th>Status</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="upcomingAppointments">
-                                    <tr>
-                                        <td colspan="6" class="pro-empty-state">
-                                            <i class="fas fa-calendar-times pro-empty-state-icon"></i>
-                                            <p>Nenhum agendamento próximo</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- New Appointment Modal -->
-    <div class="pro-modal" id="newAppointmentModal" style="display:none;">
-        <div class="pro-modal-overlay" onclick="fecharModalAgendamento()"></div>
-        <div class="pro-modal-content">
-            <div class="pro-modal-header">
-                <h2 class="pro-modal-title">Novo Agendamento</h2>
-                <button class="pro-modal-close" onclick="fecharModalAgendamento()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="pro-modal-body">
-                <form id="appointmentForm" onsubmit="saveAppointment(event)">
-                    <div class="pro-form-group">
-                        <label class="pro-label">Cliente *</label>
-                        <select class="pro-select" id="appointmentClient" required>
-                            <option value="">Selecione um cliente</option>
-                        </select>
-                    </div>
-                    <div class="pro-form-group">
-                        <label class="pro-label">Serviço *</label>
-                        <select class="pro-select" id="appointmentService" required>
-                            <option value="">Selecione um serviço</option>
-                        </select>
-                    </div>
-                    <div class="pro-form-group">
-                        <label class="pro-label">Profissional *</label>
-                        <select class="pro-select" id="appointmentProfessional" required>
-                            <option value="">Selecione um profissional</option>
-                        </select>
-                    </div>
-                    <div class="pro-form-row">
-                        <div class="pro-form-group">
-                            <label class="pro-label">Data *</label>
-                            <input type="date" class="pro-input" id="appointmentDate" required>
-                        </div>
-                        <div class="pro-form-group">
-                            <label class="pro-label">Horário *</label>
-                            <input type="time" class="pro-input" id="appointmentTime" required>
-                        </div>
-                    </div>
-                    <div class="pro-form-group">
-                        <label class="pro-label">Status *</label>
-                        <select class="pro-select" id="appointmentStatus" required>
-                            <option value="agendado">Agendado</option>
-                            <option value="confirmado">Confirmado</option>
-                            <option value="em_atendimento">Em Atendimento</option>
-                            <option value="concluido">Concluído</option>
-                            <option value="cancelado">Cancelado</option>
-                        </select>
-                    </div>
-                    <div class="pro-form-group">
-                        <label class="pro-label">Observações</label>
-                        <textarea class="pro-textarea" id="appointmentNotes" rows="3" placeholder="Anotações adicionais..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="pro-modal-footer">
-                <button class="pro-btn pro-btn-secondary" onclick="fecharModalAgendamento()">
-                    Cancelar
-                </button>
-                <button class="pro-btn pro-btn-primary" onclick="document.getElementById('appointmentForm').requestSubmit()">
-                    <i class="fas fa-save"></i>
-                    Salvar Agendamento
-                </button>
-            </div>
+      <div class="sidebar-profile" onclick="mostrarTab('minha-conta')">
+        <div class="sidebar-profile-avatar" id="profileAvatar">D</div>
+        <div class="sidebar-profile-info">
+          <div class="sidebar-profile-name" id="profileName">Dono</div>
+          <div class="sidebar-profile-role">Proprietário</div>
         </div>
+      </div>
     </div>
 
-    <style>
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f9fafb;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --border-color: #e5e7eb;
-        }
+    <!-- MAIN CONTENT -->
+    <div class="main">
+      <div class="header">
+        <h1 class="header-title" id="pageTitle">Dashboard</h1>
+        <div class="header-right">
+          <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+            <i class="fas fa-moon"></i>
+          </button>
+        </div>
+      </div>
 
-        body.dark-mode {
-            --bg-primary: #1f2937;
-            --bg-secondary: #111827;
-            --text-primary: #f9fafb;
-            --text-secondary: #d1d5db;
-            --border-color: #374151;
-        }
+      <!-- TENANT CARD -->
+      <div class="tenant-card" id="tenantCard">
+        <img id="tenantLogo" class="tenant-logo" src="" alt="Logo">
+        <div class="tenant-info">
+          <h2 class="tenant-name" id="tenantName">Carregando...</h2>
+          <div class="tenant-details">
+            <div class="tenant-detail">
+              <span class="tenant-detail-label">Telefone</span>
+              <span class="tenant-detail-value" id="tenantPhone">-</span>
+            </div>
+            <div class="tenant-detail">
+              <span class="tenant-detail-label">Segmento</span>
+              <span class="tenant-detail-value" id="tenantSegment">-</span>
+            </div>
+            <div class="tenant-detail">
+              <span class="tenant-detail-label">Status do Trial</span>
+              <div id="trialStatus"></div>
+            </div>
+            <div class="tenant-detail" id="planContainer" style="display: none;">
+              <span class="tenant-detail-label">Plano</span>
+              <span class="plan-badge" id="planBadge">BÁSICO</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        .badge {
-            display: inline-block;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-align: center;
-            line-height: 20px;
-            position: absolute;
-            top: -8px;
-            right: -8px;
-        }
-        
-        .pro-logo img {
-            max-height: 40px;
-            width: auto;
-            object-fit: contain;
-        }
+      <!-- CONTENT AREA -->
+      <div class="content">
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard-tab" class="tab-content active">
+          <h2 class="section-title">Bem-vindo ao seu dashboard!</h2>
+          <p class="section-subtitle">Aqui você pode gerenciar toda a sua operação.</p>
+        </div>
 
-        .pro-empty-chart {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 300px;
-            color: var(--text-secondary);
-            font-size: 14px;
-            flex-direction: column;
-        }
+        <!-- CONFIGURAÇÕES TAB -->
+        <div id="configuracoes-tab" class="tab-content">
+          <div class="tabs">
+            <button class="tab active" onclick="abaConfig('minha-empresa')">Minha Empresa</button>
+            <button class="tab" onclick="abaConfig('horarios')">Horários</button>
+            <button class="tab" onclick="abaConfig('convidar-profissional')">Convidar Profissional</button>
+          </div>
 
-        .pro-empty-chart i {
-            font-size: 36px;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
-
-        /* FEATURE #5: Busca Global */
-        .search-results-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-top: none;
-            border-radius: 0 0 10px 10px;
-            max-height: 400px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .search-result-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .search-result-item:hover {
-            background: var(--bg-secondary);
-        }
-
-        .search-result-title {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .search-result-subtitle {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        /* FEATURE #6: Notificações */
-        .notifications-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            width: 320px;
-            max-height: 400px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .notifications-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .notifications-header h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: 16px;
-        }
-
-        .notifications-list {
-            padding: 8px 0;
-        }
-
-        .notification-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            transition: background 0.2s;
-            cursor: pointer;
-        }
-
-        .notification-item:hover {
-            background: var(--bg-secondary);
-        }
-
-        .notification-item:last-child {
-            border-bottom: none;
-        }
-
-        .notification-icon {
-            display: inline-block;
-            width: 32px;
-            height: 32px;
-            background: #ede9fe;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            vertical-align: middle;
-            color: #667eea;
-        }
-
-        .notification-content {
-            display: inline-block;
-            vertical-align: middle;
-        }
-
-        .notification-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .notification-time {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-
-        /* FEATURE #7: Comparação com período anterior */
-        .pro-comparison-card {
-            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        body.dark-mode .pro-comparison-card {
-            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
-        }
-
-        .comparison-content {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #1e40af;
-            font-weight: 600;
-        }
-
-        body.dark-mode .comparison-content {
-            color: #93c5fd;
-        }
-
-        .comparison-content i {
-            font-size: 18px;
-        }
-
-        /* FEATURE #8: Filtro por período */
-        .header-controls {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .period-select {
-            padding: 10px 14px;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 14px;
-            font-family: inherit;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-
-        .period-select:hover,
-        .period-select:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-
-        .chart-period {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .pro-metric-change {
-            font-size: 12px;
-            margin-top: 6px;
-            font-weight: 500;
-        }
-
-        .change-positive {
-            color: #10b981;
-        }
-
-        .change-negative {
-            color: #ef4444;
-        }
-
-        @media (max-width: 768px) {
-            .header-controls {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .period-select {
-                width: 100%;
-            }
-
-            .notifications-dropdown {
-                width: 90vw;
-                right: auto;
-                left: 5vw;
-            }
-        }
-    </style>
-
-    <script>
-        // ─── Variáveis globais ─────────────────────────────────────────
-        let revenueChart = null;
-        let appointmentsChart = null;
-        let perfilCarregado = null;
-        let periodoAtual = '7d';
-        let todosAgendamentos = [];
-
-        // ─── FEATURE #6: Dark Mode ─────────────────────────────────────
-        function toggleDarkMode() {
-            const isDark = document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', isDark ? 'true' : 'false');
-            const btn = document.getElementById('themeToogle');
-            btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-        }
-
-        function initDarkMode() {
-            if (localStorage.getItem('darkMode') === 'true') {
-                document.body.classList.add('dark-mode');
-                document.getElementById('themeToogle').innerHTML = '<i class="fas fa-sun"></i>';
-            }
-        }
-
-        // ─── FEATURE #5: Busca Global ──────────────────────────────────
-        document.getElementById('globalSearch').addEventListener('input', async (e) => {
-            const termo = e.target.value.toLowerCase().trim();
-            const resultsDiv = document.getElementById('searchResults');
-
-            if (termo.length < 2) {
-                resultsDiv.style.display = 'none';
-                return;
-            }
-
-            try {
-                const [clientes, agendamentos] = await Promise.all([
-                    DB.clientes.listar(),
-                    DB.agendamentos.listar()
-                ]);
-
-                const clientesEncontrados = (clientes || [])
-                    .filter(c => c.nome.toLowerCase().includes(termo))
-                    .slice(0, 5);
-
-                const agendamentosEncontrados = (agendamentos || [])
-                    .filter(a => a.cliente?.nome.toLowerCase().includes(termo))
-                    .slice(0, 5);
-
-                const todosResultados = [
-                    ...clientesEncontrados.map(c => ({
-                        tipo: 'cliente',
-                        id: c.id,
-                        titulo: c.nome,
-                        subtitulo: `${c.telefone || '—'} | ${c.email || '—'}`
-                    })),
-                    ...agendamentosEncontrados.map(a => ({
-                        tipo: 'agendamento',
-                        id: a.id,
-                        titulo: `${a.cliente?.nome || '—'} - ${a.servico?.nome || '—'}`,
-                        subtitulo: `${a.data} às ${a.hora}`
-                    }))
-                ];
-
-                if (todosResultados.length === 0) {
-                    resultsDiv.innerHTML = '<div class="search-result-item" style="text-align: center; color: #999;">Nenhum resultado encontrado</div>';
-                } else {
-                    resultsDiv.innerHTML = todosResultados.map(r => `
-                        <div class="search-result-item" onclick="selecionarResultado('${r.tipo}', '${r.id}')">
-                            <div class="search-result-title">${r.titulo}</div>
-                            <div class="search-result-subtitle">${r.subtitulo}</div>
-                        </div>
-                    `).join('');
-                }
-
-                resultsDiv.style.display = 'block';
-            } catch (error) {
-                console.error('Erro na busca:', error);
-            }
-        });
-
-        function selecionarResultado(tipo, id) {
-            console.log(`Selecionado: ${tipo} - ${id}`);
-            document.getElementById('globalSearch').value = '';
-            document.getElementById('searchResults').style.display = 'none';
-            // TODO: Navegar para página de detalhes ou abrir modal de edição
-        }
-
-        // ─── FEATURE #6: Notificações ──────────────────────────────────
-        function toggleNotificacoes() {
-            const dropdown = document.getElementById('notificacoesDropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function adicionarNotificacao(titulo, descricao, tipo = 'info') {
-            const notificacoesList = document.getElementById('notificacoesList');
-            const badge = document.getElementById('notificacoesBadge');
-
-            const item = document.createElement('div');
-            item.className = 'notification-item';
-            item.innerHTML = `
-                <span class="notification-icon"><i class="fas fa-${tipo === 'sucesso' ? 'check' : 'info'}-circle"></i></span>
-                <div class="notification-content">
-                    <div class="notification-title">${titulo}</div>
-                    <div class="notification-time">${descricao}</div>
+          <!-- MINHA EMPRESA -->
+          <div id="minha-empresa-config" class="tab-content active">
+            <div class="section">
+              <h3 class="section-title">Dados da Empresa</h3>
+              <div id="configMessage"></div>
+              
+              <div class="form-group">
+                <label>Logo da Empresa</label>
+                <div class="logo-upload-area" id="logoUploadArea">
+                  <input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp" onchange="previewLogo(this)">
+                  <img id="logoPreviewImg" class="logo-preview" src="" alt="Preview">
+                  <div id="logoPlaceholder">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 24px; color: var(--color-text-light);"></i>
+                    <p style="margin-top: 8px; color: var(--color-text-light); font-size: 13px;">Clique para alterar o logotipo</p>
+                  </div>
                 </div>
-            `;
+              </div>
 
-            if (notificacoesList.querySelector('p')) {
-                notificacoesList.innerHTML = '';
-            }
+              <div class="form-group">
+                <label>Nome da Empresa</label>
+                <input type="text" id="nomeEmpresa" disabled>
+              </div>
 
-            notificacoesList.insertBefore(item, notificacoesList.firstChild);
-            badge.style.display = 'block';
-            badge.textContent = Math.min(parseInt(badge.textContent || 0) + 1, 99);
-        }
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Telefone</label>
+                  <input type="tel" id="telefoneConfig" disabled>
+                </div>
+                <div class="form-group">
+                  <label>Segmento</label>
+                  <input type="text" id="segmentoConfig" disabled>
+                </div>
+              </div>
 
-        // ─── FEATURE #8: Filtro por período ────────────────────────────
-        async function atualizarPeriodo() {
-            periodoAtual = document.getElementById('periodoFiltro').value;
-            const labels = {
-                '7d': 'Últimos 7 dias',
-                '14d': 'Últimas 2 semanas',
-                '30d': 'Últimos 30 dias',
-                'mes': 'Este mês'
-            };
+              <button class="btn" onclick="atualizarLogo()">
+                <i class="fas fa-save"></i> Atualizar Logo
+              </button>
+            </div>
+          </div>
+
+          <!-- HORÁRIOS -->
+          <div id="horarios-config" class="tab-content">
+            <div class="section">
+              <h3 class="section-title">Horários de Funcionamento</h3>
+              <p class="section-subtitle">Configure os horários para cada dia da semana</p>
+              <div class="horario-grid" id="horariosGrid"></div>
+              <button class="btn" onclick="salvarHorarios()">
+                <i class="fas fa-save"></i> Salvar Horários
+              </button>
+            </div>
+          </div>
+
+          <!-- CONVIDAR PROFISSIONAL -->
+          <div id="convidar-profissional-config" class="tab-content">
+            <div class="section">
+              <h3 class="section-title">Convidar Profissional</h3>
+              <p class="section-subtitle">Gere um link para o profissional fazer seu cadastro</p>
+              
+              <div class="link-generator">
+                <p style="font-size: 13px; margin-bottom: 12px;">Link de Convite:</p>
+                <div class="link-input">
+                  <input type="text" id="linkProfissional" readonly value="" style="cursor: text;">
+                  <button onclick="copiarLink()" style="background: var(--color-primary); color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                    <i class="fas fa-copy"></i> Copiar
+                  </button>
+                </div>
+                <button class="btn" style="margin-top: 12px;" onclick="gerarLinkProfissional()">
+                  <i class="fas fa-link"></i> Gerar Novo Link
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MINHA CONTA TAB -->
+        <div id="minha-conta-tab" class="tab-content">
+          <div class="section">
+            <h3 class="section-title">Minha Conta</h3>
+            <div id="minhaContaMessage"></div>
             
-            document.getElementById('revenuePeriodLabel').textContent = labels[periodoAtual];
-            document.getElementById('appointmentsPeriodLabel').textContent = labels[periodoAtual];
-            
-            await loadCharts();
-            await calcularComparacao();
-        }
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="emailConta" disabled>
+            </div>
 
-        // ─── Calcular Comparação ───────────────────────────────────────
-        async function calcularComparacao() {
-            try {
-                const hoje = new Date();
-                let dataInicio, dataFim, dataInicioAnterior, dataFimAnterior;
+            <div class="form-group">
+              <label>Alterar Senha</label>
+              <button class="btn btn-secondary" onclick="mostrarAlterarSenha()">
+                <i class="fas fa-key"></i> Alterar Senha
+              </button>
+            </div>
 
-                if (periodoAtual === '7d') {
-                    dataFim = hoje;
-                    dataInicio = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
-                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 7 * 24 * 60 * 60 * 1000);
-                } else if (periodoAtual === '30d') {
-                    dataFim = hoje;
-                    dataInicio = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
-                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 30 * 24 * 60 * 60 * 1000);
-                } else {
-                    return; // Simplificar para outros períodos
-                }
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+              <h3 class="section-title" style="color: #dc2626;">Zona de Risco</h3>
+              <button class="btn btn-danger" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Fazer Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-                // Filtrar agendamentos por período
-                const filtrarPorData = (agendamentos, inicio, fim) => {
-                    return (agendamentos || []).filter(a => {
-                        const data = new Date(a.data);
-                        return data >= inicio && data <= fim;
-                    });
-                };
+  <script>
+    const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    let tenantData = null;
+    let profileData = null;
 
-                const agendamentosAtual = filtrarPorData(todosAgendamentos, dataInicio, dataFim);
-                const agendamentosAnterior = filtrarPorData(todosAgendamentos, dataInicioAnterior, dataFimAnterior);
+    // TEMA
+    function initTheme() {
+      const tema = localStorage.getItem('dashboard-theme') || 'light';
+      if (tema === 'dark') {
+        document.body.classList.add('dark-mode');
+      }
+    }
 
-                const receitaAtual = agendamentosAtual.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-                const receitaAnterior = agendamentosAnterior.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+    }
 
-                const variacao = receitaAnterior > 0 ? ((receitaAtual - receitaAnterior) / receitaAnterior * 100) : 0;
-                const sinal = variacao >= 0 ? '↑' : '↓';
-                const cor = variacao >= 0 ? '#10b981' : '#ef4444';
+    initTheme();
 
-                const card = document.getElementById('comparisonCard');
-                card.style.display = 'flex';
-                document.getElementById('comparisonText').innerHTML = 
-                    `<strong>${sinal}</strong> Receita <strong style="color: ${cor}">${Math.abs(variacao).toFixed(1)}%</strong> comparado ao período anterior`;
-
-            } catch (error) {
-                console.error('Erro ao calcular comparação:', error);
-            }
-        }
-
-        // ─── Modal helpers ─────────────────────────────────────────────
-        function abrirModalAgendamento() {
-            document.getElementById('newAppointmentModal').style.display = 'flex';
-        }
+    // CARREGAR DADOS
+    async function carregarDados() {
+      try {
+        const supabase = window.getSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        function fecharModalAgendamento() {
-            document.getElementById('newAppointmentModal').style.display = 'none';
+        if (!session) {
+          window.location.href = 'login.html';
+          return;
         }
 
-        // Fechar dropdown ao clicar fora
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.pro-search') && document.getElementById('searchResults').style.display !== 'none') {
-                document.getElementById('searchResults').style.display = 'none';
-            }
-            if (!e.target.closest('.notifications-btn') && !e.target.closest('.notifications-dropdown')) {
-                document.getElementById('notificacoesDropdown').style.display = 'none';
-            }
+        // Carregar tenant
+        const { data: tenant, error: tenantError } = await supabase
+          .from('tenants')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!tenantError && tenant) {
+          tenantData = tenant;
+          atualizarTenantCard();
+          atualizarConfigurações();
+        }
+
+        // Carregar perfil
+        const { data: profile } = await supabase
+          .from('perfis')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile) {
+          profileData = profile;
+          document.getElementById('profileName').textContent = profile.nome || 'Usuário';
+          document.getElementById('emailConta').value = profile.email || '';
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    }
+
+    function atualizarTenantCard() {
+      if (!tenantData) return;
+
+      document.getElementById('tenantName').textContent = tenantData.nome_empresa || 'Empresa';
+      document.getElementById('tenantPhone').textContent = tenantData.telefone || '-';
+      document.getElementById('tenantSegment').textContent = tenantData.segmento || '-';
+
+      if (tenantData.logo_url) {
+        document.getElementById('tenantLogo').src = tenantData.logo_url;
+      }
+
+      // Trial ou Plano
+      if (tenantData.plano === 'basico' && tenantData.status === 'ativo') {
+        const diasRestantes = calcularDiasRestantes(tenantData.data_inicio, tenantData.dias_trial);
+        const status = document.getElementById('trialStatus');
+        
+        if (diasRestantes > 0) {
+          status.innerHTML = `<span class="trial-badge"><i class="fas fa-hourglass-end"></i> ${diasRestantes} dias restantes</span>`;
+        } else {
+          status.innerHTML = '<span class="trial-badge" style="background: #ef4444;">Trial Expirado</span>';
+        }
+      } else if (tenantData.plano !== 'basico') {
+        document.getElementById('planContainer').style.display = 'block';
+        const badge = document.getElementById('planBadge');
+        badge.textContent = tenantData.plano.toUpperCase();
+        badge.style.background = tenantData.plano === 'profissional' ? '#667eea' : '#764ba2';
+        document.getElementById('trialStatus').innerHTML = '';
+      }
+    }
+
+    function calcularDiasRestantes(dataInicio, diasTrial) {
+      const inicio = new Date(dataInicio);
+      const fim = new Date(inicio);
+      fim.setDate(fim.getDate() + diasTrial);
+      
+      const agora = new Date();
+      const diferenca = fim - agora;
+      const dias = Math.ceil(diferenca / (1000 * 60 * 60 * 24));
+      
+      return Math.max(0, dias);
+    }
+
+    function atualizarConfigurações() {
+      if (!tenantData) return;
+
+      document.getElementById('nomeEmpresa').value = tenantData.nome_empresa || '';
+      document.getElementById('telefoneConfig').value = tenantData.telefone || '';
+      document.getElementById('segmentoConfig').value = tenantData.segmento || '';
+
+      if (tenantData.logo_url) {
+        document.getElementById('logoPreviewImg').src = tenantData.logo_url;
+        document.getElementById('logoPreviewImg').style.display = 'block';
+        document.getElementById('logoPlaceholder').style.display = 'none';
+      }
+
+      // Carregar horários
+      carregarHorarios();
+    }
+
+    async function carregarHorarios() {
+      try {
+        const supabase = window.getSupabase();
+        const { data: horarios } = await supabase
+          .from('horarios_atendimento')
+          .select('*')
+          .eq('tenant_id', tenantData.id)
+          .order('dia_semana');
+
+        const grid = document.getElementById('horariosGrid');
+        grid.innerHTML = '';
+
+        DIAS.forEach((dia, index) => {
+          const horario = horarios?.find(h => h.dia_semana === index) || {
+            ativo: false,
+            hora_inicio: '08:00',
+            hora_fim: '18:00'
+          };
+
+          const item = document.createElement('div');
+          item.className = 'horario-item';
+          item.innerHTML = `
+            <span class="horario-dia">${dia}</span>
+            <input type="checkbox" class="horario-checkbox" id="ativo-${index}" ${horario.ativo ? 'checked' : ''} 
+              onchange="toggleHorario(${index})">
+            <input type="time" class="horario-time" id="inicio-${index}" value="${horario.hora_inicio || '08:00'}"
+              ${!horario.ativo ? 'disabled' : ''}>
+            <input type="time" class="horario-time" id="fim-${index}" value="${horario.hora_fim || '18:00'}"
+              ${!horario.ativo ? 'disabled' : ''}>
+          `;
+          grid.appendChild(item);
         });
+      } catch (error) {
+        console.error('Erro ao carregar horários:', error);
+      }
+    }
 
-        // ─── Carregar info do usuário na sidebar ────────────────────────
-        window.addEventListener('perfilCarregado', async (e) => {
-            const perfil = e.detail;
-            if (!perfil) return;
+    function toggleHorario(index) {
+      const ativo = document.getElementById(`ativo-${index}`).checked;
+      document.getElementById(`inicio-${index}`).disabled = !ativo;
+      document.getElementById(`fim-${index}`).disabled = !ativo;
+    }
 
-            console.log('✅ [Dashboard] Perfil carregado:', perfil.nome_empresa || perfil.nome);
+    async function salvarHorarios() {
+      try {
+        const supabase = window.getSupabase();
+        const horarios = DIAS.map((_, i) => ({
+          tenant_id: tenantData.id,
+          dia_semana: i,
+          ativo: document.getElementById(`ativo-${i}`).checked,
+          hora_inicio: document.getElementById(`inicio-${i}`).value,
+          hora_fim: document.getElementById(`fim-${i}`).value
+        }));
 
-            if (perfil.role !== 'dono') {
-                console.log('❌ [Dashboard] Acesso negado');
-                window.location.href = 'dashboard-profissional.html';
-                return;
-            }
+        await supabase.from('horarios_atendimento').delete().eq('tenant_id', tenantData.id);
+        await supabase.from('horarios_atendimento').insert(horarios);
 
-            perfilCarregado = perfil;
+        mostrarMensagem('Horários salvos com sucesso!', 'success', 'horarios-config');
+      } catch (error) {
+        console.error('Erro ao salvar horários:', error);
+        mostrarMensagem('Erro ao salvar horários', 'error', 'horarios-config');
+      }
+    }
 
-            if (perfil.logo_url) {
-                const logoIcon = document.getElementById('logoIcon');
-                logoIcon.innerHTML = `<img src="${perfil.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
-            }
+    function previewLogo(input) {
+      const file = input.files[0];
+      if (!file) return;
 
-            const primeiraLetra = (perfil.nome_empresa || perfil.nome || perfil.email || 'U')[0].toUpperCase();
-            document.getElementById('userAvatar').textContent = primeiraLetra;
-            document.getElementById('userName').textContent = perfil.nome_empresa || perfil.nome || perfil.email;
-            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
-            document.getElementById('tenantName').textContent = perfil.nome_empresa || perfil.nome || 'Meu Estabelecimento';
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('logoPreviewImg').src = e.target.result;
+        document.getElementById('logoPreviewImg').style.display = 'block';
+        document.getElementById('logoPlaceholder').style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
 
-            await loadDashboard();
-        });
-
-        // ─── Carregar Dashboard ────────────────────────────────────────
-        async function loadDashboard() {
-            try {
-                console.log('📊 [Dashboard] Carregando dados...');
-                
-                const hoje = new Date().toISOString().split('T')[0];
-                const agora = new Date();
-
-                const amanha = new Date();
-                amanha.setDate(amanha.getDate() + 1);
-                const amanhaStr = amanha.toISOString().split('T')[0];
-
-                const [agendamentosHoje, agendamentosAmanha, financeiroHoje, financeiroMes, todosAgs] = await Promise.all([
-                    DB.agendamentos.listarPorData(hoje),
-                    DB.agendamentos.listarPorData(amanhaStr),
-                    DB.financeiro.faturamentoDia(hoje),
-                    DB.financeiro.faturamentoMes(agora.getFullYear(), agora.getMonth() + 1),
-                    DB.agendamentos.listar()
-                ]);
-
-                todosAgendamentos = todosAgs || [];
-
-                document.getElementById('appointmentsToday').textContent = agendamentosHoje?.length || 0;
-                document.getElementById('appointmentsTomorrow').textContent = agendamentosAmanha?.length || 0;
-                document.getElementById('revenueToday').textContent =
-                    'R$ ' + (financeiroHoje?.faturamentoBruto || 0).toFixed(2).replace('.', ',');
-                document.getElementById('revenuePeriod').textContent =
-                    'R$ ' + (financeiroMes?.faturamentoBruto || 0).toFixed(2).replace('.', ',');
-
-                console.log('✅ [Dashboard] Métricas carregadas');
-
-                await loadCharts();
-                await loadUpcomingAppointments();
-                await loadFormOptions();
-                await calcularComparacao();
-
-            } catch (error) {
-                console.error('❌ [Dashboard] Erro ao carregar:', error);
-            }
+    async function atualizarLogo() {
+      try {
+        const file = document.getElementById('logoFile').files[0];
+        if (!file) {
+          mostrarMensagem('Selecione um arquivo', 'error', 'minha-empresa-config');
+          return;
         }
 
-        // ─── Gráficos ──────────────────────────────────────────────────
-        async function loadCharts() {
-            try {
-                const hoje = new Date();
-                let dias = [];
-                let diasLabel = '';
+        const supabase = window.getSupabase();
+        const ext = file.name.split('.').pop();
+        const path = `${tenantData.id}/logo-empresa.${ext}`;
 
-                if (periodoAtual === '7d') {
-                    for (let i = 6; i >= 0; i--) {
-                        const d = new Date();
-                        d.setDate(d.getDate() - i);
-                        dias.push(d.toISOString().split('T')[0]);
-                    }
-                    diasLabel = 'Últimos 7 dias';
-                } else if (periodoAtual === '14d') {
-                    for (let i = 13; i >= 0; i--) {
-                        const d = new Date();
-                        d.setDate(d.getDate() - i);
-                        dias.push(d.toISOString().split('T')[0]);
-                    }
-                    diasLabel = 'Últimas 2 semanas';
-                } else if (periodoAtual === '30d') {
-                    for (let i = 29; i >= 0; i--) {
-                        const d = new Date();
-                        d.setDate(d.getDate() - i);
-                        dias.push(d.toISOString().split('T')[0]);
-                    }
-                    diasLabel = 'Últimos 30 dias';
-                }
+        const { error: uploadError } = await supabase.storage
+          .from('logos')
+          .upload(path, file, { upsert: true });
 
-                const resultados = await Promise.all(
-                    dias.map(d => DB.agendamentos.listarPorData(d))
-                );
+        if (uploadError) throw uploadError;
 
-                const labels = dias.map(d => {
-                    const [, mes, dia] = d.split('-');
-                    return `${dia}/${mes}`;
-                });
+        const { data } = supabase.storage.from('logos').getPublicUrl(path);
 
-                const valores = resultados.map(lista =>
-                    lista?.reduce((acc, ag) => acc + parseFloat(ag.valor || 0), 0) || 0
-                );
+        await supabase.from('tenants').update({ logo_url: data.publicUrl }).eq('id', tenantData.id);
 
-                const quantidades = resultados.map(lista => lista?.length || 0);
+        tenantData.logo_url = data.publicUrl;
+        document.getElementById('tenantLogo').src = data.publicUrl;
 
-                const temDados = valores.some(v => v > 0) || quantidades.some(q => q > 0);
+        mostrarMensagem('Logo atualizado com sucesso!', 'success', 'minha-empresa-config');
+      } catch (error) {
+        console.error('Erro ao atualizar logo:', error);
+        mostrarMensagem('Erro ao atualizar logo', 'error', 'minha-empresa-config');
+      }
+    }
 
-                if (!temDados) {
-                    document.getElementById('revenueChartContainer').innerHTML = 
-                        '<div class="pro-empty-chart"><i class="fas fa-chart-line"></i><p>Nenhum dado disponível</p></div>';
-                    document.getElementById('appointmentsChartContainer').innerHTML = 
-                        '<div class="pro-empty-chart"><i class="fas fa-calendar"></i><p>Nenhum dado disponível</p></div>';
-                    return;
-                }
+    async function gerarLinkProfissional() {
+      const linkInput = document.getElementById('linkProfissional');
+      const link = `${window.location.origin}/cadastro-profissional.html?tenant_id=${tenantData.id}`;
+      linkInput.value = link;
+    }
 
-                if (revenueChart) revenueChart.destroy();
-                revenueChart = new Chart(document.getElementById('revenueChart'), {
-                    type: 'line',
-                    data: {
-                        labels,
-                        datasets: [{
-                            label: 'Faturamento (R$)',
-                            data: valores,
-                            borderColor: '#6366F1',
-                            backgroundColor: 'rgba(99,102,241,0.1)',
-                            tension: 0.4,
-                            fill: true,
-                            pointRadius: 4,
-                            pointHoverRadius: 6
-                        }]
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: true, position: 'top' }
-                        }
-                    }
-                });
+    function copiarLink() {
+      const link = document.getElementById('linkProfissional');
+      link.select();
+      document.execCommand('copy');
+      alert('Link copiado!');
+    }
 
-                if (appointmentsChart) appointmentsChart.destroy();
-                appointmentsChart = new Chart(document.getElementById('appointmentsChart'), {
-                    type: 'bar',
-                    data: {
-                        labels,
-                        datasets: [{
-                            label: 'Agendamentos',
-                            data: quantidades,
-                            backgroundColor: '#10B981',
-                            borderRadius: 6,
-                            borderSkipped: false
-                        }]
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: true, position: 'top' }
-                        }
-                    }
-                });
+    function mostrarMensagem(msg, tipo, elemento) {
+      const msgEl = document.querySelector(`#${elemento} .message`) || 
+                    (() => {
+                      const el = document.createElement('div');
+                      el.className = `message ${tipo}`;
+                      document.getElementById(elemento)?.insertBefore(el, document.getElementById(elemento)?.firstChild);
+                      return el;
+                    })();
+      
+      msgEl.textContent = msg;
+      msgEl.className = `message ${tipo}`;
+      msgEl.style.display = 'block';
 
-            } catch (error) {
-                console.error('❌ [Dashboard] Erro ao carregar gráficos:', error);
-            }
-        }
+      setTimeout(() => {
+        msgEl.style.display = 'none';
+      }, 3000);
+    }
 
-        // ─── Próximos Agendamentos ─────────────────────────────────────
-        async function loadUpcomingAppointments() {
-            try {
-                const hoje = new Date().toISOString().split('T')[0];
-                const agendamentos = await DB.agendamentos.listar();
-                
-                const proximosAgendamentos = (agendamentos || [])
-                    .filter(ag => ag.data && ag.data >= hoje)
-                    .sort((a, b) => `${a.data}${a.hora || ''}`.localeCompare(`${b.data}${b.hora || ''}`))
-                    .slice(0, 10); // FEATURE #8: Mostra mais que 5
+    function mostrarTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+      
+      const tabEl = document.getElementById(`${tab}-tab`);
+      if (tabEl) {
+        tabEl.classList.add('active');
+      }
 
-                const tbody = document.getElementById('upcomingAppointments');
+      const linkEl = document.querySelector(`[onclick="mostrarTab('${tab}')"]`);
+      if (linkEl) {
+        linkEl.classList.add('active');
+      }
 
-                if (!proximosAgendamentos || proximosAgendamentos.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="6" class="pro-empty-state">
-                                <i class="fas fa-calendar-times pro-empty-state-icon"></i>
-                                <p>Nenhum agendamento próximo</p>
-                            </td>
-                        </tr>`;
-                    return;
-                }
+      const titles = {
+        'dashboard': 'Dashboard',
+        'agenda': 'Agenda',
+        'clientes': 'Clientes',
+        'servicos': 'Serviços',
+        'profissionais': 'Profissionais',
+        'financeiro': 'Financeiro',
+        'relatorios': 'Relatórios',
+        'whatsapp': 'WhatsApp',
+        'configuracoes': 'Configurações',
+        'minha-conta': 'Minha Conta'
+      };
 
-                const statusColors = {
-                    agendado: 'primary',
-                    confirmado: 'info',
-                    em_atendimento: 'warning',
-                    concluido: 'success',
-                    cancelado: 'error'
-                };
+      document.getElementById('pageTitle').textContent = titles[tab] || 'Dashboard';
+    }
 
-                tbody.innerHTML = proximosAgendamentos.map(apt => {
-                    const dataHora = apt.data && apt.hora ? `${apt.data} às ${apt.hora}` : '—';
-                    const statusColor = statusColors[apt.status] || 'primary';
-                    
-                    return `
-                        <tr>
-                            <td>${apt.cliente?.nome || '—'}</td>
-                            <td>${apt.servico?.nome || '—'}</td>
-                            <td>${apt.profissional?.nome || '—'}</td>
-                            <td>${dataHora}</td>
-                            <td>
-                                <span class="pro-badge pro-badge-${statusColor}">
-                                    ${apt.status || '—'}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="pro-table-actions">
-                                    <button class="pro-action-btn" title="Editar" onclick="editarAgendamento('${apt.id}')">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
+    function abaConfig(aba) {
+      document.querySelectorAll('[id$="-config"]').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
 
-            } catch (error) {
-                console.error('❌ [Dashboard] Erro ao carregar agendamentos:', error);
-            }
-        }
+      document.getElementById(`${aba}-config`).classList.add('active');
+      event.target.classList.add('active');
+    }
 
-        // ─── Opções do Formulário ──────────────────────────────────────
-        async function loadFormOptions() {
-            try {
-                const [clientes, servicos, profissionais] = await Promise.all([
-                    DB.clientes.listar(),
-                    DB.servicos.listar(),
-                    DB.profissionais.listar()
-                ]);
+    async function logout() {
+      const supabase = window.getSupabase();
+      await supabase.auth.signOut();
+      window.location.href = 'index.html';
+    }
 
-                document.getElementById('appointmentClient').innerHTML =
-                    '<option value="">Selecione um cliente</option>' +
-                    (clientes || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+    function mostrarAlterarSenha() {
+      alert('Funcionalidade em desenvolvimento');
+    }
 
-                document.getElementById('appointmentService').innerHTML =
-                    '<option value="">Selecione um serviço</option>' +
-                    (servicos || []).map(s => `<option value="${s.id}">${s.nome} - R$ ${parseFloat(s.preco || 0).toFixed(2)}</option>`).join('');
-
-                document.getElementById('appointmentProfessional').innerHTML =
-                    '<option value="">Selecione um profissional</option>' +
-                    (profissionais || []).map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-
-                document.getElementById('appointmentDate').value = new Date().toISOString().split('T')[0];
-
-            } catch (error) {
-                console.error('❌ [Dashboard] Erro ao carregar opções:', error);
-            }
-        }
-
-        // ─── Salvar Agendamento ────────────────────────────────────────
-        async function saveAppointment(e) {
-            e.preventDefault();
-            try {
-                const servicoId = document.getElementById('appointmentService').value;
-                const servico = await DB.servicos.buscar(servicoId);
-
-                const dados = {
-                    cliente_id: document.getElementById('appointmentClient').value,
-                    servico_id: servicoId,
-                    profissional_id: document.getElementById('appointmentProfessional').value,
-                    data: document.getElementById('appointmentDate').value,
-                    hora: document.getElementById('appointmentTime').value,
-                    status: document.getElementById('appointmentStatus').value,
-                    valor: servico ? servico.preco : 0,
-                    observacoes: document.getElementById('appointmentNotes').value
-                };
-
-                const resultado = await DB.agendamentos.criar(dados);
-
-                if (resultado.success || resultado.data) {
-                    adicionarNotificacao('✓ Sucesso', 'Agendamento criado com sucesso!', 'sucesso');
-                    fecharModalAgendamento();
-                    document.getElementById('appointmentForm').reset();
-                    await loadDashboard();
-                } else {
-                    throw new Error(resultado.error || 'Erro desconhecido');
-                }
-            } catch (error) {
-                console.error('❌ [Dashboard] Erro ao salvar:', error);
-                alert('❌ Erro ao salvar agendamento: ' + error.message);
-            }
-        }
-
-        // ─── Editar Agendamento ────────────────────────────────────────
-        function editarAgendamento(id) {
-            console.log('✏️ [Dashboard] Editando agendamento:', id);
-            // TODO: Implementar edição
-        }
-
-        // ─── Logout ────────────────────────────────────────────────────
-        async function logout() {
-            if (confirm('Deseja realmente sair?')) {
-                console.log('🚪 [Dashboard] Saindo...');
-                await Auth.signOut();
-            }
-        }
-
-        // ─── Inicializar ───────────────────────────────────────────────
-        initDarkMode();
-        console.log('🚀 [Dashboard] Página carregada');
-    </script>
+    // INICIALIZAR
+    carregarDados();
+    gerarLinkProfissional();
+  </script>
 </body>
 </html>
