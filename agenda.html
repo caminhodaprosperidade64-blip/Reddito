@@ -579,10 +579,10 @@
             5: { bg: 'bg-prof-5', badge: 'badge-prof-5', slot: 'slot-prof-5' }
         };
 
-        window.addEventListener('DOMContentLoaded', async () => {
+        window.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Iniciando agenda...');
             initDarkMode();
-            await loadAll();
+            loadAll();
         });
 
         window.addEventListener('storage', e => {
@@ -593,18 +593,6 @@
             try {
                 console.log('📂 Carregando dados...');
                 
-                // Tentar carregar informações do usuário
-                try {
-                    const user = await getPerfilAtual();
-                    if (user) {
-                        document.getElementById('userName').textContent = user.nome || 'Usuário';
-                        document.getElementById('userRole').textContent = user.role || '-';
-                    }
-                } catch (e) {
-                    console.warn('⚠️ Não conseguiu carregar perfil:', e);
-                    document.getElementById('userName').textContent = 'Usuário';
-                }
-
                 allProfessionals = await DB.profissionais.listar();
                 allClients = await DB.clientes.listar();
                 allServices = await DB.servicos.listar();
@@ -617,7 +605,7 @@
 
                 populateSelects();
                 renderCalendar();
-                await renderSchedule();
+                renderSchedule();
             } catch (error) {
                 console.error('❌ Erro ao carregar dados:', error);
             }
@@ -816,9 +804,8 @@
 
                 if (result.success) {
                     closeModal();
-                    await renderSchedule();
+                    renderSchedule();
                     console.log('✅ Agendamento criado com sucesso!');
-                    alert('Agendamento criado!');
                 } else {
                     alert('Erro: ' + result.error);
                     console.error('❌ Erro ao criar agendamento:', result.error);
