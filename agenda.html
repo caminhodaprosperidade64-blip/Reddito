@@ -6,9 +6,6 @@
     <title>Agenda de Agendamentos</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/pro-design-system.css">
-    <link rel="stylesheet" href="css/pro-components.css">
-    <link rel="stylesheet" href="css/dark-mode.css">
     <style>
         * {
             margin: 0;
@@ -44,10 +41,6 @@
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .mini-calendar {
-            width: 100%;
         }
 
         .calendar-header {
@@ -157,31 +150,26 @@
             padding: 8px;
             transition: all 0.2s;
             font-size: 13px;
+            text-align: center;
         }
 
         .time-slot:hover {
-            background: #f0f0f0;
+            opacity: 0.8;
         }
 
         .time-slot.booked {
-            cursor: pointer;
-            border-radius: 6px;
-            padding: 8px;
             color: white;
             font-weight: 500;
         }
 
         .time-slot.empty {
             background: #f9f9f9;
+            color: #666;
         }
 
         .bg-prof-1 { background: #818cf8; }
         .bg-prof-2 { background: #ec4899; }
         .bg-prof-3 { background: #06b6d4; }
-
-        .badge-prof-1 { background: #818cf8; }
-        .badge-prof-2 { background: #ec4899; }
-        .badge-prof-3 { background: #06b6d4; }
 
         .modal {
             display: none;
@@ -319,11 +307,6 @@
             background: #dc2626;
         }
 
-        .btn-danger:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
         .payment-methods {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -420,56 +403,6 @@
         </div>
     </div>
 
-    <!-- MODAL: NOVO AGENDAMENTO -->
-    <div id="appointmentModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Novo Agendamento</h2>
-                <button class="close-btn" onclick="closeModal('appointmentModal')">&times;</button>
-            </div>
-            <form id="appointmentForm" onsubmit="saveAppointment(event)">
-                <div class="form-group">
-                    <label for="newProfessional">Profissional:</label>
-                    <select id="newProfessional" required disabled>
-                        <option value="">Carregando...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="newDate">Data:</label>
-                    <input type="text" id="newDate" required disabled>
-                </div>
-                <div class="form-group">
-                    <label for="newTime">Horário:</label>
-                    <input type="text" id="newTime" required disabled>
-                </div>
-                <div class="form-group">
-                    <label for="newClient">Cliente:</label>
-                    <select id="newClient" required>
-                        <option value="">Selecione um cliente</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="newService">Serviço:</label>
-                    <select id="newService" required>
-                        <option value="">Selecione um serviço</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="newValue">Valor:</label>
-                    <input type="number" id="newValue" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="newNotes">Observações:</label>
-                    <textarea id="newNotes"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary" onclick="closeModal('appointmentModal')">Cancelar</button>
-                    <button type="submit" class="btn-primary">Agendar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- MODAL: VISUALIZAR AGENDAMENTO -->
     <div id="viewModal" class="modal">
         <div class="modal-content">
@@ -532,9 +465,7 @@
             <form id="editForm" onsubmit="updateAppointment(event)">
                 <div class="form-group">
                     <label for="editProfessional">Profissional:</label>
-                    <select id="editProfessional" required>
-                        <option value="">Selecione</option>
-                    </select>
+                    <input type="text" id="editProfessional" disabled>
                 </div>
                 <div class="form-group">
                     <label for="editDate">Data:</label>
@@ -546,15 +477,11 @@
                 </div>
                 <div class="form-group">
                     <label for="editClient">Cliente:</label>
-                    <select id="editClient" required>
-                        <option value="">Selecione</option>
-                    </select>
+                    <input type="text" id="editClient" disabled>
                 </div>
                 <div class="form-group">
                     <label for="editService">Serviço:</label>
-                    <select id="editService" required>
-                        <option value="">Selecione</option>
-                    </select>
+                    <input type="text" id="editService" disabled>
                 </div>
                 <div class="form-group">
                     <label for="editValue">Valor:</label>
@@ -589,25 +516,21 @@
 
                 <label style="display: block; margin-bottom: 10px; font-weight: 600;">Forma de Pagamento:</label>
                 <div class="payment-methods">
-                    <div class="payment-card" onclick="selectPayment('dinheiro')">
+                    <div class="payment-card" onclick="selectPayment(event, 'dinheiro')">
                         <div class="payment-icon">💵</div>
                         <div class="payment-label">Dinheiro</div>
-                        <input type="radio" name="paymentMethod" value="dinheiro" style="display: none;">
                     </div>
-                    <div class="payment-card" onclick="selectPayment('pix')">
+                    <div class="payment-card" onclick="selectPayment(event, 'pix')">
                         <div class="payment-icon">📱</div>
                         <div class="payment-label">PIX</div>
-                        <input type="radio" name="paymentMethod" value="pix" style="display: none;">
                     </div>
-                    <div class="payment-card" onclick="selectPayment('debito')">
+                    <div class="payment-card" onclick="selectPayment(event, 'debito')">
                         <div class="payment-icon">🏧</div>
                         <div class="payment-label">Débito</div>
-                        <input type="radio" name="paymentMethod" value="debito" style="display: none;">
                     </div>
-                    <div class="payment-card" onclick="selectPayment('credito')">
+                    <div class="payment-card" onclick="selectPayment(event, 'credito')">
                         <div class="payment-icon">💳</div>
                         <div class="payment-label">Crédito</div>
-                        <input type="radio" name="paymentMethod" value="credito" style="display: none;">
                     </div>
                 </div>
 
@@ -657,52 +580,12 @@
                 allProfessionals = await DB.profissionais.listar();
                 allClients = await DB.clientes.listar();
                 allServices = await DB.servicos.listar();
-                console.log('✅ Dados carregados');
-                populateSelects();
+                console.log('✅ Profissionais:', allProfessionals.length);
+                console.log('✅ Clientes:', allClients.length);
+                console.log('✅ Serviços:', allServices.length);
             } catch (error) {
                 console.error('❌ Erro ao carregar dados:', error);
             }
-        }
-
-        function populateSelects() {
-            // Novo agendamento
-            const newProfSelect = document.getElementById('newProfessional');
-            newProfSelect.innerHTML = '<option value="">Selecione um profissional</option>';
-            allProfessionals.forEach(prof => {
-                newProfSelect.innerHTML += `<option value="${prof.id}">${prof.nome}</option>`;
-            });
-            newProfSelect.disabled = false;
-
-            const newClientSelect = document.getElementById('newClient');
-            newClientSelect.innerHTML = '<option value="">Selecione um cliente</option>';
-            allClients.forEach(client => {
-                newClientSelect.innerHTML += `<option value="${client.id}">${client.nome}</option>`;
-            });
-
-            const newServiceSelect = document.getElementById('newService');
-            newServiceSelect.innerHTML = '<option value="">Selecione um serviço</option>';
-            allServices.forEach(service => {
-                newServiceSelect.innerHTML += `<option value="${service.id}">${service.nome} - R$ ${service.preco.toFixed(2)}</option>`;
-            });
-
-            // Editar agendamento
-            const editProfSelect = document.getElementById('editProfessional');
-            editProfSelect.innerHTML = '<option value="">Selecione</option>';
-            allProfessionals.forEach(prof => {
-                editProfSelect.innerHTML += `<option value="${prof.id}">${prof.nome}</option>`;
-            });
-
-            const editClientSelect = document.getElementById('editClient');
-            editClientSelect.innerHTML = '<option value="">Selecione</option>';
-            allClients.forEach(client => {
-                editClientSelect.innerHTML += `<option value="${client.id}">${client.nome}</option>`;
-            });
-
-            const editServiceSelect = document.getElementById('editService');
-            editServiceSelect.innerHTML = '<option value="">Selecione</option>';
-            allServices.forEach(service => {
-                editServiceSelect.innerHTML += `<option value="${service.id}">${service.nome} - R$ ${service.preco.toFixed(2)}</option>`;
-            });
         }
 
         // CALENDÁRIO
@@ -778,11 +661,11 @@
         async function renderSchedule() {
             const dateStr = selectedDay.toISOString().split('T')[0];
             document.getElementById('selectedDateTitle').textContent = 
-                `Agendamentos - ${selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+                `Agendamentos - ${selectedDay.toLocaleDateString('pt-BR')}`;
 
             try {
                 allAppointments = await DB.agendamentos.listarPorData(dateStr);
-                console.log(`✅ ${allAppointments.length} agendamentos carregados`);
+                console.log(`✅ ${allAppointments.length} agendamentos carregados para ${dateStr}`);
             } catch (error) {
                 console.error('❌ Erro ao carregar agendamentos:', error);
                 allAppointments = [];
@@ -815,16 +698,16 @@
 
                     if (apt) {
                         const slot = document.createElement('div');
-                        slot.className = `time-slot booked ${COLORS[`prof-${idx + 1}`]?.bg || 'bg-prof-1'}`;
-                        slot.textContent = `${apt.cliente?.nome || 'Cliente'} - ${apt.servico?.nome || 'Serviço'}`;
-                        slot.style.cursor = 'pointer';
+                        const colorClass = COLORS[`prof-${(idx % 3) + 1}`]?.bg || 'bg-prof-1';
+                        slot.className = `time-slot booked ${colorClass}`;
+                        slot.textContent = `${apt.cliente?.nome || 'Cliente'}\n${apt.servico?.nome || 'Serviço'}`;
+                        slot.style.whiteSpace = 'pre-wrap';
                         slot.onclick = () => viewAppointment(apt.id);
                         td.appendChild(slot);
                     } else {
                         const slot = document.createElement('div');
                         slot.className = 'time-slot empty';
                         slot.textContent = '+ Agendar';
-                        slot.onclick = () => openNewAppointmentModal(prof.id, prof.nome, dateStr, time);
                         td.appendChild(slot);
                     }
 
@@ -862,52 +745,6 @@
             document.getElementById(modalId).classList.remove('active');
         }
 
-        function openNewAppointmentModal(profId, profName, date, time) {
-            document.getElementById('newProfessional').value = profId;
-            document.getElementById('newDate').value = date;
-            document.getElementById('newTime').value = time;
-            openModal('appointmentModal');
-        }
-
-        // NOVO AGENDAMENTO
-        async function saveAppointment(e) {
-            e.preventDefault();
-            
-            const profissional_id = document.getElementById('newProfessional').value;
-            const data = document.getElementById('newDate').value;
-            const hora = document.getElementById('newTime').value + ':00';
-            const cliente_id = document.getElementById('newClient').value;
-            const servico_id = document.getElementById('newService').value;
-            const valor = parseFloat(document.getElementById('newValue').value);
-            const observacoes = document.getElementById('newNotes').value;
-
-            if (!profissional_id || !cliente_id || !servico_id) {
-                alert('Por favor, preencha todos os campos obrigatórios');
-                return;
-            }
-
-            try {
-                await DB.agendamentos.criar({
-                    profissional_id,
-                    cliente_id,
-                    servico_id,
-                    data,
-                    hora,
-                    valor,
-                    observacoes,
-                    status: 'confirmado'
-                });
-                console.log('✅ Agendamento criado');
-                alert('Agendamento criado com sucesso!');
-                closeModal('appointmentModal');
-                document.getElementById('appointmentForm').reset();
-                await renderSchedule();
-            } catch (error) {
-                console.error('❌ Erro ao criar agendamento:', error);
-                alert('Erro ao criar agendamento: ' + error.message);
-            }
-        }
-
         // VISUALIZAR AGENDAMENTO
         async function viewAppointment(id) {
             currentAppointmentId = id;
@@ -918,6 +755,8 @@
                 return;
             }
 
+            console.log('📋 Visualizando agendamento:', apt);
+
             document.getElementById('viewProf').textContent = apt.profissional?.nome || '-';
             document.getElementById('viewClient').textContent = apt.cliente?.nome || '-';
             document.getElementById('viewService').textContent = apt.servico?.nome || '-';
@@ -927,7 +766,6 @@
             document.getElementById('viewStatus').textContent = apt.status || 'confirmado';
             document.getElementById('viewNotes').value = apt.observacoes || '';
 
-            // Controlar visibilidade dos botões
             const editBtn = document.getElementById('viewEditBtn');
             const cancelBtn = document.getElementById('viewCancelBtn');
             const finalizeBtn = document.getElementById('viewFinalizeBtn');
@@ -950,11 +788,11 @@
             const apt = allAppointments.find(a => a.id === currentAppointmentId);
             if (!apt) return;
 
-            document.getElementById('editProfessional').value = apt.profissional_id;
+            document.getElementById('editProfessional').value = apt.profissional?.nome || '-';
             document.getElementById('editDate').value = apt.data;
             document.getElementById('editTime').value = apt.hora.substring(0, 5);
-            document.getElementById('editClient').value = apt.cliente_id;
-            document.getElementById('editService').value = apt.servico_id;
+            document.getElementById('editClient').value = apt.cliente?.nome || '-';
+            document.getElementById('editService').value = apt.servico?.nome || '-';
             document.getElementById('editValue').value = apt.valor;
             document.getElementById('editNotes').value = apt.observacoes || '';
 
@@ -968,11 +806,8 @@
             if (!currentAppointmentId) return;
 
             const updates = {
-                profissional_id: document.getElementById('editProfessional').value,
                 data: document.getElementById('editDate').value,
                 hora: document.getElementById('editTime').value + ':00',
-                cliente_id: document.getElementById('editClient').value,
-                servico_id: document.getElementById('editService').value,
                 valor: parseFloat(document.getElementById('editValue').value),
                 observacoes: document.getElementById('editNotes').value
             };
@@ -984,7 +819,7 @@
                 closeModal('editModal');
                 await renderSchedule();
             } catch (error) {
-                console.error('❌ Erro ao atualizar agendamento:', error);
+                console.error('❌ Erro ao atualizar:', error);
                 alert('Erro ao atualizar: ' + error.message);
             }
         }
@@ -1020,26 +855,21 @@
             document.getElementById('finalizeNotes').value = '';
             selectedPaymentMethod = null;
 
-            // Reset payment selection
             document.querySelectorAll('.payment-card').forEach(card => {
                 card.classList.remove('selected');
-            });
-            document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-                radio.checked = false;
             });
 
             closeModal('viewModal');
             openModal('finalizeModal');
         }
 
-        function selectPayment(method) {
+        function selectPayment(event, method) {
             selectedPaymentMethod = method;
             document.querySelectorAll('.payment-card').forEach(card => {
                 card.classList.remove('selected');
             });
             event.currentTarget.classList.add('selected');
-            document.querySelector(`input[value="${method}"]`).checked = true;
-            console.log('Pagamento selecionado:', method);
+            console.log('💳 Pagamento selecionado:', method);
         }
 
         async function finalizarAgendamento() {
@@ -1058,7 +888,7 @@
 
             try {
                 await DB.agendamentos.atualizar(currentAppointmentId, updates);
-                console.log('✅ Agendamento finalizado');
+                console.log('✅ Agendamento finalizado com pagamento:', selectedPaymentMethod);
                 alert('Agendamento finalizado com sucesso!');
                 closeModal('finalizeModal');
                 await renderSchedule();
