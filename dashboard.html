@@ -1,1060 +1,1144 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard – RedditoApp</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase-config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/auth-guard.js"></script>
-
-  <style>
-    :root {
-      --bg-primary: #ffffff;
-      --bg-secondary: #f8fafc;
-      --text-primary: #1e293b;
-      --text-secondary: #64748b;
-      --border-color: #e2e8f0;
-      --accent: #667eea;
-      --accent-dark: #764ba2;
-    }
-
-    body.dark-mode {
-      --bg-primary: #0f172a;
-      --bg-secondary: #1e293b;
-      --text-primary: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --border-color: #334155;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-secondary);
-      color: var(--text-primary);
-      transition: all 0.3s ease;
-    }
-
-    .dashboard-container {
-      display: flex;
-      height: 100vh;
-    }
-
-    /* ==================== SIDEBAR ==================== */
-    .sidebar {
-      width: 280px;
-      background: var(--bg-primary);
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .sidebar-logo {
-      padding: 20px;
-      text-align: center;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .sidebar-logo img {
-      height: 40px;
-      object-fit: contain;
-    }
-
-    .sidebar-nav {
-      flex: 1;
-      padding: 20px 0;
-    }
-
-    .sidebar-nav a {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 20px;
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: all 0.2s;
-      border-left: 3px solid transparent;
-    }
-
-    .sidebar-nav a:hover,
-    .sidebar-nav a.active {
-      color: var(--accent);
-      background: rgba(102, 126, 234, 0.1);
-      border-left-color: var(--accent);
-    }
-
-    .sidebar-nav a i {
-      width: 20px;
-    }
-
-    .sidebar-profile {
-      padding: 20px;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .sidebar-profile img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .sidebar-profile-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .sidebar-profile-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .sidebar-profile-role {
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-
-    /* ==================== MAIN CONTENT ==================== */
-    .main-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .header {
-      background: var(--bg-primary);
-      border-bottom: 1px solid var(--border-color);
-      padding: 20px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .header-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .btn-theme {
-      background: transparent;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      color: var(--text-primary);
-      transition: color 0.2s;
-    }
-
-    .btn-theme:hover {
-      color: var(--accent);
-    }
-
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 30px;
-    }
-
-    /* ==================== TENANT CARD ==================== */
-    .tenant-card {
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 30px;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 20px;
-      align-items: start;
-    }
-
-    .tenant-logo {
-      width: 80px;
-      height: 80px;
-      border-radius: 12px;
-      background: var(--bg-secondary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .tenant-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .tenant-info h2 {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 8px;
-    }
-
-    .tenant-info p {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
-    }
-
-    .tenant-badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-top: 12px;
-    }
-
-    .tenant-badge.trial {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .tenant-badge.plan {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-
-    /* ==================== TABS ==================== */
-    .tabs {
-      display: flex;
-      gap: 8px;
-      border-bottom: 1px solid var(--border-color);
-      margin-bottom: 24px;
-    }
-
-    .tab-button {
-      padding: 12px 16px;
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .tab-button.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-
-    .tab-button:hover {
-      color: var(--text-primary);
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    /* ==================== FORMS ==================== */
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 6px;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 14px;
-      font-family: inherit;
-      color: var(--text-primary);
-      background: var(--bg-primary);
-      transition: border-color 0.2s;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    input:disabled {
-      background: var(--bg-secondary);
-      color: var(--text-secondary);
-      cursor: not-allowed;
-    }
-
-    .logo-upload {
-      border: 2px dashed var(--border-color);
-      border-radius: 12px;
-      padding: 32px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .logo-upload:hover {
-      border-color: var(--accent);
-      background: rgba(102, 126, 234, 0.05);
-    }
-
-    .logo-upload input[type="file"] {
-      display: none;
-    }
-
-    .logo-preview {
-      width: 100px;
-      height: 100px;
-      border-radius: 8px;
-      object-fit: cover;
-      margin: 0 auto 12px;
-      display: none;
-    }
-
-    /* ==================== SCHEDULE GRID ==================== */
-    .schedule-grid {
-      display: grid;
-      gap: 16px;
-    }
-
-    .schedule-row {
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 16px;
-      display: grid;
-      grid-template-columns: 24px 120px 1fr 1fr 1fr;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .schedule-row input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--accent);
-    }
-
-    .schedule-day {
-      font-weight: 600;
-      color: var(--text-primary);
-      font-size: 14px;
-    }
-
-    .schedule-row input[type="time"] {
-      padding: 8px 10px;
-      font-size: 13px;
-    }
-
-    .schedule-row input[type="time"]:disabled {
-      background: var(--bg-secondary);
-      color: var(--text-secondary);
-    }
-
-    /* ==================== INVITE LINK ==================== */
-    .invite-box {
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 20px;
-      display: flex;
-      gap: 12px;
-    }
-
-    .invite-link {
-      flex: 1;
-      padding: 12px 14px;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      word-break: break-all;
-      font-family: monospace;
-    }
-
-    /* ==================== BUTTONS ==================== */
-    .btn {
-      padding: 12px 24px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      color: white;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .btn:hover {
-      opacity: 0.9;
-    }
-
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      border: 1px solid var(--border-color);
-    }
-
-    .btn-secondary:hover {
-      background: var(--border-color);
-    }
-
-    .btn-danger {
-      background: #ef4444;
-    }
-
-    /* ==================== MESSAGES ==================== */
-    .msg {
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-size: 14px;
-      display: none;
-    }
-
-    .msg-success {
-      background: #d1fae5;
-      color: #065f46;
-      border-left: 4px solid #10b981;
-    }
-
-    .msg-error {
-      background: #fee2e2;
-      color: #7f1d1d;
-      border-left: 4px solid #ef4444;
-    }
-
-    .msg.show {
-      display: block;
-    }
-
-    /* ==================== RESPONSIVE ==================== */
-    @media (max-width: 1024px) {
-      .sidebar {
-        width: 240px;
-      }
-      .schedule-row {
-        grid-template-columns: 24px 100px 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .dashboard-container {
-        flex-direction: column;
-      }
-      .sidebar {
-        width: 100%;
-        height: auto;
-        flex-direction: row;
-      }
-      .sidebar-nav {
-        display: flex;
-        flex: 1;
-        padding: 0;
-        overflow-x: auto;
-      }
-      .sidebar-nav a {
-        padding: 12px 16px;
-        white-space: nowrap;
-      }
-      .content {
-        padding: 16px;
-      }
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-      .tenant-card {
-        grid-template-columns: 1fr;
-      }
-      .schedule-row {
-        grid-template-columns: 24px 80px 1fr;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - RedditoApp</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/pro-design-system.css">
+    <link rel="stylesheet" href="css/pro-components.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/pro-ui.js"></script>
 </head>
 <body>
+    <div class="pro-app">
+        <!-- Sidebar -->
+        <aside class="pro-sidebar">
+            <div class="pro-sidebar-logo">
+                <a href="dashboard.html" class="pro-logo" id="sidebarLogo">
+                    <div class="pro-logo-icon" id="logoIcon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <span class="pro-logo-text">RedditoApp</span>
+                </a>
+            </div>
 
-  <div class="dashboard-container">
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="sidebar-logo">
-        <img src="https://ldnbivvqzpaqcdhxkywl.supabase.co/storage/v1/object/public/logos/7000a574-d4ad-4363-ae35-472e8cb26d3a/logo.jpeg" alt="RedditoApp" />
-      </div>
-      <nav class="sidebar-nav">
-        <a href="#dashboard" onclick="mostrarTab('dashboard')" class="nav-link active">
-          <i class="fas fa-chart-line"></i> Dashboard
-        </a>
-        <a href="#agenda" onclick="mostrarTab('agenda')" class="nav-link">
-          <i class="fas fa-calendar"></i> Agenda
-        </a>
-        <a href="#clientes" onclick="mostrarTab('clientes')" class="nav-link">
-          <i class="fas fa-users"></i> Clientes
-        </a>
-        <a href="#servicos" onclick="mostrarTab('servicos')" class="nav-link">
-          <i class="fas fa-briefcase"></i> Serviços
-        </a>
-        <a href="#profissionais" onclick="mostrarTab('profissionais')" class="nav-link">
-          <i class="fas fa-user-tie"></i> Profissionais
-        </a>
-        <a href="#financeiro" onclick="mostrarTab('financeiro')" class="nav-link">
-          <i class="fas fa-money-bill"></i> Financeiro
-        </a>
-        <a href="#relatorios" onclick="mostrarTab('relatorios')" class="nav-link">
-          <i class="fas fa-chart-bar"></i> Relatórios
-        </a>
-        <a href="#whatsapp" onclick="mostrarTab('whatsapp')" class="nav-link">
-          <i class="fas fa-whatsapp"></i> WhatsApp
-        </a>
-        <a href="#configuracoes" onclick="mostrarTab('configuracoes')" class="nav-link">
-          <i class="fas fa-cog"></i> Configurações
-        </a>
-      </nav>
-      <div class="sidebar-profile">
-        <img id="userAvatar" src="https://via.placeholder.com/40" alt="Perfil" />
-        <div class="sidebar-profile-info">
-          <div class="sidebar-profile-name" id="userName">Carregando...</div>
-          <div class="sidebar-profile-role" id="userRole">Proprietário</div>
-        </div>
-      </div>
+            <nav class="pro-sidebar-nav">
+                <div class="pro-nav-section">
+                    <a href="dashboard.html" class="pro-nav-item active">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="agenda.html" class="pro-nav-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Agenda</span>
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">Gestão</div>
+                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item">
+                        <i class="fas fa-users"></i>
+                        <span>Clientes</span>
+                    </a>
+                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item">
+                        <i class="fas fa-cut"></i>
+                        <span>Serviços</span>
+                    </a>
+                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Profissionais</span>
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">Financeiro</div>
+                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Financeiro</span>
+                    </a>
+                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">Automação</div>
+                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Conectar WhatsApp</span>
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="pro-sidebar-footer">
+                <div class="pro-user-profile">
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
+                    <div class="pro-user-info">
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
+                    </div>
+                    <button class="pro-user-logout" onclick="logout()" title="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="pro-main">
+            <header class="pro-header">
+                <div class="pro-search">
+                    <i class="fas fa-search pro-search-icon"></i>
+                    <input 
+                        type="text" 
+                        class="pro-search-input" 
+                        placeholder="Buscar clientes, agendamentos..."
+                        id="globalSearch"
+                    >
+                    <div id="searchResults" class="search-results-dropdown" style="display: none;"></div>
+                </div>
+                <div class="pro-header-actions">
+                    <button class="pro-header-btn notifications-btn" id="notificacoesBtn" title="Notificações" onclick="toggleNotificacoes()">
+                        <i class="fas fa-bell"></i>
+                        <span id="notificacoesBadge" style="display: none;" class="badge">0</span>
+                    </button>
+                    <div id="notificacoesDropdown" class="notifications-dropdown" style="display: none;">
+                        <div class="notifications-header">
+                            <h3>Notificações</h3>
+                            <button class="close-btn" onclick="toggleNotificacoes()"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div id="notificacoesList" class="notifications-list">
+                            <p style="text-align: center; color: #999; padding: 20px;">Nenhuma notificação</p>
+                        </div>
+                    </div>
+                    <div class="pro-header-divider"></div>
+                    <button class="pro-header-btn" id="themeToogle" title="Alternar Tema" onclick="toggleDarkMode()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
+                </div>
+            </header>
+
+            <div class="pro-content">
+                <div class="pro-page-header">
+                    <div class="pro-page-header-top">
+                        <div>
+                            <h1 class="pro-page-title">Dashboard</h1>
+                            <p class="pro-page-subtitle">Visão geral do seu negócio</p>
+                        </div>
+                        <div class="header-controls">
+                            <select id="periodoFiltro" onchange="atualizarPeriodo()" class="pro-select period-select">
+                                <option value="7d">Últimos 7 dias</option>
+                                <option value="14d">Últimas 2 semanas</option>
+                                <option value="30d">Últimos 30 dias</option>
+                                <option value="mes">Este mês</option>
+                            </select>
+                            <button class="pro-btn pro-btn-primary" onclick="abrirModalAgendamento()">
+                                <i class="fas fa-plus"></i>
+                                Novo Agendamento
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparação com período anterior -->
+                <div class="pro-comparison-card" id="comparisonCard" style="display: none;">
+                    <div class="comparison-content">
+                        <i class="fas fa-arrow-trending-up"></i>
+                        <span id="comparisonText"></span>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="pro-metrics-grid">
+                    <div class="pro-metric-card">
+                        <div class="pro-metric-header">
+                            <span class="pro-metric-label">Agendamentos Hoje</span>
+                            <div class="pro-metric-icon primary">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                        </div>
+                        <div class="pro-metric-value" id="appointmentsToday">0</div>
+                        <div class="pro-metric-change" id="appointmentsTodayChange"></div>
+                    </div>
+
+                    <div class="pro-metric-card">
+                        <div class="pro-metric-header">
+                            <span class="pro-metric-label">Agendamentos Amanhã</span>
+                            <div class="pro-metric-icon primary">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                        </div>
+                        <div class="pro-metric-value" id="appointmentsTomorrow">0</div>
+                        <div class="pro-metric-change" id="appointmentsTomorrowChange"></div>
+                    </div>
+
+                    <div class="pro-metric-card">
+                        <div class="pro-metric-header">
+                            <span class="pro-metric-label">Faturamento Hoje</span>
+                            <div class="pro-metric-icon success">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                        <div class="pro-metric-value" id="revenueToday">R$ 0</div>
+                        <div class="pro-metric-change" id="revenueTodayChange"></div>
+                    </div>
+
+                    <div class="pro-metric-card">
+                        <div class="pro-metric-header">
+                            <span class="pro-metric-label">Faturamento Período</span>
+                            <div class="pro-metric-icon success">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                        </div>
+                        <div class="pro-metric-value" id="revenuePeriod">R$ 0</div>
+                        <div class="pro-metric-change" id="revenuePeriodChange"></div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="pro-grid-2">
+                    <div class="pro-card">
+                        <div class="pro-card-header">
+                            <h3 class="pro-card-title">Faturamento</h3>
+                            <span class="chart-period" id="revenuePeriodLabel">Últimos 7 dias</span>
+                        </div>
+                        <div class="pro-card-body">
+                            <div style="height: 300px;" id="revenueChartContainer">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pro-card">
+                        <div class="pro-card-header">
+                            <h3 class="pro-card-title">Agendamentos por Dia</h3>
+                            <span class="chart-period" id="appointmentsPeriodLabel">Últimos 7 dias</span>
+                        </div>
+                        <div class="pro-card-body">
+                            <div style="height: 300px;" id="appointmentsChartContainer">
+                                <canvas id="appointmentsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Appointments -->
+                <div class="pro-card" style="margin-top: 24px;">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">Próximos Agendamentos</h3>
+                        <a href="agenda.html" class="pro-btn pro-btn-ghost pro-btn-sm">
+                            Ver todos <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="pro-card-body">
+                        <div class="pro-table-container">
+                            <table class="pro-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Serviço</th>
+                                        <th>Profissional</th>
+                                        <th>Data/Hora</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="upcomingAppointments">
+                                    <tr>
+                                        <td colspan="6" class="pro-empty-state">
+                                            <i class="fas fa-calendar-times pro-empty-state-icon"></i>
+                                            <p>Nenhum agendamento próximo</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <!-- MAIN CONTENT -->
-    <div class="main-content">
-      <div class="header">
-        <h1 class="header-title" id="pageTitle">Dashboard</h1>
-        <div class="header-actions">
-          <button class="btn-theme" onclick="toggleTheme()" title="Alternar tema">
-            <i class="fas fa-moon"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="content">
-        <div id="msgSuccess" class="msg msg-success"></div>
-        <div id="msgError" class="msg msg-error"></div>
-
-        <!-- TENANT CARD -->
-        <div class="tenant-card" id="tenantCard" style="display: none;">
-          <div class="tenant-logo">
-            <img id="tenantLogoImg" src="" alt="Logo" />
-          </div>
-          <div class="tenant-info">
-            <h2 id="tenantName">Carregando...</h2>
-            <p><i class="fas fa-phone"></i> <span id="tenantPhone">-</span></p>
-            <p><i class="fas fa-tag"></i> <span id="tenantSegment">-</span></p>
-            <span class="tenant-badge trial" id="trialBadge" style="display: none;">
-              <i class="fas fa-clock"></i> <span id="trialDays">7</span> dias de teste
-            </span>
-            <span class="tenant-badge plan" id="planBadge" style="display: none;">
-              Plano: <span id="planName">Básico</span>
-            </span>
-          </div>
-          <div></div>
-        </div>
-
-        <!-- TABS -->
-        <div id="content-dashboard" class="tab-content active">
-          <h2 style="margin-bottom: 20px;">Bem-vindo ao Dashboard! 👋</h2>
-          <p>Selecione uma opção na barra lateral para começar.</p>
-        </div>
-
-        <div id="content-agenda" class="tab-content">
-          <h2>Agenda</h2>
-          <p>Funcionalidade em desenvolvimento...</p>
-        </div>
-
-        <div id="content-clientes" class="tab-content">
-          <h2>Clientes</h2>
-          <p>Funcionalidade em desenvolvimento...</p>
-        </div>
-
-        <div id="content-servicos" class="tab-content">
-          <h2>Serviços</h2>
-          <p>Funcionalidade em desenvolvimento...</p>
-        </div>
-
-        <div id="content-profissionais" class="tab-content">
-          <h2>Profissionais</h2>
-          <p>Funcionalidade em desenvolvimento...</p>
-        </div>
-
-        <div id="content-financeiro" class="tab-content">
-          <h2>Financeiro</h2>
-          <p>Funcionalidade em desenvolvimento...</p>
-        </div>
-
-        <div id="content-relatorios" class="tab-content">
-          <h2>Relatórios</h2>
-          <p>Funcionalidade em desenvolvimento...</p>
-        </div>
-
-        <div id="content-whatsapp" class="tab-content">
-          <h2>WhatsApp</h2>
-          <p>Funcionalidade em desenvolvimento...</p>
-        </div>
-
-        <!-- CONFIGURAÇÕES -->
-        <div id="content-configuracoes" class="tab-content">
-          <div class="tabs">
-            <button class="tab-button active" onclick="abaConfig('empresa')">Minha Empresa</button>
-            <button class="tab-button" onclick="abaConfig('horarios')">Horários</button>
-            <button class="tab-button" onclick="abaConfig('convidar')">Convidar Profissional</button>
-            <button class="tab-button" onclick="abaConfig('minhaconta')">Minha Conta</button>
-          </div>
-
-          <!-- Minha Empresa -->
-          <div id="aba-empresa" class="tab-content active">
-            <h3>Dados da Empresa</h3>
-            <div class="form-group">
-              <label>Logotipo</label>
-              <div class="logo-upload" onclick="document.getElementById('logoFileInput').click()">
-                <input type="file" id="logoFileInput" accept="image/jpeg,image/png,image/webp" onchange="previewLogo(this)" />
-                <img id="logoPreviewImg" class="logo-preview" src="" alt="Preview" />
-                <div id="logoPlaceholder">
-                  <div style="font-size: 32px; margin-bottom: 8px;"><i class="fas fa-cloud-upload-alt"></i></div>
-                  <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Clique para atualizar o logotipo</div>
-                  <div style="font-size: 12px; color: var(--text-secondary);">JPEG, PNG ou WebP • Máx. 2MB</div>
-                </div>
-              </div>
+    <!-- New Appointment Modal -->
+    <div class="pro-modal" id="newAppointmentModal" style="display:none;">
+        <div class="pro-modal-overlay" onclick="fecharModalAgendamento()"></div>
+        <div class="pro-modal-content">
+            <div class="pro-modal-header">
+                <h2 class="pro-modal-title">Novo Agendamento</h2>
+                <button class="pro-modal-close" onclick="fecharModalAgendamento()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Nome da Empresa</label>
-                <input type="text" id="nomeEmpresa" disabled />
-              </div>
-              <div class="form-group">
-                <label>Telefone</label>
-                <input type="tel" id="telefonEmpresa" disabled />
-              </div>
+            <div class="pro-modal-body">
+                <form id="appointmentForm" onsubmit="saveAppointment(event)">
+                    <div class="pro-form-group">
+                        <label class="pro-label">Cliente *</label>
+                        <select class="pro-select" id="appointmentClient" required>
+                            <option value="">Selecione um cliente</option>
+                        </select>
+                    </div>
+                    <div class="pro-form-group">
+                        <label class="pro-label">Serviço *</label>
+                        <select class="pro-select" id="appointmentService" required>
+                            <option value="">Selecione um serviço</option>
+                        </select>
+                    </div>
+                    <div class="pro-form-group">
+                        <label class="pro-label">Profissional *</label>
+                        <select class="pro-select" id="appointmentProfessional" required>
+                            <option value="">Selecione um profissional</option>
+                        </select>
+                    </div>
+                    <div class="pro-form-row">
+                        <div class="pro-form-group">
+                            <label class="pro-label">Data *</label>
+                            <input type="date" class="pro-input" id="appointmentDate" required>
+                        </div>
+                        <div class="pro-form-group">
+                            <label class="pro-label">Horário *</label>
+                            <input type="time" class="pro-input" id="appointmentTime" required>
+                        </div>
+                    </div>
+                    <div class="pro-form-group">
+                        <label class="pro-label">Status *</label>
+                        <select class="pro-select" id="appointmentStatus" required>
+                            <option value="agendado">Agendado</option>
+                            <option value="confirmado">Confirmado</option>
+                            <option value="em_atendimento">Em Atendimento</option>
+                            <option value="concluido">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="pro-form-group">
+                        <label class="pro-label">Observações</label>
+                        <textarea class="pro-textarea" id="appointmentNotes" rows="3" placeholder="Anotações adicionais..."></textarea>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-              <label>Segmento</label>
-              <input type="text" id="segmentoEmpresa" disabled />
+            <div class="pro-modal-footer">
+                <button class="pro-btn pro-btn-secondary" onclick="fecharModalAgendamento()">
+                    Cancelar
+                </button>
+                <button class="pro-btn pro-btn-primary" onclick="document.getElementById('appointmentForm').requestSubmit()">
+                    <i class="fas fa-save"></i>
+                    Salvar Agendamento
+                </button>
             </div>
-            <button class="btn" onclick="atualizarLogo()">Atualizar Logo</button>
-          </div>
-
-          <!-- Horários -->
-          <div id="aba-horarios" class="tab-content">
-            <h3>Horários de Atendimento</h3>
-            <div class="schedule-grid" id="horariosGrid"></div>
-            <button class="btn" style="margin-top: 20px;" onclick="salvarHorarios()">Salvar Horários</button>
-          </div>
-
-          <!-- Convidar Profissional -->
-          <div id="aba-convidar" class="tab-content">
-            <h3>Gerar Link de Convite</h3>
-            <p style="margin-bottom: 20px; color: var(--text-secondary);">Compartilhe este link com profissionais para que eles se cadastrem:</p>
-            <div class="invite-box">
-              <input type="text" id="linkConvite" class="invite-link" readonly />
-              <button class="btn" onclick="copiarLink()"><i class="fas fa-copy"></i> Copiar</button>
-            </div>
-          </div>
-
-          <!-- Minha Conta -->
-          <div id="aba-minhaconta" class="tab-content">
-            <h3>Dados da Conta</h3>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" id="emailConta" disabled />
-            </div>
-            <div class="form-group">
-              <label>Alterar Foto de Perfil</label>
-              <div class="logo-upload" onclick="document.getElementById('avatarFileInput').click()">
-                <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/webp" onchange="previewAvatar(this)" />
-                <img id="avatarPreviewImg" class="logo-preview" src="" alt="Preview" />
-                <div id="avatarPlaceholder">
-                  <div style="font-size: 32px; margin-bottom: 8px;"><i class="fas fa-user-circle"></i></div>
-                  <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Clique para atualizar a foto</div>
-                  <div style="font-size: 12px; color: var(--text-secondary);">JPEG, PNG ou WebP • Máx. 2MB</div>
-                </div>
-              </div>
-            </div>
-            <button class="btn" onclick="atualizarAvatar()">Atualizar Foto</button>
-            <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);" />
-            <h4 style="color: #ef4444; margin-bottom: 12px;">Zona de Risco</h4>
-            <button class="btn btn-danger" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sair</button>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <script>
-    let currentTenant = null;
-    let currentUser = null;
-    let tenantId = null;
-    let userId = null;
-
-    const DIAS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-
-    // ==================== THEME ==================== 
-    function initTheme() {
-      const isDark = localStorage.getItem('theme') === 'dark';
-      if (isDark) {
-        document.body.classList.add('dark-mode');
-      }
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle('dark-mode');
-      const isDark = document.body.classList.contains('dark-mode');
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }
-
-    // ==================== MESSAGES ==================== 
-    function showMessage(type, text) {
-      const el = document.getElementById(`msg${type === 'success' ? 'Success' : 'Error'}`);
-      el.textContent = text;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), 5000);
-    }
-
-    // ==================== NAVIGATION ==================== 
-    function mostrarTab(tabName) {
-      // Hide all tabs
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-
-      // Show selected tab
-      const tabEl = document.getElementById(`content-${tabName}`);
-      if (tabEl) {
-        tabEl.classList.add('active');
-        document.querySelector(`[href="#${tabName}"]`).classList.add('active');
-        document.getElementById('pageTitle').textContent = 
-          tabName.charAt(0).toUpperCase() + tabName.slice(1);
-      }
-    }
-
-    function abaConfig(abaName) {
-      document.querySelectorAll('#content-configuracoes .tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('#content-configuracoes .tab-button').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById(`aba-${abaName}`).classList.add('active');
-      event.target.classList.add('active');
-    }
-
-    // ==================== DATA LOADING ==================== 
-    async function carregarDados() {
-      try {
-        const supabase = window.getSupabase();
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (!session?.user) {
-          window.location.href = 'login.html';
-          return;
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
         }
 
-        userId = session.user.id;
-        currentUser = session.user;
+        body.dark-mode {
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: #374151;
+        }
 
-        // Load tenant data
-        const { data: tenant } = await supabase
-          .from('tenants')
-          .select('*')
-          .eq('id', userId)
-          .single();
+        .badge {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 20px;
+            position: absolute;
+            top: -8px;
+            right: -8px;
+        }
+        
+        .pro-logo img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
 
-        currentTenant = tenant;
-        tenantId = tenant.id;
+        .pro-empty-chart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            flex-direction: column;
+        }
 
-        // Load profile data
-        const { data: perfil } = await supabase
-          .from('perfis')
-          .select('*')
-          .eq('id', userId)
-          .single();
+        .pro-empty-chart i {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
 
-        // Update UI
-        document.getElementById('userName').textContent = perfil?.nome || 'Usuário';
-        document.getElementById('emailConta').value = session.user.email;
+        /* FEATURE #5: Busca Global */
+        .search-results-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
 
-        atualizarTenantCard();
-        await carregarHorarios();
-        gerarLinkConvite();
+        .search-result-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        showMessage('error', 'Erro ao carregar dados. Tente novamente.');
-      }
-    }
+        .search-result-item:hover {
+            background: var(--bg-secondary);
+        }
 
-    // ==================== TENANT CARD ==================== 
-    function atualizarTenantCard() {
-      if (!currentTenant) return;
+        .search-result-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
 
-      document.getElementById('tenantCard').style.display = 'grid';
-      document.getElementById('tenantName').textContent = currentTenant.nome_empresa || 'Empresa';
-      document.getElementById('tenantPhone').textContent = currentTenant.telefone || '-';
-      document.getElementById('tenantSegment').textContent = currentTenant.segmento || '-';
-      document.getElementById('nomeEmpresa').value = currentTenant.nome_empresa || '';
-      document.getElementById('telefonEmpresa').value = currentTenant.telefone || '';
-      document.getElementById('segmentoEmpresa').value = currentTenant.segmento || '';
+        .search-result-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
 
-      if (currentTenant.logo_url) {
-        document.getElementById('tenantLogoImg').src = currentTenant.logo_url;
-        document.getElementById('logoPreviewImg').src = currentTenant.logo_url;
-        document.getElementById('logoPreviewImg').style.display = 'block';
-        document.getElementById('logoPlaceholder').style.display = 'none';
-      }
+        /* FEATURE #6: Notificações */
+        .notifications-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            width: 320px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
 
-      // Trial vs Plan badge
-      const dataInicio = new Date(currentTenant.data_inicio);
-      const diasPassados = Math.floor((Date.now() - dataInicio.getTime()) / (1000 * 60 * 60 * 24));
-      const diasRestantes = Math.max(0, currentTenant.dias_trial - diasPassados);
+        .notifications-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-      const trialBadge = document.getElementById('trialBadge');
-      const planBadge = document.getElementById('planBadge');
+        .notifications-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+        }
 
-      if (currentTenant.plano === 'basico') {
-        trialBadge.style.display = 'inline-block';
-        document.getElementById('trialDays').textContent = diasRestantes;
-        planBadge.style.display = 'none';
-      } else {
-        trialBadge.style.display = 'none';
-        planBadge.style.display = 'inline-block';
-        document.getElementById('planName').textContent = 
-          currentTenant.plano === 'profissional' ? 'Profissional' : 
-          currentTenant.plano === 'multiunit' ? 'Multi-Unidade' : 'Básico';
-      }
-    }
+        .close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
 
-    // ==================== SCHEDULES ==================== 
-    async function carregarHorarios() {
-      try {
-        const supabase = window.getSupabase();
-        const { data: horarios } = await supabase
-          .from('horarios_atendimento')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .order('dia_semana');
+        .notifications-list {
+            padding: 8px 0;
+        }
 
-        const grid = document.getElementById('horariosGrid');
-        grid.innerHTML = '';
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+            cursor: pointer;
+        }
 
-        DIAS.forEach((dia, index) => {
-          const horario = horarios?.find(h => h.dia_semana === index) || {
-            ativo: false,
-            hora_inicio: '08:00',
-            hora_fim: '18:00'
-          };
+        .notification-item:hover {
+            background: var(--bg-secondary);
+        }
 
-          grid.innerHTML += `
-            <div class="schedule-row">
-              <input type="checkbox" id="ativo-${index}" ${horario.ativo ? 'checked' : ''} onchange="toggleHorario(${index})" />
-              <span class="schedule-day">${dia}</span>
-              <input type="time" id="inicio-${index}" value="${horario.hora_inicio}" ${!horario.ativo ? 'disabled' : ''} />
-              <span>até</span>
-              <input type="time" id="fim-${index}" value="${horario.hora_fim}" ${!horario.ativo ? 'disabled' : ''} />
-            </div>
-          `;
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-icon {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: #ede9fe;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            vertical-align: middle;
+            color: #667eea;
+        }
+
+        .notification-content {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .notification-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* FEATURE #7: Comparação com período anterior */
+        .pro-comparison-card {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        body.dark-mode .pro-comparison-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+        }
+
+        .comparison-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        body.dark-mode .comparison-content {
+            color: #93c5fd;
+        }
+
+        .comparison-content i {
+            font-size: 18px;
+        }
+
+        /* FEATURE #8: Filtro por período */
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .period-select {
+            padding: 10px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .period-select:hover,
+        .period-select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .chart-period {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .pro-metric-change {
+            font-size: 12px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .change-positive {
+            color: #10b981;
+        }
+
+        .change-negative {
+            color: #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            .header-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .period-select {
+                width: 100%;
+            }
+
+            .notifications-dropdown {
+                width: 90vw;
+                right: auto;
+                left: 5vw;
+            }
+        }
+    </style>
+
+    <script>
+        // ─── Variáveis globais ─────────────────────────────────────────
+        let revenueChart = null;
+        let appointmentsChart = null;
+        let perfilCarregado = null;
+        let periodoAtual = '7d';
+        let todosAgendamentos = [];
+
+        // ─── FEATURE #6: Dark Mode ─────────────────────────────────────
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+            const btn = document.getElementById('themeToogle');
+            btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        }
+
+        function initDarkMode() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('themeToogle').innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+
+        // ─── FEATURE #5: Busca Global ──────────────────────────────────
+        document.getElementById('globalSearch').addEventListener('input', async (e) => {
+            const termo = e.target.value.toLowerCase().trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (termo.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            try {
+                const [clientes, agendamentos] = await Promise.all([
+                    DB.clientes.listar(),
+                    DB.agendamentos.listar()
+                ]);
+
+                const clientesEncontrados = (clientes || [])
+                    .filter(c => c.nome.toLowerCase().includes(termo))
+                    .slice(0, 5);
+
+                const agendamentosEncontrados = (agendamentos || [])
+                    .filter(a => a.cliente?.nome.toLowerCase().includes(termo))
+                    .slice(0, 5);
+
+                const todosResultados = [
+                    ...clientesEncontrados.map(c => ({
+                        tipo: 'cliente',
+                        id: c.id,
+                        titulo: c.nome,
+                        subtitulo: `${c.telefone || '—'} | ${c.email || '—'}`
+                    })),
+                    ...agendamentosEncontrados.map(a => ({
+                        tipo: 'agendamento',
+                        id: a.id,
+                        titulo: `${a.cliente?.nome || '—'} - ${a.servico?.nome || '—'}`,
+                        subtitulo: `${a.data} às ${a.hora}`
+                    }))
+                ];
+
+                if (todosResultados.length === 0) {
+                    resultsDiv.innerHTML = '<div class="search-result-item" style="text-align: center; color: #999;">Nenhum resultado encontrado</div>';
+                } else {
+                    resultsDiv.innerHTML = todosResultados.map(r => `
+                        <div class="search-result-item" onclick="selecionarResultado('${r.tipo}', '${r.id}')">
+                            <div class="search-result-title">${r.titulo}</div>
+                            <div class="search-result-subtitle">${r.subtitulo}</div>
+                        </div>
+                    `).join('');
+                }
+
+                resultsDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Erro na busca:', error);
+            }
         });
 
-      } catch (error) {
-        console.error('Erro ao carregar horários:', error);
-      }
-    }
+        function selecionarResultado(tipo, id) {
+            console.log(`Selecionado: ${tipo} - ${id}`);
+            document.getElementById('globalSearch').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+            // TODO: Navegar para página de detalhes ou abrir modal de edição
+        }
 
-    function toggleHorario(index) {
-      const ativo = document.getElementById(`ativo-${index}`).checked;
-      document.getElementById(`inicio-${index}`).disabled = !ativo;
-      document.getElementById(`fim-${index}`).disabled = !ativo;
-    }
+        // ─── FEATURE #6: Notificações ──────────────────────────────────
+        function toggleNotificacoes() {
+            const dropdown = document.getElementById('notificacoesDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
 
-    async function salvarHorarios() {
-      try {
-        const supabase = window.getSupabase();
+        function adicionarNotificacao(titulo, descricao, tipo = 'info') {
+            const notificacoesList = document.getElementById('notificacoesList');
+            const badge = document.getElementById('notificacoesBadge');
 
-        const horarios = DIAS.map((_, index) => ({
-          tenant_id: tenantId,
-          dia_semana: index,
-          ativo: document.getElementById(`ativo-${index}`).checked,
-          hora_inicio: document.getElementById(`inicio-${index}`).value || '08:00',
-          hora_fim: document.getElementById(`fim-${index}`).value || '18:00'
-        }));
+            const item = document.createElement('div');
+            item.className = 'notification-item';
+            item.innerHTML = `
+                <span class="notification-icon"><i class="fas fa-${tipo === 'sucesso' ? 'check' : 'info'}-circle"></i></span>
+                <div class="notification-content">
+                    <div class="notification-title">${titulo}</div>
+                    <div class="notification-time">${descricao}</div>
+                </div>
+            `;
 
-        await supabase.from('horarios_atendimento').delete().eq('tenant_id', tenantId);
-        await supabase.from('horarios_atendimento').insert(horarios);
+            if (notificacoesList.querySelector('p')) {
+                notificacoesList.innerHTML = '';
+            }
 
-        showMessage('success', '✅ Horários salvos com sucesso!');
-      } catch (error) {
-        console.error('Erro ao salvar horários:', error);
-        showMessage('error', '❌ Erro ao salvar horários.');
-      }
-    }
+            notificacoesList.insertBefore(item, notificacoesList.firstChild);
+            badge.style.display = 'block';
+            badge.textContent = Math.min(parseInt(badge.textContent || 0) + 1, 99);
+        }
 
-    // ==================== LOGO ==================== 
-    function previewLogo(input) {
-      const file = input.files[0];
-      if (!file) return;
+        // ─── FEATURE #8: Filtro por período ────────────────────────────
+        async function atualizarPeriodo() {
+            periodoAtual = document.getElementById('periodoFiltro').value;
+            const labels = {
+                '7d': 'Últimos 7 dias',
+                '14d': 'Últimas 2 semanas',
+                '30d': 'Últimos 30 dias',
+                'mes': 'Este mês'
+            };
+            
+            document.getElementById('revenuePeriodLabel').textContent = labels[periodoAtual];
+            document.getElementById('appointmentsPeriodLabel').textContent = labels[periodoAtual];
+            
+            await loadCharts();
+            await calcularComparacao();
+        }
 
-      if (file.size > 2 * 1024 * 1024) {
-        showMessage('error', '⚠️ Imagem muito grande. Máximo 2MB.');
-        input.value = '';
-        return;
-      }
+        // ─── Calcular Comparação ───────────────────────────────────────
+        async function calcularComparacao() {
+            try {
+                const hoje = new Date();
+                let dataInicio, dataFim, dataInicioAnterior, dataFimAnterior;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        document.getElementById('logoPreviewImg').src = e.target.result;
-        document.getElementById('logoPreviewImg').style.display = 'block';
-        document.getElementById('logoPlaceholder').style.display = 'none';
-      };
-      reader.readAsDataURL(file);
-    }
+                if (periodoAtual === '7d') {
+                    dataFim = hoje;
+                    dataInicio = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
+                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 7 * 24 * 60 * 60 * 1000);
+                } else if (periodoAtual === '30d') {
+                    dataFim = hoje;
+                    dataInicio = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
+                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 30 * 24 * 60 * 60 * 1000);
+                } else {
+                    return; // Simplificar para outros períodos
+                }
 
-    async function atualizarLogo() {
-      const file = document.getElementById('logoFileInput').files[0];
-      if (!file) {
-        showMessage('error', 'Selecione uma imagem primeiro.');
-        return;
-      }
+                // Filtrar agendamentos por período
+                const filtrarPorData = (agendamentos, inicio, fim) => {
+                    return (agendamentos || []).filter(a => {
+                        const data = new Date(a.data);
+                        return data >= inicio && data <= fim;
+                    });
+                };
 
-      try {
-        const supabase = window.getSupabase();
-        const ext = file.name.split('.').pop().toLowerCase();
-        const path = `${userId}/logo.${ext}`;
+                const agendamentosAtual = filtrarPorData(todosAgendamentos, dataInicio, dataFim);
+                const agendamentosAnterior = filtrarPorData(todosAgendamentos, dataInicioAnterior, dataFimAnterior);
 
-        const { error: uploadError } = await supabase.storage.from('logos').upload(path, file, { upsert: true });
-        if (uploadError) throw uploadError;
+                const receitaAtual = agendamentosAtual.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+                const receitaAnterior = agendamentosAnterior.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
 
-        const { data } = supabase.storage.from('logos').getPublicUrl(path);
-        const logoUrl = data.publicUrl;
+                const variacao = receitaAnterior > 0 ? ((receitaAtual - receitaAnterior) / receitaAnterior * 100) : 0;
+                const sinal = variacao >= 0 ? '↑' : '↓';
+                const cor = variacao >= 0 ? '#10b981' : '#ef4444';
 
-        await supabase.from('tenants').update({ logo_url: logoUrl }).eq('id', userId);
+                const card = document.getElementById('comparisonCard');
+                card.style.display = 'flex';
+                document.getElementById('comparisonText').innerHTML = 
+                    `<strong>${sinal}</strong> Receita <strong style="color: ${cor}">${Math.abs(variacao).toFixed(1)}%</strong> comparado ao período anterior`;
 
-        currentTenant.logo_url = logoUrl;
-        atualizarTenantCard();
-        showMessage('success', '✅ Logo atualizado com sucesso!');
-      } catch (error) {
-        console.error('Erro ao atualizar logo:', error);
-        showMessage('error', '❌ Erro ao atualizar logo.');
-      }
-    }
+            } catch (error) {
+                console.error('Erro ao calcular comparação:', error);
+            }
+        }
 
-    // ==================== AVATAR ==================== 
-    function previewAvatar(input) {
-      const file = input.files[0];
-      if (!file) return;
+        // ─── Modal helpers ─────────────────────────────────────────────
+        function abrirModalAgendamento() {
+            document.getElementById('newAppointmentModal').style.display = 'flex';
+        }
+        
+        function fecharModalAgendamento() {
+            document.getElementById('newAppointmentModal').style.display = 'none';
+        }
 
-      if (file.size > 2 * 1024 * 1024) {
-        showMessage('error', '⚠️ Imagem muito grande. Máximo 2MB.');
-        input.value = '';
-        return;
-      }
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.pro-search') && document.getElementById('searchResults').style.display !== 'none') {
+                document.getElementById('searchResults').style.display = 'none';
+            }
+            if (!e.target.closest('.notifications-btn') && !e.target.closest('.notifications-dropdown')) {
+                document.getElementById('notificacoesDropdown').style.display = 'none';
+            }
+        });
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        document.getElementById('avatarPreviewImg').src = e.target.result;
-        document.getElementById('avatarPreviewImg').style.display = 'block';
-        document.getElementById('avatarPlaceholder').style.display = 'none';
-      };
-      reader.readAsDataURL(file);
-    }
+        // ─── Carregar info do usuário na sidebar ────────────────────────
+        window.addEventListener('perfilCarregado', async (e) => {
+            const perfil = e.detail;
+            if (!perfil) return;
 
-    async function atualizarAvatar() {
-      const file = document.getElementById('avatarFileInput').files[0];
-      if (!file) {
-        showMessage('error', 'Selecione uma imagem primeiro.');
-        return;
-      }
+            console.log('✅ [Dashboard] Perfil carregado:', perfil.nome_empresa || perfil.nome);
 
-      try {
-        const supabase = window.getSupabase();
-        const ext = file.name.split('.').pop().toLowerCase();
-        const path = `${userId}/avatar.${ext}`;
+            if (perfil.role !== 'dono') {
+                console.log('❌ [Dashboard] Acesso negado');
+                window.location.href = 'dashboard-profissional.html';
+                return;
+            }
 
-        const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-        if (uploadError) throw uploadError;
+            perfilCarregado = perfil;
 
-        const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-        const avatarUrl = data.publicUrl;
+            if (perfil.logo_url) {
+                const logoIcon = document.getElementById('logoIcon');
+                logoIcon.innerHTML = `<img src="${perfil.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+            }
 
-        await supabase.from('perfis').update({ avatar_url: avatarUrl }).eq('id', userId);
+            const primeiraLetra = (perfil.nome_empresa || perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            document.getElementById('userAvatar').textContent = primeiraLetra;
+            document.getElementById('userName').textContent = perfil.nome_empresa || perfil.nome || perfil.email;
+            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+            document.getElementById('tenantName').textContent = perfil.nome_empresa || perfil.nome || 'Meu Estabelecimento';
 
-        document.getElementById('userAvatar').src = avatarUrl;
-        showMessage('success', '✅ Foto de perfil atualizada!');
-      } catch (error) {
-        console.error('Erro ao atualizar avatar:', error);
-        showMessage('error', '❌ Erro ao atualizar foto.');
-      }
-    }
+            await loadDashboard();
+        });
 
-    // ==================== INVITE LINK ==================== 
-    function gerarLinkConvite() {
-      const origin = window.location.origin;
-      const link = `${origin}/cadastro-profissional.html?tenant_id=${tenantId}`;
-      document.getElementById('linkConvite').value = link;
-    }
+        // ─── Carregar Dashboard ────────────────────────────────────────
+        async function loadDashboard() {
+            try {
+                console.log('📊 [Dashboard] Carregando dados...');
+                
+                const hoje = new Date().toISOString().split('T')[0];
+                const agora = new Date();
 
-    function copiarLink() {
-      const link = document.getElementById('linkConvite');
-      link.select();
-      document.execCommand('copy');
-      showMessage('success', '✅ Link copiado para a área de transferência!');
-    }
+                const amanha = new Date();
+                amanha.setDate(amanha.getDate() + 1);
+                const amanhaStr = amanha.toISOString().split('T')[0];
 
-    // ==================== LOGOUT ==================== 
-    async function logout() {
-      if (!confirm('Tem certeza que deseja sair?')) return;
+                const [agendamentosHoje, agendamentosAmanha, financeiroHoje, financeiroMes, todosAgs] = await Promise.all([
+                    DB.agendamentos.listarPorData(hoje),
+                    DB.agendamentos.listarPorData(amanhaStr),
+                    DB.financeiro.faturamentoDia(hoje),
+                    DB.financeiro.faturamentoMes(agora.getFullYear(), agora.getMonth() + 1),
+                    DB.agendamentos.listar()
+                ]);
 
-      try {
-        const supabase = window.getSupabase();
-        await supabase.auth.signOut();
-        window.location.href = 'index.html';
-      } catch (error) {
-        console.error('Erro ao sair:', error);
-        showMessage('error', 'Erro ao sair. Tente novamente.');
-      }
-    }
+                todosAgendamentos = todosAgs || [];
 
-    // ==================== INIT ==================== 
-    initTheme();
-    carregarDados();
-  </script>
+                document.getElementById('appointmentsToday').textContent = agendamentosHoje?.length || 0;
+                document.getElementById('appointmentsTomorrow').textContent = agendamentosAmanha?.length || 0;
+                document.getElementById('revenueToday').textContent =
+                    'R$ ' + (financeiroHoje?.faturamentoBruto || 0).toFixed(2).replace('.', ',');
+                document.getElementById('revenuePeriod').textContent =
+                    'R$ ' + (financeiroMes?.faturamentoBruto || 0).toFixed(2).replace('.', ',');
 
+                console.log('✅ [Dashboard] Métricas carregadas');
+
+                await loadCharts();
+                await loadUpcomingAppointments();
+                await loadFormOptions();
+                await calcularComparacao();
+
+            } catch (error) {
+                console.error('❌ [Dashboard] Erro ao carregar:', error);
+            }
+        }
+
+        // ─── Gráficos ──────────────────────────────────────────────────
+        async function loadCharts() {
+            try {
+                const hoje = new Date();
+                let dias = [];
+                let diasLabel = '';
+
+                if (periodoAtual === '7d') {
+                    for (let i = 6; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - i);
+                        dias.push(d.toISOString().split('T')[0]);
+                    }
+                    diasLabel = 'Últimos 7 dias';
+                } else if (periodoAtual === '14d') {
+                    for (let i = 13; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - i);
+                        dias.push(d.toISOString().split('T')[0]);
+                    }
+                    diasLabel = 'Últimas 2 semanas';
+                } else if (periodoAtual === '30d') {
+                    for (let i = 29; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - i);
+                        dias.push(d.toISOString().split('T')[0]);
+                    }
+                    diasLabel = 'Últimos 30 dias';
+                }
+
+                const resultados = await Promise.all(
+                    dias.map(d => DB.agendamentos.listarPorData(d))
+                );
+
+                const labels = dias.map(d => {
+                    const [, mes, dia] = d.split('-');
+                    return `${dia}/${mes}`;
+                });
+
+                const valores = resultados.map(lista =>
+                    lista?.reduce((acc, ag) => acc + parseFloat(ag.valor || 0), 0) || 0
+                );
+
+                const quantidades = resultados.map(lista => lista?.length || 0);
+
+                const temDados = valores.some(v => v > 0) || quantidades.some(q => q > 0);
+
+                if (!temDados) {
+                    document.getElementById('revenueChartContainer').innerHTML = 
+                        '<div class="pro-empty-chart"><i class="fas fa-chart-line"></i><p>Nenhum dado disponível</p></div>';
+                    document.getElementById('appointmentsChartContainer').innerHTML = 
+                        '<div class="pro-empty-chart"><i class="fas fa-calendar"></i><p>Nenhum dado disponível</p></div>';
+                    return;
+                }
+
+                if (revenueChart) revenueChart.destroy();
+                revenueChart = new Chart(document.getElementById('revenueChart'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Faturamento (R$)',
+                            data: valores,
+                            borderColor: '#6366F1',
+                            backgroundColor: 'rgba(99,102,241,0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' }
+                        }
+                    }
+                });
+
+                if (appointmentsChart) appointmentsChart.destroy();
+                appointmentsChart = new Chart(document.getElementById('appointmentsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Agendamentos',
+                            data: quantidades,
+                            backgroundColor: '#10B981',
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('❌ [Dashboard] Erro ao carregar gráficos:', error);
+            }
+        }
+
+        // ─── Próximos Agendamentos ─────────────────────────────────────
+        async function loadUpcomingAppointments() {
+            try {
+                const hoje = new Date().toISOString().split('T')[0];
+                const agendamentos = await DB.agendamentos.listar();
+                
+                const proximosAgendamentos = (agendamentos || [])
+                    .filter(ag => ag.data && ag.data >= hoje)
+                    .sort((a, b) => `${a.data}${a.hora || ''}`.localeCompare(`${b.data}${b.hora || ''}`))
+                    .slice(0, 10); // FEATURE #8: Mostra mais que 5
+
+                const tbody = document.getElementById('upcomingAppointments');
+
+                if (!proximosAgendamentos || proximosAgendamentos.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="pro-empty-state">
+                                <i class="fas fa-calendar-times pro-empty-state-icon"></i>
+                                <p>Nenhum agendamento próximo</p>
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                const statusColors = {
+                    agendado: 'primary',
+                    confirmado: 'info',
+                    em_atendimento: 'warning',
+                    concluido: 'success',
+                    cancelado: 'error'
+                };
+
+                tbody.innerHTML = proximosAgendamentos.map(apt => {
+                    const dataHora = apt.data && apt.hora ? `${apt.data} às ${apt.hora}` : '—';
+                    const statusColor = statusColors[apt.status] || 'primary';
+                    
+                    return `
+                        <tr>
+                            <td>${apt.cliente?.nome || '—'}</td>
+                            <td>${apt.servico?.nome || '—'}</td>
+                            <td>${apt.profissional?.nome || '—'}</td>
+                            <td>${dataHora}</td>
+                            <td>
+                                <span class="pro-badge pro-badge-${statusColor}">
+                                    ${apt.status || '—'}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="pro-table-actions">
+                                    <button class="pro-action-btn" title="Editar" onclick="editarAgendamento('${apt.id}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('❌ [Dashboard] Erro ao carregar agendamentos:', error);
+            }
+        }
+
+        // ─── Opções do Formulário ──────────────────────────────────────
+        async function loadFormOptions() {
+            try {
+                const [clientes, servicos, profissionais] = await Promise.all([
+                    DB.clientes.listar(),
+                    DB.servicos.listar(),
+                    DB.profissionais.listar()
+                ]);
+
+                document.getElementById('appointmentClient').innerHTML =
+                    '<option value="">Selecione um cliente</option>' +
+                    (clientes || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+                document.getElementById('appointmentService').innerHTML =
+                    '<option value="">Selecione um serviço</option>' +
+                    (servicos || []).map(s => `<option value="${s.id}">${s.nome} - R$ ${parseFloat(s.preco || 0).toFixed(2)}</option>`).join('');
+
+                document.getElementById('appointmentProfessional').innerHTML =
+                    '<option value="">Selecione um profissional</option>' +
+                    (profissionais || []).map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+
+                document.getElementById('appointmentDate').value = new Date().toISOString().split('T')[0];
+
+            } catch (error) {
+                console.error('❌ [Dashboard] Erro ao carregar opções:', error);
+            }
+        }
+
+        // ─── Salvar Agendamento ────────────────────────────────────────
+        async function saveAppointment(e) {
+            e.preventDefault();
+            try {
+                const servicoId = document.getElementById('appointmentService').value;
+                const servico = await DB.servicos.buscar(servicoId);
+
+                const dados = {
+                    cliente_id: document.getElementById('appointmentClient').value,
+                    servico_id: servicoId,
+                    profissional_id: document.getElementById('appointmentProfessional').value,
+                    data: document.getElementById('appointmentDate').value,
+                    hora: document.getElementById('appointmentTime').value,
+                    status: document.getElementById('appointmentStatus').value,
+                    valor: servico ? servico.preco : 0,
+                    observacoes: document.getElementById('appointmentNotes').value
+                };
+
+                const resultado = await DB.agendamentos.criar(dados);
+
+                if (resultado.success || resultado.data) {
+                    adicionarNotificacao('✓ Sucesso', 'Agendamento criado com sucesso!', 'sucesso');
+                    fecharModalAgendamento();
+                    document.getElementById('appointmentForm').reset();
+                    await loadDashboard();
+                } else {
+                    throw new Error(resultado.error || 'Erro desconhecido');
+                }
+            } catch (error) {
+                console.error('❌ [Dashboard] Erro ao salvar:', error);
+                alert('❌ Erro ao salvar agendamento: ' + error.message);
+            }
+        }
+
+        // ─── Editar Agendamento ────────────────────────────────────────
+        function editarAgendamento(id) {
+            console.log('✏️ [Dashboard] Editando agendamento:', id);
+            // TODO: Implementar edição
+        }
+
+        // ─── Logout ────────────────────────────────────────────────────
+        async function logout() {
+            if (confirm('Deseja realmente sair?')) {
+                console.log('🚪 [Dashboard] Saindo...');
+                await Auth.signOut();
+            }
+        }
+
+        // ─── Inicializar ───────────────────────────────────────────────
+        initDarkMode();
+        console.log('🚀 [Dashboard] Página carregada');
+    </script>
 </body>
 </html>
