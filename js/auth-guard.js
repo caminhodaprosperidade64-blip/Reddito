@@ -1,5 +1,5 @@
 /**
- * Auth Guard - Proteção de Rotas e Controle de Acesso por Role (Versão Completa)
+ * Auth Guard - Proteção de Rotas e Controle de Acesso por Role (Versão Corrigida)
  */
 (function() {
     // Configuração de páginas
@@ -14,7 +14,15 @@
         'agendar.html',
         'aguardando-confirmacao.html'
     ];
-    const PAGINAS_RESTRITAS_DONO = ['dashboard.html', 'clientes.html', 'profissionais.html', 'servicos.html', 'configuracoes.html', 'financeiro.html'];
+    
+    const PAGINAS_RESTRITAS_DONO = [
+        'dashboard.html', 
+        'clientes.html', 
+        'profissionais.html', 
+        'servicos.html', 
+        'configuracoes.html', 
+        'financeiro.html'
+    ];
 
     async function checkAuth() {
         try {
@@ -33,14 +41,21 @@
 
             console.log(`📍 [Auth Guard] Página: ${path} | Pública: ${isPublic} | Sessão: ${!!session}`);
 
-            // Se não tem sessão, página pública é liberada
+            // ========== SEM SESSÃO ==========
             if (!session) {
-                console.log('✅ [Auth Guard] Sem sessão - página pública liberada');
+                console.log('✅ [Auth Guard] Sem sessão - páginas públicas liberadas');
+                // Se é página pública, deixa ficar
+                if (isPublic) {
+                    return;
+                }
+                // Se é página privada, redireciona para login
+                console.warn('❌ [Auth Guard] Página privada sem sessão → login');
+                window.location.href = 'login.html';
                 return;
             }
 
-            // TEM SESSÃO - buscar perfil
-            console.log('🔍 [Auth Guard] Verificando perfil...');
+            // ========== COM SESSÃO ==========
+            console.log('🔍 [Auth Guard] Sessão ativa, verificando perfil...');
             
             try {
                 const userMetadata = session.user.user_metadata || {};
@@ -49,6 +64,7 @@
                 let role = 'dono';
                 let perfil = null;
 
+                // Verificar se é ADMIN
                 if (roleFromMetadata === 'admin') {
                     role = 'admin';
                     perfil = {
@@ -59,7 +75,9 @@
                         tenant_id: session.user.id,
                         onboarding_completo: true
                     };
+                    console.log('✅ [Auth Guard] User é ADMIN');
                 } else {
+                    // Buscar perfil do BD
                     const { data: perfilBD, error } = await supabase
                         .from('perfis')
                         .select('*')
@@ -67,49 +85,52 @@
                         .single();
 
                     if (error || !perfilBD) {
-                        console.log('⚠️ [Auth Guard] Perfil não encontrado - novo usuário');
+                        console.log('⚠️ [Auth Guard] Perfil não encontrado no BD');
                         
-                        // Se está em onboarding, deixa ficar
+                        // Se está em onboarding, PERMITE ficar
                         if (path === 'onboarding.html') {
-                            console.log('✅ [Auth Guard] Novo usuário em onboarding - permitido');
+                            console.log('✅ [Auth Guard] Em onboarding sem perfil - PERMITIDO');
                             return;
                         }
                         
-                        // Se é página pública (login, index), deixa ficar
+                        // Se é página pública, permite
                         if (isPublic) {
-                            console.log('✅ [Auth Guard] Página pública - permitido');
+                            console.log('✅ [Auth Guard] Página pública - PERMITIDO');
                             return;
                         }
                         
                         // Senão, redireciona para onboarding
-                        console.log('📍 [Auth Guard] Redirecionando para onboarding');
+                        console.log('📍 [Auth Guard] Redirecionando para onboarding (perfil não existe)');
                         window.location.href = 'onboarding.html';
                         return;
                     }
 
                     perfil = perfilBD;
                     role = (perfil.role || 'dono').toLowerCase();
+                    console.log(`✅ [Auth Guard] Perfil encontrado | Role: ${role} | Onboarding: ${perfil.onboarding_completo}`);
                 }
 
-                console.log(`✅ [Auth Guard] Role: ${role} | Onboarding: ${perfil?.onboarding_completo}`);
-
-                // --- ONBOARDING INCOMPLETO ---
+                // ========== VERIFICAR ONBOARDING INCOMPLETO ==========
                 if (!perfil.onboarding_completo) {
+                    console.log('⚠️ [Auth Guard] Onboarding INCOMPLETO');
+                    
                     if (path === 'onboarding.html') {
-                        console.log('✅ [Auth Guard] Onboarding incompleto em onboarding.html - permitido');
+                        console.log('✅ [Auth Guard] Em onboarding.html - PERMITIDO');
                         return;
                     }
-                    console.log('📍 [Auth Guard] Redirecionando para onboarding (incompleto)');
+                    
+                    console.log('📍 [Auth Guard] Redirecionando para onboarding');
                     window.location.href = 'onboarding.html';
                     return;
                 }
 
-                // --- ONBOARDING COMPLETO ---
+                // ========== ONBOARDING COMPLETO ==========
+                console.log('✅ [Auth Guard] Onboarding COMPLETO');
                 
-                // Se está em página pública (login, index, onboarding), redireciona para dashboard
+                // Se está em página pública, redireciona para dashboard apropriado
                 if (isPublic) {
                     if (role === 'profissional') {
-                        console.log('📍 [Auth Guard] Dono em página pública → dashboard-profissional');
+                        console.log('📍 [Auth Guard] Profissional em página pública → dashboard-profissional');
                         window.location.href = 'dashboard-profissional.html';
                     } else if (role === 'admin') {
                         console.log('📍 [Auth Guard] Admin em página pública → dashboard-admin');
@@ -121,14 +142,28 @@
                     return;
                 }
 
-                // Bloqueio de acesso para profissionais
+                // Bloqueio de acesso para profissionais em áreas restritas
                 if (role === 'profissional' && PAGINAS_RESTRITAS_DONO.includes(path)) {
-                    console.log('❌ [Auth Guard] Profissional bloqueado');
+                    console.log('❌ [Auth Guard] Profissional bloqueado de página restrita');
                     window.location.href = 'dashboard-profissional.html';
                     return;
                 }
 
-                // Atualizar UI
+                // Bloqueio: dono tentando acessar dashboard de profissional
+                if (role === 'dono' && path === 'dashboard-profissional.html') {
+                    console.log('📍 [Auth Guard] Dono redirecionado da dashboard-profissional');
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+
+                // Bloqueio: admin em dashboard de dono
+                if (role === 'admin' && path === 'dashboard.html') {
+                    console.log('📍 [Auth Guard] Admin redirecionado → dashboard-admin');
+                    window.location.href = 'dashboard-admin.html';
+                    return;
+                }
+
+                // ========== ATUALIZAR UI ==========
                 const userNameEl = document.getElementById('userName');
                 const userRoleEl = document.getElementById('userRole');
                 const userAvatarEl = document.getElementById('userAvatar');
@@ -145,8 +180,24 @@
                 }
                 if (userAvatarEl && perfil.avatar_url) userAvatarEl.src = perfil.avatar_url;
 
-                // Dispara evento
-                console.log('📢 [Auth Guard] Perfil carregado');
+                // Esconder menu para profissionais
+                if (role === 'profissional') {
+                    const idsParaEsconder = [
+                        'menu-dashboard', 
+                        'menu-clientes', 
+                        'menu-profissionais', 
+                        'menu-servicos', 
+                        'menu-financeiro', 
+                        'menu-configuracoes'
+                    ];
+                    idsParaEsconder.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.style.display = 'none';
+                    });
+                }
+
+                // Disparar evento
+                console.log('📢 [Auth Guard] Perfil carregado com sucesso');
                 window.dispatchEvent(new CustomEvent('perfilCarregado', { detail: perfil }));
 
             } catch (err) {
@@ -161,17 +212,18 @@
     // Iniciar quando Supabase estiver pronto
     function iniciar() {
         if (window.isSupabaseReady && window.isSupabaseReady()) {
-            console.log('✅ [Auth Guard] Iniciando verificação...');
+            console.log('✅ [Auth Guard] Supabase pronto, iniciando verificação...');
             checkAuth();
         } else {
-            console.log('⏳ [Auth Guard] Aguardando Supabase...');
+            console.log('⏳ [Auth Guard] Aguardando Supabase ficar pronto...');
             window.addEventListener('supabaseReady', () => {
-                console.log('✅ [Auth Guard] Supabase pronto!');
+                console.log('✅ [Auth Guard] Supabase pronto, iniciando verificação...');
                 checkAuth();
             }, { once: true });
         }
     }
 
+    // Executar quando o script carregar
     iniciar();
 
     // Listener para logout
@@ -184,7 +236,7 @@
                 }
             });
         } catch (e) {
-            console.warn('⚠️ [Auth Guard] Erro ao configurar logout:', e);
+            console.warn('⚠️ [Auth Guard] Erro ao configurar logout listener:', e);
         }
     });
 })();
