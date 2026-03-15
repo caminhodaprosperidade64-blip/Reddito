@@ -11,6 +11,10 @@
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
+
+    <!-- QR Code generator (usado para Pix estático) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
     <style>
         .agenda-wrapper {
             display: grid;
@@ -461,7 +465,8 @@
             color: #991b1b;
         }
 
-        .modal-status-badge.finalizado {
+        .modal-status-badge.finalizado,
+        .modal-status-badge.concluido {
             background: #dbeafe;
             color: #0c4a6e;
         }
@@ -593,6 +598,39 @@
 
         .pro-btn-danger:hover {
             background: #dc2626;
+        }
+
+        /* Bloco Pix / Cartão no modal */
+        .pay-extra {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-main);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        .pay-extra.active { display: block; }
+
+        .pix-qr {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .pix-qr canvas, .pix-qr img {
+            width: 220px;
+            height: 220px;
+        }
+        .pix-copy {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.5rem;
+        }
+        .pix-copy textarea {
+            width: 100%;
+            resize: none;
+            min-height: 70px;
         }
     </style>
 </head>
@@ -912,6 +950,43 @@
                         </div>
                     </div>
 
+                    <!-- EXTRAS: PIX -->
+                    <div class="pay-extra" id="pixExtra">
+                        <div class="pix-qr">
+                            <div style="width: 100%; text-align: center; font-weight: 600; margin-bottom: 0.25rem;">
+                                Escaneie e pague com Pix
+                            </div>
+
+                            <canvas id="pixQrCanvas"></canvas>
+
+                            <div class="pix-copy">
+                                <textarea id="pixCopiaCola" readonly></textarea>
+                                <button type="button" class="pro-btn pro-btn-secondary" onclick="copyPixCode()">
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                            </div>
+
+                            <div style="width:100%; font-size: 0.85rem; color: var(--text-secondary);">
+                                Depois que o cliente pagar, clique em <b>Confirmar Finalização</b>.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXTRAS: CARTÃO / DÉBITO -->
+                    <div class="pay-extra" id="cardExtra">
+                        <div class="form-field">
+                            <label>NSU *</label>
+                            <input type="text" id="nsuField" placeholder="Ex: 123456">
+                        </div>
+                        <div class="form-field">
+                            <label>AUT (Autorização) *</label>
+                            <input type="text" id="autField" placeholder="Ex: 987654">
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Pegue esses dados no comprovante da maquininha.
+                        </div>
+                    </div>
+
                     <div class="form-field">
                         <label>Observações Finais</label>
                         <textarea id="finalizeNotesField" rows="3" placeholder="Adicione observações..."></textarea>
@@ -946,6 +1021,9 @@
         let modalState = { profId: null, profName: null, date: null, time: null };
         let viewingAppointment = null;
 
+        // Configuração Pix (carregada do Supabase)
+        let paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
+
         const COLORS = {
             0: { bg: 'bg-prof-1', badge: 'badge-prof-1', slot: 'slot-prof-1' },
             1: { bg: 'bg-prof-2', badge: 'badge-prof-2', slot: 'slot-prof-2' },
@@ -955,6 +1033,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
             loadAll();
+            setupPaymentMethodListeners();
         });
 
         window.addEventListener('storage', e => {
@@ -966,12 +1045,37 @@
                 allProfessionals = await DB.profissionais.listar();
                 allClients = await DB.clientes.listar();
                 allServices = await DB.servicos.listar();
+
+                // carrega config Pix do tenant
+                await loadPaymentConfig();
+
                 populateSelects();
                 populateEditSelects();
                 renderCalendar();
                 renderSchedule();
             } catch (error) {
                 console.error('Erro ao carregar:', error);
+            }
+        }
+
+        async function loadPaymentConfig() {
+            try {
+                const tenantId = await Auth.getTenantId();
+                const supabase = window.getSupabase();
+
+                const { data, error } = await supabase
+                    .from('config_pagamentos')
+                    .select('pix_chave, pix_nome, pix_cidade')
+                    .eq('tenant_id', tenantId)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                paymentConfig = data || { pix_chave: null, pix_nome: null, pix_cidade: null };
+                console.log('✅ Config Pagamentos carregada:', paymentConfig);
+            } catch (err) {
+                console.warn('⚠️ Não foi possível carregar config_pagamentos (Pix).', err);
+                paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
             }
         }
 
@@ -1095,12 +1199,18 @@
                 html += '</div>';
 
                 times.forEach(time => {
-                    html += '<div class="time-row"><div class="time-cell hour">${time}</div>';
+                    // CORREÇÃO: template string correta aqui
+                    html += `<div class="time-row"><div class="time-cell hour">${time}</div>`;
                     allProfessionals.forEach((prof, idx) => {
                         const color = COLORS[idx % 3];
                         const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora.substring(0, 5) === time);
                         if (apt) {
-                            html += `<div class="schedule-slot booked ${color.slot}" data-apt-id="${apt.id}"><div class="slot-content"><div class="slot-client">${apt.cliente?.nome}</div><div class="slot-service">${apt.servico?.nome}</div></div></div>`;
+                            html += `<div class="schedule-slot booked ${color.slot}" data-apt-id="${apt.id}">
+                                        <div class="slot-content">
+                                            <div class="slot-client">${apt.cliente?.nome || '-'}</div>
+                                            <div class="slot-service">${apt.servico?.nome || '-'}</div>
+                                        </div>
+                                     </div>`;
                         } else {
                             html += `<div class="schedule-slot empty ${color.bg}" data-prof-id="${prof.id}" data-prof-name="${prof.nome}" data-date="${dateStr}" data-time="${time}">Disponível</div>`;
                         }
@@ -1111,11 +1221,9 @@
                 html += '</div>';
                 container.innerHTML = html;
 
-                // Adicionar event listeners após renderizar
                 container.querySelectorAll('.schedule-slot.booked').forEach(slot => {
                     slot.addEventListener('click', function() {
                         const aptId = this.getAttribute('data-apt-id');
-                        console.log('Clicou em agendamento:', aptId);
                         viewAppointment(aptId);
                     });
                 });
@@ -1126,7 +1234,6 @@
                         const profName = this.getAttribute('data-prof-name');
                         const dateStr = this.getAttribute('data-date');
                         const time = this.getAttribute('data-time');
-                        console.log('Clicou em slot vazio:', profName, dateStr, time);
                         openModal(profId, profName, dateStr, time);
                     });
                 });
@@ -1199,8 +1306,7 @@
         }
 
         async function viewAppointment(aptId) {
-            viewingAppointment = allAppointments.find(a => a.id === aptId);
-            
+            viewingAppointment = allAppointments.find(a => String(a.id) === String(aptId));
             if (!viewingAppointment) return;
 
             document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
@@ -1212,10 +1318,10 @@
             document.getElementById('viewNotes').textContent = viewingAppointment.observacoes || '-';
 
             const statusBadge = document.getElementById('viewStatus');
-            statusBadge.innerHTML = `<span class="modal-status-badge ${viewingAppointment.status}">${viewingAppointment.status.charAt(0).toUpperCase() + viewingAppointment.status.slice(1)}</span>`;
+            statusBadge.innerHTML = `<span class="modal-status-badge ${viewingAppointment.status}">${(viewingAppointment.status || '').charAt(0).toUpperCase() + (viewingAppointment.status || '').slice(1)}</span>`;
 
             const actions = document.getElementById('viewActions');
-            if (viewingAppointment.status === 'finalizado' || viewingAppointment.status === 'cancelado') {
+            if (viewingAppointment.status === 'concluido' || viewingAppointment.status === 'cancelado') {
                 actions.className = 'modal-actions full';
                 actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
             } else {
@@ -1262,7 +1368,6 @@
 
         async function updateAppointment(e) {
             e.preventDefault();
-
             if (!viewingAppointment) return;
 
             const clientId = document.getElementById('editClientSelect').value;
@@ -1271,7 +1376,6 @@
             const notes = document.getElementById('editNotesField').value;
 
             try {
-                console.log('Atualizando agendamento:', viewingAppointment.id);
                 await DB.agendamentos.atualizar(viewingAppointment.id, {
                     cliente_id: clientId,
                     servico_id: serviceId,
@@ -1297,7 +1401,6 @@
             if (!viewingAppointment) return;
 
             try {
-                console.log('Cancelando agendamento:', viewingAppointment.id);
                 await DB.agendamentos.atualizar(viewingAppointment.id, { status: 'cancelado' });
                 closeViewModal();
                 await renderSchedule();
@@ -1315,6 +1418,16 @@
             document.getElementById('finalizeNotesField').value = '';
             document.getElementById('finalizeForm').reset();
 
+            // limpa extras
+            document.getElementById('pixExtra').classList.remove('active');
+            document.getElementById('cardExtra').classList.remove('active');
+            document.getElementById('pixCopiaCola').value = '';
+            clearPixQr();
+
+            // limpar NSU/AUT
+            document.getElementById('nsuField').value = '';
+            document.getElementById('autField').value = '';
+
             closeViewModal();
             document.getElementById('finalizeAppointmentModal').classList.add('active');
         }
@@ -1322,11 +1435,173 @@
         function closeFinalizeModal() {
             document.getElementById('finalizeAppointmentModal').classList.remove('active');
             document.getElementById('finalizeForm').reset();
+
+            document.getElementById('pixExtra').classList.remove('active');
+            document.getElementById('cardExtra').classList.remove('active');
+            document.getElementById('pixCopiaCola').value = '';
+            clearPixQr();
+            document.getElementById('nsuField').value = '';
+            document.getElementById('autField').value = '';
+        }
+
+        function setupPaymentMethodListeners() {
+            document.addEventListener('change', async (e) => {
+                if (e.target && e.target.name === 'paymentMethod') {
+                    await onPaymentMethodChanged(e.target.value);
+                }
+            });
+        }
+
+        async function onPaymentMethodChanged(method) {
+            const pixExtra = document.getElementById('pixExtra');
+            const cardExtra = document.getElementById('cardExtra');
+
+            pixExtra.classList.remove('active');
+            cardExtra.classList.remove('active');
+
+            if (method === 'pix') {
+                pixExtra.classList.add('active');
+                await generatePixQrForCurrentAppointment();
+            }
+
+            if (method === 'cartao' || method === 'debito') {
+                cardExtra.classList.add('active');
+            }
+        }
+
+        function clearPixQr() {
+            const canvas = document.getElementById('pixQrCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        async function generatePixQrForCurrentAppointment() {
+            try {
+                if (!viewingAppointment) return;
+
+                if (!paymentConfig?.pix_chave || !paymentConfig?.pix_nome || !paymentConfig?.pix_cidade) {
+                    document.getElementById('pixCopiaCola').value = '';
+                    clearPixQr();
+                    alert('⚠️ Para gerar Pix, cadastre chave/nome/cidade no Supabase (tabela config_pagamentos).');
+                    return;
+                }
+
+                const valor = parseFloat(viewingAppointment.valor || 0).toFixed(2);
+                const descricao = `Agendamento ${String(viewingAppointment.id).slice(0, 8)}`;
+
+                const brcode = buildPixPayload({
+                    chave: paymentConfig.pix_chave,
+                    nome: paymentConfig.pix_nome,
+                    cidade: paymentConfig.pix_cidade,
+                    valor: valor,
+                    descricao: descricao
+                });
+
+                document.getElementById('pixCopiaCola').value = brcode;
+
+                const canvas = document.getElementById('pixQrCanvas');
+                await QRCode.toCanvas(canvas, brcode, { width: 220, margin: 2 });
+
+            } catch (err) {
+                console.error('Erro ao gerar QR Pix:', err);
+                alert('Erro ao gerar QR Pix');
+            }
+        }
+
+        function copyPixCode() {
+            const text = document.getElementById('pixCopiaCola').value;
+            if (!text) return;
+
+            navigator.clipboard.writeText(text)
+                .then(() => alert('✅ Pix copia e cola copiado!'))
+                .catch(() => alert('Não foi possível copiar automaticamente. Selecione e copie manualmente.'));
+        }
+
+        // ==========================
+        // PIX EMV (copia e cola)
+        // ==========================
+        function onlyNumbers(value) {
+            return String(value || '').replace(/\D/g, '');
+        }
+
+        function emv(id, value) {
+            const v = String(value);
+            return `${id}${String(v.length).padStart(2, '0')}${v}`;
+        }
+
+        // CRC16-CCITT (0x1021) - padrão EMV
+        function crc16(payload) {
+            let crc = 0xFFFF;
+            for (let i = 0; i < payload.length; i++) {
+                crc ^= payload.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) {
+                    if (crc & 0x8000) crc = (crc << 1) ^ 0x1021;
+                    else crc = crc << 1;
+                    crc &= 0xFFFF;
+                }
+            }
+            return crc.toString(16).toUpperCase().padStart(4, '0');
+        }
+
+        function normalizeNomeCidade(str, maxLen) {
+            // remove acentos básicos e limita tamanho
+            return String(str || '')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toUpperCase()
+                .replace(/[^A-Z0-9 \-\.]/g, '')
+                .trim()
+                .slice(0, maxLen);
+        }
+
+        function buildPixPayload({ chave, nome, cidade, valor, descricao }) {
+            const merchantName = normalizeNomeCidade(nome, 25);
+            const merchantCity = normalizeNomeCidade(cidade, 15);
+
+            // GUI obrigatório
+            const gui = emv('00', 'BR.GOV.BCB.PIX');
+
+            // Chave Pix
+            const key = emv('01', String(chave).trim());
+
+            // Descrição (opcional)
+            let desc = '';
+            if (descricao) desc = emv('02', String(descricao).trim().slice(0, 50));
+
+            const merchantAccountInfo = emv('26', gui + key + desc);
+
+            const payloadFormatIndicator = emv('00', '01');
+            const pointOfInitiationMethod = emv('01', '12'); // 12 = dinâmico/estático com valor (usado bastante para estático)
+            const merchantCategoryCode = emv('52', '0000');
+            const transactionCurrency = emv('53', '986'); // BRL
+            const transactionAmount = emv('54', String(valor)); // "10.00"
+            const countryCode = emv('58', 'BR');
+            const mName = emv('59', merchantName);
+            const mCity = emv('60', merchantCity);
+
+            // TXID (referência) - obrigatório no 62/05, pode ser *** em alguns casos
+            const txid = emv('05', '***');
+            const additionalData = emv('62', txid);
+
+            // Monta sem CRC primeiro
+            const withoutCrc =
+                payloadFormatIndicator +
+                pointOfInitiationMethod +
+                merchantAccountInfo +
+                merchantCategoryCode +
+                transactionCurrency +
+                transactionAmount +
+                countryCode +
+                mName +
+                mCity +
+                additionalData +
+                '6304';
+
+            const crc = crc16(withoutCrc);
+            return withoutCrc + crc;
         }
 
         async function finalizeAppointment(e) {
             e.preventDefault();
-
             if (!viewingAppointment) return;
 
             const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
@@ -1337,17 +1612,43 @@
                 return;
             }
 
+            // valida NSU/AUT para cartão e débito
+            let nsu = null;
+            let autorizacao = null;
+
+            if (paymentMethod === 'cartao' || paymentMethod === 'debito') {
+                nsu = document.getElementById('nsuField').value.trim();
+                autorizacao = document.getElementById('autField').value.trim();
+
+                if (!nsu || !autorizacao) {
+                    alert('Para Cartão/Débito, informe NSU e AUT.');
+                    return;
+                }
+            }
+
+            // se for pix, garante que o brcode foi gerado (config cadastrada)
+            if (paymentMethod === 'pix') {
+                const brcode = document.getElementById('pixCopiaCola').value;
+                if (!brcode) {
+                    alert('Não foi possível gerar o Pix. Cadastre chave/nome/cidade no Supabase.');
+                    return;
+                }
+            }
+
             try {
-                console.log('Finalizando agendamento:', viewingAppointment.id);
                 await DB.agendamentos.atualizar(viewingAppointment.id, {
-                    status: 'finalizado',
+                    status: 'concluido',
                     forma_pagamento: paymentMethod,
+                    status_pagamento: 'pago',
+                    pago_em: new Date().toISOString(),
+                    nsu: nsu,
+                    autorizacao: autorizacao,
                     observacoes: notes
                 });
 
                 closeFinalizeModal();
                 await renderSchedule();
-                alert('✅ Finalizado!');
+                alert('✅ Concluído e pago!');
             } catch (error) {
                 console.error('Erro ao finalizar:', error);
                 alert('Erro ao finalizar');
