@@ -13,7 +13,8 @@
     <link rel="stylesheet" href="css/dark-mode.css">
     <style>
         .agenda-wrapper {
-            display: flex;
+            display: grid;
+            grid-template-columns: 320px 1fr;
             gap: 2rem;
             padding: 2rem;
             height: calc(100vh - 100px);
@@ -21,10 +22,14 @@
 
         /* CALENDÁRIO */
         .calendar-panel {
-            width: 350px;
             display: flex;
             flex-direction: column;
             gap: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: fit-content;
         }
 
         .calendar-header {
@@ -45,17 +50,17 @@
         }
 
         .calendar-nav button {
-            background: var(--bg-secondary);
+            background: var(--bg-primary);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             transition: all 0.2s;
         }
 
@@ -65,18 +70,10 @@
             border-color: var(--primary);
         }
 
-        .mini-calendar {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.5rem;
-            flex: 1;
-        }
-
         .calendar-month-title {
             text-align: center;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             margin-bottom: 1rem;
             color: var(--text-primary);
@@ -85,13 +82,13 @@
         .calendar-weekdays {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 0.4rem;
-            margin-bottom: 0.5rem;
+            gap: 0.3rem;
+            margin-bottom: 0.4rem;
         }
 
         .calendar-weekday {
             text-align: center;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 600;
             color: var(--text-secondary);
             text-transform: uppercase;
@@ -100,7 +97,7 @@
         .calendar-days {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 0.4rem;
+            gap: 0.3rem;
         }
 
         .calendar-day {
@@ -110,7 +107,7 @@
             justify-content: center;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             background: var(--bg-primary);
             border: 1px solid transparent;
             transition: all 0.2s;
@@ -122,7 +119,7 @@
         }
 
         .calendar-day.other-month {
-            opacity: 0.3;
+            opacity: 0.25;
             cursor: default;
         }
 
@@ -136,28 +133,23 @@
             background: var(--primary);
             color: white;
             font-weight: 600;
-            border-color: var(--primary);
         }
 
         /* SCHEDULE AREA */
         .schedule-panel {
-            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 1rem;
             overflow: hidden;
         }
 
-        .schedule-title-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+        .schedule-header {
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
         }
 
-        .schedule-title-area h2 {
-            margin: 0;
+        .schedule-header h2 {
+            margin: 0 0 0.5rem 0;
             font-size: 1.3rem;
         }
 
@@ -166,49 +158,71 @@
             color: var(--text-secondary);
         }
 
-        .schedule-grid-container {
+        .schedule-container {
             flex: 1;
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             overflow: auto;
+            display: flex;
+            flex-direction: column;
         }
 
-        .schedule-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 100%;
+        .schedule-grid {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
         }
 
-        .time-col {
-            width: 80px;
-            padding: 1rem 0.5rem;
+        .time-row {
+            display: grid;
+            grid-template-columns: 80px repeat(3, 1fr);
+            border-bottom: 1px solid var(--border-color);
+            min-height: 80px;
+        }
+
+        .time-row:first-child {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg-primary);
+        }
+
+        .time-cell {
+            padding: 1rem 0.75rem;
             text-align: center;
             font-size: 0.8rem;
             font-weight: 500;
             color: var(--text-secondary);
-            background: var(--bg-primary);
             border-right: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .time-cell.header {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-height: auto;
+        }
+
+        .time-cell.hour {
+            background: var(--bg-primary);
             position: sticky;
             left: 0;
             z-index: 5;
         }
 
-        .prof-header-row {
-            background: var(--bg-primary);
-        }
-
-        .prof-header-cell {
-            padding: 1rem 0.5rem;
+        .prof-name-cell {
+            padding: 1rem 0.75rem;
             text-align: center;
-            font-weight: 600;
-            font-size: 0.9rem;
             border-right: 1px solid var(--border-color);
-            min-width: 180px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.6rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            gap: 0.5rem;
         }
 
         .prof-badge {
@@ -217,12 +231,9 @@
             border-radius: 50%;
         }
 
-        .time-slot {
+        .schedule-slot {
             padding: 0.75rem;
             border-right: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            min-width: 180px;
-            min-height: 75px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
@@ -232,16 +243,16 @@
             font-size: 0.8rem;
         }
 
-        .time-slot.empty {
+        .schedule-slot.empty {
             color: var(--text-secondary);
             background: transparent;
         }
 
-        .time-slot.empty:hover {
+        .schedule-slot.empty:hover {
             background: rgba(0, 0, 0, 0.03);
         }
 
-        .time-slot.booked {
+        .schedule-slot.booked {
             color: white;
             font-weight: 500;
         }
@@ -254,46 +265,26 @@
 
         .slot-client {
             font-weight: 600;
+            font-size: 0.9rem;
         }
 
         .slot-service {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             opacity: 0.85;
         }
 
         /* CORES */
-        .bg-prof-1 { background-color: rgba(59, 130, 246, 0.12); }
-        .bg-prof-2 { background-color: rgba(129, 140, 248, 0.12); }
-        .bg-prof-3 { background-color: rgba(168, 85, 247, 0.12); }
-        .bg-prof-4 { background-color: rgba(236, 72, 153, 0.12); }
-        .bg-prof-5 { background-color: rgba(249, 115, 22, 0.12); }
+        .bg-prof-1 { background-color: rgba(59, 130, 246, 0.1); }
+        .bg-prof-2 { background-color: rgba(129, 140, 248, 0.1); }
+        .bg-prof-3 { background-color: rgba(168, 85, 247, 0.1); }
 
         .badge-prof-1 { background-color: #3b82f6; }
         .badge-prof-2 { background-color: #818cf8; }
         .badge-prof-3 { background-color: #a855f7; }
-        .badge-prof-4 { background-color: #ec4899; }
-        .badge-prof-5 { background-color: #f97316; }
 
         .slot-prof-1 { background-color: #3b82f6; }
         .slot-prof-2 { background-color: #818cf8; }
         .slot-prof-3 { background-color: #a855f7; }
-        .slot-prof-4 { background-color: #ec4899; }
-        .slot-prof-5 { background-color: #f97316; }
-
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            height: 100%;
-            color: var(--text-secondary);
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            opacity: 0.4;
-        }
 
         /* MODAL */
         .modal-overlay {
@@ -419,13 +410,19 @@
             background: var(--bg-hover);
         }
 
-        @media (max-width: 1200px) {
-            .agenda-wrapper {
-                flex-direction: column;
-            }
-            .calendar-panel {
-                width: 100%;
-            }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            height: 100%;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.4;
         }
     </style>
 </head>
@@ -489,18 +486,16 @@
                             <button onclick="nextMonth()" title="Próximo mês"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
-                    <div class="mini-calendar" id="miniCalendar"></div>
+                    <div id="miniCalendar"></div>
                 </div>
 
                 <!-- AGENDA -->
                 <div class="schedule-panel">
-                    <div class="schedule-title-area">
-                        <div>
-                            <h2>Agenda</h2>
-                            <div class="schedule-date-label" id="dateLabel">Selecione um dia</div>
-                        </div>
+                    <div class="schedule-header">
+                        <h2>Agenda</h2>
+                        <div class="schedule-date-label" id="dateLabel">Selecione um dia</div>
                     </div>
-                    <div class="schedule-grid-container" id="scheduleContainer"></div>
+                    <div class="schedule-container" id="scheduleContainer"></div>
                 </div>
             </div>
         </main>
@@ -572,11 +567,9 @@
         let modalState = { profId: null, profName: null, date: null, time: null };
 
         const COLORS = {
-            1: { bg: 'bg-prof-1', badge: 'badge-prof-1', slot: 'slot-prof-1' },
-            2: { bg: 'bg-prof-2', badge: 'badge-prof-2', slot: 'slot-prof-2' },
-            3: { bg: 'bg-prof-3', badge: 'badge-prof-3', slot: 'slot-prof-3' },
-            4: { bg: 'bg-prof-4', badge: 'badge-prof-4', slot: 'slot-prof-4' },
-            5: { bg: 'bg-prof-5', badge: 'badge-prof-5', slot: 'slot-prof-5' }
+            0: { bg: 'bg-prof-1', badge: 'badge-prof-1', slot: 'slot-prof-1' },
+            1: { bg: 'bg-prof-2', badge: 'badge-prof-2', slot: 'slot-prof-2' },
+            2: { bg: 'bg-prof-3', badge: 'badge-prof-3', slot: 'slot-prof-3' }
         };
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -641,7 +634,7 @@
                 });
             }
 
-            console.log('✅ Selects populados - Clientes:', allClients.length, '| Serviços:', allServices.length);
+            console.log('✅ Selects populados');
         }
 
         function renderCalendar() {
@@ -710,39 +703,39 @@
                 }
 
                 const times = generateTimes('08:00', '18:00', 30);
-                let html = '<table class="schedule-table"><tbody>';
+                let html = '<div class="schedule-grid">';
 
-                // Cabeçalho com profissionais
-                html += '<tr class="prof-header-row"><td class="time-col"></td>';
+                // Cabeçalho com nomes dos profissionais
+                html += '<div class="time-row">';
+                html += '<div class="time-cell header"></div>';
                 allProfessionals.forEach((prof, idx) => {
-                    const colorIdx = (idx % 5) + 1;
-                    const color = COLORS[colorIdx];
-                    html += `<td class="prof-header-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</td>`;
+                    const color = COLORS[idx];
+                    html += `<div class="prof-name-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</div>`;
                 });
-                html += '</tr>';
+                html += '</div>';
 
                 // Linhas de horários
                 times.forEach(time => {
-                    html += `<tr><td class="time-col">${time}</td>`;
+                    html += '<div class="time-row">';
+                    html += `<div class="time-cell hour">${time}</div>`;
                     allProfessionals.forEach((prof, idx) => {
-                        const colorIdx = (idx % 5) + 1;
-                        const color = COLORS[colorIdx];
+                        const color = COLORS[idx];
                         const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora === time);
 
                         if (apt) {
                             const clientName = apt.cliente?.nome || 'Cliente';
                             const serviceName = apt.servico?.nome || 'Serviço';
-                            html += `<td class="time-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></td>`;
+                            html += `<div class="schedule-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></div>`;
                         } else {
-                            html += `<td class="time-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')"><span>Disponível</span></td>`;
+                            html += `<div class="schedule-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')"><span>Disponível</span></div>`;
                         }
                     });
-                    html += '</tr>';
+                    html += '</div>';
                 });
 
-                html += '</tbody></table>';
+                html += '</div>';
                 container.innerHTML = html;
-                console.log('✅ Agenda renderizada -', times.length, 'horários -', allAppointments.length, 'agendamentos');
+                console.log('✅ Agenda renderizada');
             } catch (error) {
                 console.error('❌ Erro ao renderizar agenda:', error);
             }
@@ -805,10 +798,9 @@
                 if (result.success) {
                     closeModal();
                     renderSchedule();
-                    console.log('✅ Agendamento criado com sucesso!');
+                    console.log('✅ Agendamento criado!');
                 } else {
                     alert('Erro: ' + result.error);
-                    console.error('❌ Erro ao criar agendamento:', result.error);
                 }
             } catch (error) {
                 console.error('❌ Erro:', error);
@@ -817,8 +809,7 @@
         }
 
         function editAppointment(id) {
-            console.log('✏️ Editar agendamento:', id);
-            alert('Funcionalidade de edição em desenvolvimento');
+            alert('Funcionalidade em desenvolvimento');
         }
 
         async function logout() {
