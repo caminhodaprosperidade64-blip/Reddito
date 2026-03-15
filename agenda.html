@@ -4,253 +4,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda - Sistema Profissional</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    
+    <link rel="stylesheet" href="css/pro-design-system.css">
+    <link rel="stylesheet" href="css/pro-components.css">
+    <link rel="stylesheet" href="css/dark-mode.css">
+
+    <!-- ✅ QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <style>
-        /* ==================== RESET E GLOBALS ==================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .agenda-wrapper {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2rem;
+            padding: 2rem;
         }
 
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333333;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-        }
-
-        /* ==================== CONTAINER ==================== */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* ==================== HEADER ==================== */
-        .header {
-            background: white;
-            padding: 30px 35px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
+        .calendar-panel {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 5px solid #667eea;
-            animation: slideDown 0.4s ease;
+            flex-direction: column;
+            gap: 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 1.5rem;
+            height: fit-content;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .header h1 {
-            font-size: 32px;
-            color: #1a1a1a;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            letter-spacing: -0.5px;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        /* ==================== BUTTONS ==================== */
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            user-select: none;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #5568d3 0%, #6a4291 100%);
-        }
-
-        .btn-secondary {
-            background: #f5f5f5;
-            color: #333333;
-            border: 1px solid #e0e0e0;
-        }
-
-        .btn-secondary:hover {
-            background: #efefef;
-            border-color: #d0d0d0;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: linear-gradient(135deg, #218838 0%, #1a6629 100%);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: linear-gradient(135deg, #ffb300 0%, #f57c00 100%);
-        }
-
-        .btn-small {
-            padding: 8px 16px;
-            font-size: 12px;
-        }
-
-        .btn-large {
-            padding: 14px 32px;
-            font-size: 16px;
-        }
-
-        .btn i {
-            font-size: 1em;
-        }
-
-        /* ==================== SECTIONS ==================== */
-        .section {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            animation: slideUp 0.4s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f5f5f5;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-subtitle {
-            font-size: 14px;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        /* ==================== CALENDAR ==================== */
         .calendar-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
         }
 
-        .calendar-header h2 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1a1a1a;
+        .calendar-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
             margin: 0;
+            color: var(--text-primary);
         }
 
         .calendar-nav {
             display: flex;
-            gap: 8px;
+            gap: 0.5rem;
         }
 
-        .calendar {
+        .calendar-nav button {
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 28px;
+            height: 28px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all var(--transition-fast);
+        }
+
+        .calendar-nav button:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .calendar-month-title {
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .calendar-weekdays {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
+            gap: 0.3rem;
+            margin-bottom: 0.4rem;
         }
 
         .calendar-weekday {
             text-align: center;
-            font-weight: 700;
-            color: #666;
-            padding: 12px;
-            font-size: 12px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            background: #f9f9f9;
-            border-radius: 8px;
+        }
+
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.3rem;
         }
 
         .calendar-day {
@@ -258,1721 +108,1225 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
+            border-radius: var(--border-radius);
             cursor: pointer;
-            font-size: 15px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            background: white;
-            color: #333;
-            user-select: none;
+            font-size: 0.8rem;
+            background: var(--bg-main);
+            border: 1px solid transparent;
+            transition: all var(--transition-fast);
+            color: var(--text-secondary);
         }
 
-        .calendar-day:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
-            transform: translateY(-2px);
+        .calendar-day:hover:not(.other-month) {
+            background: #F0F4FF;
+            border-color: var(--border-color);
         }
 
         .calendar-day.other-month {
-            color: #ccc;
-            background: #f5f5f5;
-            cursor: not-allowed;
-            border-color: #f0f0f0;
-        }
-
-        .calendar-day.other-month:hover {
-            border-color: #f0f0f0;
-            background: #f5f5f5;
-            transform: none;
+            opacity: 0.25;
+            cursor: default;
         }
 
         .calendar-day.today {
-            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-            border-color: #667eea;
-            color: #667eea;
-            font-weight: 700;
-            box-shadow: inset 0 0 0 1px #667eea;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
         }
 
         .calendar-day.selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            font-weight: 600;
         }
 
-        .calendar-day.selected:hover {
-            transform: translateY(-2px);
+        .schedule-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow: hidden;
         }
 
-        /* ==================== SCHEDULE ==================== */
+        .schedule-header {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .schedule-header h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: var(--font-size-xl);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .schedule-date-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
         .schedule-container {
-            margin-bottom: 20px;
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         .schedule-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 12px;
-        }
-
-        .time-slot {
-            padding: 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            background: white;
-            color: #666;
-            user-select: none;
-        }
-
-        .time-slot:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
-            color: #667eea;
-            transform: translateY(-2px);
-        }
-
-        .time-slot.available {
-            border-color: #e0e0e0;
-            color: #666;
-        }
-
-        .time-slot.available:hover {
-            border-color: #28a745;
-            background: #f0fff4;
-            color: #28a745;
-        }
-
-        .time-slot.booked {
-            background: #f8d7da;
-            border-color: #dc3545;
-            color: #dc3545;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .time-slot.booked:hover {
-            background: #f8d7da;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .time-slot.selected {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .time-slot.selected:hover {
-            transform: translateY(-2px);
-        }
-
-        /* ==================== APPOINTMENTS LIST ==================== */
-        .appointments-list {
             display: flex;
             flex-direction: column;
-            gap: 15px;
         }
 
-        .appointments-empty {
+        .time-row {
+            display: grid;
+            grid-template-columns: 80px repeat(3, 1fr);
+            border-bottom: 1px solid var(--border-color);
+            min-height: 80px;
+        }
+
+        .time-row:first-child {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg-main);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .time-cell {
+            padding: 1rem 0.75rem;
             text-align: center;
-            padding: 60px 20px;
-            color: #999;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .appointments-empty i {
-            font-size: 48px;
-            color: #ddd;
-            margin-bottom: 15px;
-            display: block;
-            opacity: 0.5;
+        .time-cell.header {
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
-        .appointments-empty p {
-            font-size: 16px;
-            margin: 0;
+        .time-cell.hour {
+            background: var(--bg-main);
+            position: sticky;
+            left: 0;
+            z-index: 5;
         }
 
-        .appointment-card {
-            padding: 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+        .prof-name-cell {
+            padding: 1rem 0.75rem;
+            text-align: center;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            gap: 0.5rem;
+        }
+
+        .prof-badge {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .schedule-slot {
+            padding: 0.75rem;
+            border-right: 1px solid var(--border-color);
             cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            user-select: none;
-        }
-
-        .appointment-card:hover {
-            background: linear-gradient(135deg, white 0%, #f8f9fa 100%);
-            border-color: #667eea;
-            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
-            transform: translateX(4px);
-        }
-
-        .appointment-card.completed {
-            opacity: 0.8;
-            background: linear-gradient(135deg, #f0fff4 0%, white 100%);
-            border-color: #28a745;
-        }
-
-        .appointment-card.completed:hover {
-            border-color: #28a745;
-            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.2);
-        }
-
-        .appointment-card.cancelled {
-            opacity: 0.5;
-            background: linear-gradient(135deg, #fff5f5 0%, white 100%);
-            border-color: #dc3545;
-        }
-
-        .appointment-card.cancelled:hover {
-            border-color: #dc3545;
-            box-shadow: 0 4px 16px rgba(220, 53, 69, 0.2);
-        }
-
-        .appointment-info {
-            flex: 1;
-        }
-
-        .appointment-time {
-            font-weight: 700;
-            color: #1a1a1a;
-            font-size: 16px;
-            margin-bottom: 8px;
+            transition: all var(--transition-fast);
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.8rem;
         }
 
-        .appointment-time i {
-            color: #667eea;
+        .schedule-slot.empty {
+            color: var(--text-primary);
+            background: transparent;
+            font-weight: 500;
         }
 
-        .appointment-client {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 6px;
+        .schedule-slot.empty:hover {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .schedule-slot.booked {
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .schedule-slot.booked:hover {
+            transform: scale(1.05);
+        }
+
+        .slot-content {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
+            gap: 0.25rem;
         }
 
-        .appointment-client i {
-            color: #999;
-            width: 16px;
+        .slot-client {
+            font-weight: 600;
+            font-size: 0.9rem;
         }
 
-        .appointment-service {
-            font-size: 13px;
-            color: #999;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .slot-service {
+            font-size: 0.7rem;
+            opacity: 0.9;
         }
 
-        .appointment-service i {
-            color: #999;
-            width: 16px;
-        }
+        .bg-prof-1 { background-color: #dbeafe; }
+        .bg-prof-2 { background-color: #e0e7ff; }
+        .bg-prof-3 { background-color: #f3e8ff; }
 
-        .appointment-value {
-            font-size: 15px;
-            color: #28a745;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .badge-prof-1 { background-color: #3b82f6; }
+        .badge-prof-2 { background-color: #818cf8; }
+        .badge-prof-3 { background-color: #a855f7; }
 
-        .appointment-value i {
-            color: #28a745;
-        }
+        .slot-prof-1 { background-color: #3b82f6; }
+        .slot-prof-2 { background-color: #818cf8; }
+        .slot-prof-3 { background-color: #a855f7; }
 
-        .appointment-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .appointment-status {
-            display: inline-block;
-            font-size: 11px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            background: #e7f3ff;
-            color: #0056b3;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-
-        .appointment-status.completed {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .appointment-status.cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .appointment-status.pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        /* ==================== MODALS ==================== */
-        .modal {
+        .modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            z-index: 2000;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            animation: fadeIn 0.3s ease;
-            backdrop-filter: blur(4px);
         }
 
-        .modal.active {
+        .modal-overlay.active {
             display: flex;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideInUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-content {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            max-width: 700px;
-            width: 100%;
+        .modal-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            animation: slideInUp 0.3s ease;
+            box-shadow: var(--shadow-xl);
         }
 
         .modal-header {
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: #1a1a1a;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f5f5f5;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .modal-header i {
-            margin-right: 10px;
-            color: #667eea;
+        .modal-header h2 {
+            margin: 0;
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .modal-close {
             background: none;
             border: none;
-            font-size: 28px;
+            font-size: 24px;
             cursor: pointer;
-            color: #999;
-            width: 40px;
-            height: 40px;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            user-select: none;
+            border-radius: var(--border-radius);
+            transition: all var(--transition-fast);
         }
 
         .modal-close:hover {
-            background: #f5f5f5;
-            color: #1a1a1a;
+            background: var(--bg-main);
+            color: var(--text-primary);
         }
 
-        /* ==================== FORMS ==================== */
-        .form-group {
-            margin-bottom: 20px;
+        .form-field {
+            margin-bottom: 1.2rem;
         }
 
-        .form-group:last-of-type {
-            margin-bottom: 0;
-        }
-
-        .form-group label {
+        .form-field label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 700;
-            font-size: 14px;
-            color: #1a1a1a;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+            font-size: var(--font-size-sm);
+            color: var(--text-primary);
         }
 
-        .form-group label i {
-            margin-right: 6px;
-            color: #667eea;
-            width: 16px;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
             width: 100%;
-            padding: 12px 14px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: 'Inter', inherit;
-            transition: all 0.3s ease;
-            background: white;
-            color: #333;
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+            transition: all var(--transition-fast);
+            box-sizing: border-box;
         }
 
-        .form-group input::placeholder,
-        .form-group textarea::placeholder {
-            color: #999;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
             outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
         }
 
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-            font-family: 'Inter', inherit;
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: 6px;
-            color: #666;
-            font-size: 12px;
+        .form-field input:disabled {
+            background: var(--bg-main);
+            cursor: not-allowed;
         }
 
         .form-actions {
             display: flex;
-            gap: 12px;
-            margin-top: 30px;
+            gap: 1rem;
             justify-content: flex-end;
-            padding-top: 20px;
-            border-top: 2px solid #f5f5f5;
+            margin-top: 2rem;
         }
 
-        .form-actions .btn {
-            min-width: 120px;
+        .modal-info-group {
+            background: var(--bg-main);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
         }
 
-        /* ==================== PAYMENT METHODS ==================== */
-        .payment-method-selector {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .payment-option {
-            padding: 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.3s ease;
-            background: white;
-            position: relative;
-        }
-
-        .payment-option:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-        }
-
-        .payment-option input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .payment-option input[type="radio"]:checked + label {
-            color: #667eea;
-            font-weight: 700;
-        }
-
-        .payment-option.active {
-            border-color: #667eea;
-            background: #f8f9ff;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
-
-        .payment-option label {
-            cursor: pointer;
-            display: block;
-            user-select: none;
-        }
-
-        .payment-option-icon {
-            font-size: 40px;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .payment-option-text {
-            font-weight: 700;
-            color: #333;
-            font-size: 14px;
-        }
-
-        /* ==================== PAYMENT EXTRAS ==================== */
-        .pay-extra {
-            display: none;
-            padding: 25px;
-            background: linear-gradient(135deg, #f9f9f9 0%, #f5f5f5 100%);
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            animation: slideInUp 0.3s ease;
-        }
-
-        .pay-extra.active {
-            display: block;
-        }
-
-        .pay-extra h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .pay-extra h3 i {
-            color: #667eea;
-        }
-
-        /* ==================== PIX QR CODE ==================== */
-        #pixQr {
-            width: 100%;
-            height: 320px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            border: 2px dashed #667eea;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            padding: 15px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        #pixQr canvas {
-            max-width: 280px !important;
-            max-height: 280px !important;
-            width: auto !important;
-            height: auto !important;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
-
-        #pixQr img {
-            max-width: 280px !important;
-            max-height: 280px !important;
-            width: auto !important;
-            height: auto !important;
-        }
-
-        .qr-loading {
-            text-align: center;
-            color: #999;
-        }
-
-        .qr-loading i {
-            font-size: 32px;
-            animation: spin 1s linear infinite;
-            display: block;
-            margin-bottom: 10px;
-            color: #667eea;
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        #pixCopiaCola {
-            width: 100%;
-            min-height: 100px;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            background: white;
-            color: #333;
-            resize: vertical;
-            margin-bottom: 15px;
-            line-height: 1.6;
-            word-break: break-all;
-        }
-
-        #pixCopiaCola:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        }
-
-        .copy-button-wrapper {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .copy-button-wrapper button {
-            flex: 1;
-            min-width: 150px;
-        }
-
-        /* ==================== FINALIZE VALUE ==================== */
-        .finalize-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #28a745;
-            margin-bottom: 30px;
-            text-align: center;
-            padding: 25px 20px;
-            background: linear-gradient(135deg, #f0fff4 0%, #e8f8f0 100%);
-            border-radius: 10px;
-            border: 2px solid #28a745;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .finalize-value i {
-            font-size: 24px;
-        }
-
-        .finalize-value small {
-            display: block;
-            font-size: 13px;
-            color: #666;
-            margin-top: 8px;
-            font-weight: 400;
-        }
-
-        /* ==================== CARD FIELDS ==================== */
-        .card-fields {
+        .modal-info-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 1rem;
+            margin-bottom: 0.8rem;
         }
 
-        .card-fields .form-group {
+        .modal-info-row:last-child {
             margin-bottom: 0;
         }
 
-        /* ==================== VIEW CONTENT ==================== */
-        .view-content {
-            margin-bottom: 20px;
+        .modal-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
         }
 
-        .view-content-item {
-            padding: 12px;
-            margin-bottom: 10px;
-            border-left: 4px solid #667eea;
-            background: #f8f9ff;
-            border-radius: 6px;
-        }
-
-        .view-content-item strong {
-            color: #1a1a1a;
-            display: block;
-            margin-bottom: 4px;
-            font-size: 13px;
+        .modal-info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #667eea;
         }
 
-        .view-content-item span {
-            color: #333;
-            font-size: 15px;
+        .modal-info-value {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-primary);
         }
 
-        /* ==================== INFO BOX ==================== */
-        .info-box {
-            padding: 15px;
-            background: #e7f3ff;
-            border-left: 4px solid #0056b3;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-        .info-box i {
-            color: #0056b3;
-            margin-right: 8px;
-        }
-
-        .info-box small {
-            color: #0056b3;
+        .modal-status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
             font-weight: 600;
         }
 
-        /* ==================== RESPONSIVE ==================== */
-        @media (max-width: 1024px) {
-            .container {
-                padding: 15px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
-
-            .header-actions {
-                width: 100%;
-            }
-
-            .header-actions .btn {
-                flex: 1;
-            }
-
-            .schedule-grid {
-                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            }
-
-            .modal-content {
-                max-width: 95%;
-                padding: 30px;
-            }
+        .modal-status-badge.confirmado {
+            background: #d1fae5;
+            color: #065f46;
         }
 
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 24px;
-            }
-
-            .section {
-                padding: 20px;
-            }
-
-            .section-title {
-                font-size: 18px;
-            }
-
-            .modal-content {
-                max-width: 95%;
-                padding: 25px;
-            }
-
-            .appointment-card {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .appointment-actions {
-                width: 100%;
-            }
-
-            .appointment-actions .btn {
-                flex: 1;
-                font-size: 12px;
-            }
-
-            .schedule-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            }
-
-            .calendar {
-                grid-template-columns: repeat(7, 1fr);
-                gap: 6px;
-            }
-
-            .calendar-day {
-                font-size: 13px;
-            }
-
-            .payment-method-selector {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .card-fields {
-                grid-template-columns: 1fr;
-            }
-
-            .form-actions {
-                flex-direction: column-reverse;
-            }
-
-            .form-actions .btn {
-                width: 100%;
-            }
+        .modal-status-badge.cancelado {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
-        @media (max-width: 480px) {
-            .container {
-                padding: 10px;
-            }
+        .modal-status-badge.finalizado,
+        .modal-status-badge.concluido {
+            background: #dbeafe;
+            color: #0c4a6e;
+        }
 
-            .header {
-                padding: 15px;
-                margin-bottom: 20px;
-            }
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
 
-            .header h1 {
-                font-size: 20px;
-            }
+        .modal-actions.full {
+            grid-template-columns: 1fr;
+        }
 
-            .header h1 i {
-                font-size: 24px;
-            }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            height: 100%;
+            color: var(--text-secondary);
+        }
 
-            .section {
-                padding: 15px;
-                margin-bottom: 20px;
-            }
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.4;
+        }
 
-            .calendar-header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
+        .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
 
-            .calendar-header h2 {
-                width: 100%;
-            }
+        .payment-method {
+            position: relative;
+        }
 
-            .calendar-nav {
-                width: 100%;
-            }
+        .payment-method input[type="radio"] {
+            display: none;
+        }
 
-            .calendar-nav .btn {
-                flex: 1;
-            }
+        .payment-method-card {
+            padding: 1.5rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--card-bg);
+        }
 
-            .modal-content {
-                padding: 20px;
-                max-height: 85vh;
-            }
+        .payment-method input[type="radio"]:checked ~ .payment-method-card {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary) 100%);
+            color: white;
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+            transform: translateY(-4px);
+        }
 
-            .modal-header {
-                font-size: 20px;
-                margin-bottom: 20px;
-            }
+        .payment-method-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            display: block;
+            line-height: 1;
+        }
 
-            .payment-method-selector {
-                grid-template-columns: 1fr;
-            }
+        .payment-method input[type="radio"]:checked ~ .payment-method-card .payment-method-icon,
+        .payment-method input[type="radio"]:checked ~ .payment-method-card .payment-method-label {
+            color: white;
+        }
 
+        .payment-method-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: block;
+        }
+
+        .pro-btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pro-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .pro-btn-primary:hover {
+            background: #4f46e5;
+        }
+
+        .pro-btn-secondary {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .pro-btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .pro-btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .pro-btn-success:hover {
+            background: #059669;
+        }
+
+        .pro-btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .pro-btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Bloco Pix / Cartão */
+        .pay-extra {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-main);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        .pay-extra.active { display: block; }
+
+        .pix-qr {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .pix-copy {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.5rem;
+        }
+        .pix-copy textarea {
+            width: 100%;
+            resize: none;
+            min-height: 70px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        #pixQr {
+            width: 280px;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        #pixQr img,
+        #pixQr canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            image-rendering: pixelated;
+        }
+
+        @media (max-width: 520px) {
             #pixQr {
-                height: 280px;
-            }
-
-            .finalize-value {
-                font-size: 24px;
-                padding: 20px;
-            }
-
-            .form-group label {
-                font-size: 12px;
-            }
-
-            .form-group input,
-            .form-group select,
-            .form-group textarea {
-                font-size: 16px;
-            }
-        }
-
-        /* ==================== SCROLLBAR ==================== */
-        .modal-content::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .modal-content::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .modal-content::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 10px;
-        }
-
-        .modal-content::-webkit-scrollbar-thumb:hover {
-            background: #999;
-        }
-
-        /* ==================== PRINT ==================== */
-        @media print {
-            body {
-                background: white;
-            }
-
-            .modal,
-            .btn,
-            .header-actions {
-                display: none;
-            }
-
-            .section {
-                box-shadow: none;
-                border: 1px solid #e0e0e0;
+                width: 240px;
+                height: 240px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- ==================== HEADER ==================== -->
-        <div class="header">
-            <div>
-                <h1>
-                    <i class="fas fa-calendar-alt"></i>
-                    Agenda de Agendamentos
-                </h1>
+    <div class="pro-app">
+        <aside class="pro-sidebar">
+            <div class="pro-sidebar-logo">
+                <a href="#" class="pro-logo">
+                    <div class="pro-logo-icon">📋</div>
+                    <span class="pro-logo-text">ReddIto</span>
+                </a>
             </div>
-            <div class="header-actions">
-                <button class="btn btn-primary" onclick="openNewAppointmentModal()" title="Criar novo agendamento">
-                    <i class="fas fa-plus"></i>
-                    Novo Agendamento
-                </button>
-                <button class="btn btn-secondary" onclick="openPaymentConfigModal()" title="Configurar pagamento">
-                    <i class="fas fa-cog"></i>
-                    Configurações
-                </button>
-            </div>
-        </div>
 
-        <!-- ==================== CALENDAR ==================== -->
-        <div class="section">
-            <div class="calendar-header">
-                <div>
-                    <h2 id="calendarTitle">Março 2026</h2>
+            <nav class="pro-sidebar-nav">
+                <div class="pro-nav-section">
+                    <a href="dashboard.html" class="pro-nav-item">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                    <a href="agenda.html" class="pro-nav-item active">
+                        <i class="fas fa-calendar"></i> Agenda
+                    </a>
                 </div>
-                <div class="calendar-nav">
-                    <button class="btn btn-small btn-secondary" onclick="previousMonth()" title="Mês anterior">
-                        <i class="fas fa-chevron-left"></i>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">GESTÃO</div>
+                    <a href="clientes.html" class="pro-nav-item">
+                        <i class="fas fa-users"></i> Clientes
+                    </a>
+                    <a href="servicos.html" class="pro-nav-item">
+                        <i class="fas fa-concierge-bell"></i> Serviços
+                    </a>
+                    <a href="profissionais.html" class="pro-nav-item">
+                        <i class="fas fa-user-tie"></i> Profissionais
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">FINANCEIRO</div>
+                    <a href="financeiro.html" class="pro-nav-item">
+                        <i class="fas fa-money-bill-wave"></i> Financeiro
+                    </a>
+                    <a href="relatorios.html" class="pro-nav-item">
+                        <i class="fas fa-chart-bar"></i> Relatórios
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">AUTOMAÇÃO</div>
+                    <a href="whatsapp.html" class="pro-nav-item">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <a href="configuracoes.html" class="pro-nav-item">
+                        <i class="fas fa-cog"></i> Configurações
+                    </a>
+                </div>
+            </nav>
+
+            <div class="pro-sidebar-footer">
+                <div class="pro-user-profile">
+                    <div class="pro-user-avatar" id="userAvatar">U</div>
+                    <div class="pro-user-info">
+                        <div class="pro-user-name" id="userName">Usuário</div>
+                        <div class="pro-user-role" id="userRole">-</div>
+                    </div>
+                    <button class="pro-user-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
                     </button>
-                    <button class="btn btn-small btn-secondary" onclick="nextMonth()" title="Próximo mês">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
                 </div>
             </div>
-            <div class="calendar" id="calendar"></div>
-        </div>
+        </aside>
 
-        <!-- ==================== SCHEDULE ==================== -->
-        <div class="section schedule-container">
-            <div class="section-title">
-                <i class="fas fa-clock"></i>
-                Horários Disponíveis - <span id="scheduleDate">Selecione uma data</span>
-            </div>
-            <div class="schedule-grid" id="schedule"></div>
-        </div>
-
-        <!-- ==================== APPOINTMENTS ==================== -->
-        <div class="section">
-            <div class="section-title">
-                <i class="fas fa-list"></i>
-                Agendamentos - <span id="appointmentsDate">Selecione uma data</span>
-            </div>
-            <div class="appointments-list" id="appointmentsList">
-                <div class="appointments-empty">
-                    <i class="fas fa-inbox"></i>
-                    <p>Nenhum agendamento para esta data</p>
+        <main class="pro-main">
+            <div class="agenda-wrapper">
+                <div class="calendar-panel">
+                    <div class="calendar-header">
+                        <h3 id="monthYear">Março 2026</h3>
+                        <div class="calendar-nav">
+                            <button onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
+                            <button onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div id="miniCalendar"></div>
                 </div>
+
+                <div class="schedule-panel">
+                    <div class="schedule-header">
+                        <h2>Agenda</h2>
+                        <div class="schedule-date-label" id="dateLabel">Selecione um dia</div>
+                    </div>
+                    <div class="schedule-container" id="scheduleContainer"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL - NOVO AGENDAMENTO -->
+    <div class="modal-overlay" id="appointmentModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Novo Agendamento</h2>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 0 2rem;">
+                <form id="appointmentForm" onsubmit="saveAppointment(event)">
+                    <div class="form-field">
+                        <label>Profissional</label>
+                        <input type="text" id="profName" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Data</label>
+                        <input type="text" id="dateField" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Horário</label>
+                        <input type="text" id="timeField" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Cliente *</label>
+                        <select id="clientSelect" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Serviço *</label>
+                        <select id="serviceSelect" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Valor (R$)</label>
+                        <input type="number" id="valueField" min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>Observações</label>
+                        <textarea id="notesField" rows="3" placeholder="Digite observações..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="pro-btn pro-btn-secondary" onclick="closeModal()">Cancelar</button>
+                        <button type="submit" class="pro-btn pro-btn-primary">Agendar</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- ==================== NEW/EDIT APPOINTMENT MODAL ==================== -->
-    <div class="modal" id="appointmentModal">
-        <div class="modal-content">
+    <!-- MODAL - VISUALIZAR AGENDAMENTO -->
+    <div class="modal-overlay" id="viewAppointmentModal">
+        <div class="modal-box">
             <div class="modal-header">
-                <span>
-                    <i class="fas fa-plus-circle"></i>
-                    <span id="appointmentModalTitle">Novo Agendamento</span>
-                </span>
-                <button class="modal-close" onclick="closeAppointmentModal()" title="Fechar">
-                    <i class="fas fa-times"></i>
-                </button>
+                <h2>Detalhes do Agendamento</h2>
+                <button class="modal-close" onclick="closeViewModal()"><i class="fas fa-times"></i></button>
             </div>
-            <form id="appointmentForm" onsubmit="handleAppointmentSubmit(event)">
-                <div class="form-group">
-                    <label for="clientName">
-                        <i class="fas fa-user"></i>
-                        Nome do Cliente
-                    </label>
-                    <input
-                        type="text"
-                        id="clientName"
-                        placeholder="Ex: João Silva"
-                        required
-                        maxlength="100"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="clientEmail">
-                        <i class="fas fa-envelope"></i>
-                        Email
-                    </label>
-                    <input
-                        type="email"
-                        id="clientEmail"
-                        placeholder="Ex: joao@email.com"
-                        required
-                        maxlength="100"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="clientPhone">
-                        <i class="fas fa-phone"></i>
-                        Telefone
-                    </label>
-                    <input
-                        type="tel"
-                        id="clientPhone"
-                        placeholder="Ex: (11) 98765-4321"
-                        required
-                        maxlength="20"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="appointmentDate">
-                        <i class="fas fa-calendar"></i>
-                        Data
-                    </label>
-                    <input
-                        type="date"
-                        id="appointmentDate"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="appointmentTime">
-                        <i class="fas fa-clock"></i>
-                        Horário
-                    </label>
-                    <input
-                        type="time"
-                        id="appointmentTime"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="serviceType">
-                        <i class="fas fa-briefcase"></i>
-                        Serviço
-                    </label>
-                    <select id="serviceType" required>
-                        <option value="">-- Selecione um serviço --</option>
-                        <option value="Consulta">Consulta</option>
-                        <option value="Tratamento">Tratamento</option>
-                        <option value="Limpeza">Limpeza</option>
-                        <option value="Acompanhamento">Acompanhamento</option>
-                        <option value="Avaliação">Avaliação</option>
-                        <option value="Procedimento">Procedimento</option>
-                        <option value="Outros">Outros</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="appointmentValue">
-                        <i class="fas fa-money-bill-wave"></i>
-                        Valor (R$)
-                    </label>
-                    <input
-                        type="number"
-                        id="appointmentValue"
-                        placeholder="Ex: 150.00"
-                        step="0.01"
-                        min="0.01"
-                        required
-                    >
-                    <small>O valor é obrigatório para finalizar o agendamento</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="appointmentNotes">
-                        <i class="fas fa-sticky-note"></i>
-                        Observações
-                    </label>
-                    <textarea
-                        id="appointmentNotes"
-                        placeholder="Observações adicionais (opcional)..."
-                        maxlength="500"
-                    ></textarea>
-                    <small>Máximo 500 caracteres</small>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeAppointmentModal()">
-                        <i class="fas fa-times"></i>
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>
-                        Salvar Agendamento
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ==================== VIEW APPOINTMENT MODAL ==================== -->
-    <div class="modal" id="viewAppointmentModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>
-                    <i class="fas fa-info-circle"></i>
-                    Detalhes do Agendamento
-                </span>
-                <button class="modal-close" onclick="closeViewModal()" title="Fechar">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="viewAppointmentContent"></div>
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeViewModal()">
-                    <i class="fas fa-times"></i>
-                    Fechar
-                </button>
-                <button type="button" class="btn btn-primary" id="editApptBtn" onclick="editAppointment()">
-                    <i class="fas fa-edit"></i>
-                    Editar
-                </button>
-                <button type="button" class="btn btn-success" id="finalizeApptBtn" onclick="handleFinalize()">
-                    <i class="fas fa-check"></i>
-                    Finalizar
-                </button>
-                <button type="button" class="btn btn-danger" id="cancelApptBtn" onclick="cancelAppointment()">
-                    <i class="fas fa-ban"></i>
-                    Cancelar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== FINALIZE APPOINTMENT MODAL ==================== -->
-    <div class="modal" id="finalizeAppointmentModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span>
-                    <i class="fas fa-credit-card"></i>
-                    Finalizar Agendamento
-                </span>
-                <button class="modal-close" onclick="closeFinalizeModal()" title="Fechar">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="finalize-value">
-                <i class="fas fa-tag"></i>
-                R$ <span id="finalizeValue">0,00</span>
-                <small id="finalizeValueLabel">Valor total do agendamento</small>
-            </div>
-
-            <div class="payment-method-selector">
-                <div class="payment-option">
-                    <input
-                        type="radio"
-                        id="paymentPix"
-                        name="paymentMethod"
-                        value="pix"
-                        onchange="onPaymentMethodChanged()"
-                    >
-                    <label for="paymentPix">
-                        <span class="payment-option-icon">📱</span>
-                        <span class="payment-option-text">Pix</span>
-                    </label>
-                </div>
-                <div class="payment-option">
-                    <input
-                        type="radio"
-                        id="paymentCard"
-                        name="paymentMethod"
-                        value="card"
-                        onchange="onPaymentMethodChanged()"
-                    >
-                    <label for="paymentCard">
-                        <span class="payment-option-icon">💳</span>
-                        <span class="payment-option-text">Cartão</span>
-                    </label>
-                </div>
-                <div class="payment-option">
-                    <input
-                        type="radio"
-                        id="paymentCash"
-                        name="paymentMethod"
-                        value="cash"
-                        onchange="onPaymentMethodChanged()"
-                    >
-                    <label for="paymentCash">
-                        <span class="payment-option-icon">💵</span>
-                        <span class="payment-option-text">Dinheiro</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- ==================== PIX EXTRA ==================== -->
-            <div class="pay-extra" id="pixExtra">
-                <h3>
-                    <i class="fas fa-qrcode"></i>
-                    QR Code Pix
-                </h3>
-                <div id="pixQr">
-                    <div class="qr-loading">
-                        <i class="fas fa-spinner"></i>
-                        <p>Gerando QR Code...</p>
+            <div style="padding: 0 2rem;">
+                <div class="modal-info-group">
+                    <div class="modal-info-row">
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Profissional</span>
+                            <span class="modal-info-value" id="viewProfName">-</span>
+                        </div>
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Cliente</span>
+                            <span class="modal-info-value" id="viewClientName">-</span>
+                        </div>
+                    </div>
+                    <div class="modal-info-row">
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Data</span>
+                            <span class="modal-info-value" id="viewDate">-</span>
+                        </div>
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Horário</span>
+                            <span class="modal-info-value" id="viewTime">-</span>
+                        </div>
+                    </div>
+                    <div class="modal-info-row">
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Serviço</span>
+                            <span class="modal-info-value" id="viewService">-</span>
+                        </div>
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Valor</span>
+                            <span class="modal-info-value" id="viewValue">-</span>
+                        </div>
+                    </div>
+                    <div class="modal-info-row">
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Status</span>
+                            <span class="modal-info-value" id="viewStatus">-</span>
+                        </div>
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Observações</span>
+                            <span class="modal-info-value" id="viewNotes">-</span>
+                        </div>
                     </div>
                 </div>
-                <textarea
-                    id="pixCopiaCola"
-                    readonly
-                    placeholder="O código Pix será gerado aqui..."
-                ></textarea>
-                <div class="copy-button-wrapper">
-                    <button type="button" class="btn btn-primary" onclick="copyPixCode()">
-                        <i class="fas fa-copy"></i>
-                        Copiar Código Pix
+
+                <div class="modal-actions" id="viewActions">
+                    <button type="button" class="pro-btn pro-btn-primary" onclick="handleEdit()">
+                        <i class="fas fa-edit"></i> Editar
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="downloadQRCode()">
-                        <i class="fas fa-download"></i>
-                        Baixar QR Code
+                    <button type="button" class="pro-btn pro-btn-danger" onclick="handleCancel()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="pro-btn pro-btn-success" onclick="handleFinalize()">
+                        <i class="fas fa-check"></i> Finalizar
                     </button>
                 </div>
-            </div>
-
-            <!-- ==================== CARD EXTRA ==================== -->
-            <div class="pay-extra" id="cardExtra">
-                <h3>
-                    <i class="fas fa-credit-card"></i>
-                    Dados do Cartão
-                </h3>
-                <div class="card-fields">
-                    <div class="form-group">
-                        <label for="nsuField">
-                            <i class="fas fa-hashtag"></i>
-                            NSU (Número Sequencial Único)
-                        </label>
-                        <input
-                            type="text"
-                            id="nsuField"
-                            placeholder="Ex: 123456"
-                            maxlength="20"
-                        >
-                    </div>
-                    <div class="form-group">
-                        <label for="autField">
-                            <i class="fas fa-key"></i>
-                            AUT (Código de Autorização)
-                        </label>
-                        <input
-                            type="text"
-                            id="autField"
-                            placeholder="Ex: 654321"
-                            maxlength="20"
-                        >
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeFinalizeModal()">
-                    <i class="fas fa-times"></i>
-                    Cancelar
-                </button>
-                <button type="button" class="btn btn-success btn-large" onclick="confirmFinalize()">
-                    <i class="fas fa-check-circle"></i>
-                    Confirmar Pagamento
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- ==================== PAYMENT CONFIG MODAL ==================== -->
-    <div class="modal" id="paymentConfigModal">
-        <div class="modal-content">
+    <!-- MODAL - EDITAR AGENDAMENTO -->
+    <div class="modal-overlay" id="editAppointmentModal">
+        <div class="modal-box">
             <div class="modal-header">
-                <span>
-                    <i class="fas fa-cog"></i>
-                    Configurações de Pagamento
-                </span>
-                <button class="modal-close" onclick="closePaymentConfigModal()" title="Fechar">
-                    <i class="fas fa-times"></i>
-                </button>
+                <h2>Editar Agendamento</h2>
+                <button class="modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
             </div>
-            <form id="paymentConfigForm" onsubmit="handlePaymentConfigSubmit(event)">
-                <div class="form-group">
-                    <label for="pixChave">
-                        <i class="fas fa-key"></i>
-                        Chave Pix (CPF, CNPJ, Email ou Telefone)
-                    </label>
-                    <input
-                        type="text"
-                        id="pixChave"
-                        placeholder="Ex: 12345678900 ou email@email.com ou +55 11 98765-4321"
-                        required
-                        maxlength="140"
-                    >
-                    <small>Pode ser CPF (11 dígitos), CNPJ (14 dígitos), Email ou Telefone</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="pixNome">
-                        <i class="fas fa-user-circle"></i>
-                        Nome do Recebedor
-                    </label>
-                    <input
-                        type="text"
-                        id="pixNome"
-                        placeholder="Ex: Bruno Cesar Silva"
-                        required
-                        maxlength="140"
-                    >
-                    <small>Nome completo ou nome da empresa (máx. 140 caracteres)</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="pixCidade">
-                        <i class="fas fa-map-marker-alt"></i>
-                        Cidade
-                    </label>
-                    <input
-                        type="text"
-                        id="pixCidade"
-                        placeholder="Ex: São Paulo"
-                        required
-                        maxlength="25"
-                    >
-                    <small>Cidade onde você recebe o Pix (máx. 25 caracteres)</small>
-                </div>
-
-                <div class="info-box">
-                    <i class="fas fa-info-circle"></i>
-                    <small>
-                        Essas configurações são obrigatórias para gerar o QR Code do Pix. Você pode alterá-las a qualquer momento. Os dados não são compartilhados.
-                    </small>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closePaymentConfigModal()">
-                        <i class="fas fa-times"></i>
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>
-                        Salvar Configurações
-                    </button>
-                </div>
-            </form>
+            <div style="padding: 0 2rem;">
+                <form id="editAppointmentForm" onsubmit="updateAppointment(event)">
+                    <div class="form-field">
+                        <label>Profissional</label>
+                        <input type="text" id="editProfName" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Data</label>
+                        <input type="text" id="editDate" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Horário</label>
+                        <input type="text" id="editTime" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Cliente</label>
+                        <select id="editClientSelect" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Serviço</label>
+                        <select id="editServiceSelect" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Valor (R$)</label>
+                        <input type="number" id="editValueField" min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>Observações</label>
+                        <textarea id="editNotesField" rows="3" placeholder="Digite observações..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="pro-btn pro-btn-secondary" onclick="closeEditModal()">Cancelar</button>
+                        <button type="submit" class="pro-btn pro-btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <!-- ==================== SCRIPTS ==================== -->
+    <!-- MODAL - FINALIZAR AGENDAMENTO -->
+    <div class="modal-overlay" id="finalizeAppointmentModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Finalizar Agendamento</h2>
+                <button class="modal-close" onclick="closeFinalizeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 0 2rem;">
+                <form id="finalizeForm" onsubmit="finalizeAppointment(event)">
+                    <div class="modal-info-group">
+                        <div class="modal-info-row">
+                            <div class="modal-info-item">
+                                <span class="modal-info-label">Valor do Serviço</span>
+                                <span class="modal-info-value" id="finalizeValue" style="color: var(--primary); font-size: 1.2rem;">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field" style="margin-bottom: 1.5rem;">
+                        <label style="margin-bottom: 1rem;">Como foi o pagamento? *</label>
+                        <div class="payment-methods">
+                            <div class="payment-method">
+                                <input type="radio" id="payment_pix" name="paymentMethod" value="pix" required>
+                                <label for="payment_pix" class="payment-method-card">
+                                    <span class="payment-method-icon">🟢</span>
+                                    <span class="payment-method-label">Pix</span>
+                                </label>
+                            </div>
+
+                            <div class="payment-method">
+                                <input type="radio" id="payment_cartao" name="paymentMethod" value="cartao" required>
+                                <label for="payment_cartao" class="payment-method-card">
+                                    <span class="payment-method-icon">💳</span>
+                                    <span class="payment-method-label">Cartão</span>
+                                </label>
+                            </div>
+
+                            <div class="payment-method">
+                                <input type="radio" id="payment_dinheiro" name="paymentMethod" value="dinheiro" required>
+                                <label for="payment_dinheiro" class="payment-method-card">
+                                    <span class="payment-method-icon">💵</span>
+                                    <span class="payment-method-label">Dinheiro</span>
+                                </label>
+                            </div>
+
+                            <div class="payment-method">
+                                <input type="radio" id="payment_debito" name="paymentMethod" value="debito" required>
+                                <label for="payment_debito" class="payment-method-card">
+                                    <span class="payment-method-icon">🏧</span>
+                                    <span class="payment-method-label">Débito</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXTRAS: PIX -->
+                    <div class="pay-extra" id="pixExtra">
+                        <div class="pix-qr">
+                            <div style="width: 100%; text-align: center; font-weight: 600; margin-bottom: 0.5rem;">
+                                Escaneie e pague com Pix
+                            </div>
+
+                            <div id="pixQr"></div>
+
+                            <div class="pix-copy">
+                                <textarea id="pixCopiaCola" readonly placeholder="Código Pix será gerado aqui"></textarea>
+                                <button type="button" class="pro-btn pro-btn-secondary" onclick="copyPixCode()">
+                                    <i class="fas fa-copy"></i> Copiar
+                                </button>
+                            </div>
+
+                            <div style="width:100%; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">
+                                Depois que o cliente pagar, clique em <b>Confirmar Finalização</b>.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXTRAS: CARTÃO / DÉBITO -->
+                    <div class="pay-extra" id="cardExtra">
+                        <div class="form-field">
+                            <label>NSU *</label>
+                            <input type="text" id="nsuField" placeholder="Ex: 123456">
+                        </div>
+                        <div class="form-field">
+                            <label>AUT (Autorização) *</label>
+                            <input type="text" id="autField" placeholder="Ex: 987654">
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Pegue esses dados no comprovante da maquininha.
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Observações Finais</label>
+                        <textarea id="finalizeNotesField" rows="3" placeholder="Adicione observações..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="pro-btn pro-btn-secondary" onclick="closeFinalizeModal()">Cancelar</button>
+                        <button type="submit" class="pro-btn pro-btn-success">
+                            <i class="fas fa-check"></i> Confirmar Finalização
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/pro-ui.js"></script>
+    <script src="js/dark-mode.js"></script>
+
     <script>
-        // ============================================
-        // VARIÁVEIS GLOBAIS E ESTADO
-        // ============================================
-        let currentMonth = new Date();
-        let selectedDate = new Date();
-        let selectedTime = null;
+        let currentCalendar = new Date();
+        let selectedDay = new Date();
+        let allAppointments = [];
+        let allProfessionals = [];
+        let allClients = [];
+        let allServices = [];
+        let modalState = { profId: null, profName: null, date: null, time: null };
         let viewingAppointment = null;
         let finalizingAppointment = null;
+        let paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
         let currentQRCode = null;
-        let paymentConfig = {
-            pix_chave: 'ec6cac7d-02af-463c-8a53-f1c753a7de96',
-            pix_nome: 'bruno cesar',
-            pix_cidade: 'Itaquaquecetuba'
-        };
-        let appointments = [];
 
-        // ============================================
-        // INICIALIZAÇÃO DA APLICAÇÃO
-        // ============================================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ Página carregada e pronta para uso');
-            initializeApp();
+        const COLORS = {
+            0: { bg: 'bg-prof-1', badge: 'badge-prof-1', slot: 'slot-prof-1' },
+            1: { bg: 'bg-prof-2', badge: 'badge-prof-2', slot: 'slot-prof-2' },
+            2: { bg: 'bg-prof-3', badge: 'badge-prof-3', slot: 'slot-prof-3' }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            loadAll();
+            setupPaymentMethodListeners();
         });
 
-        async function initializeApp() {
+        window.addEventListener('storage', e => {
+            if (e.key === 'sispro_theme') location.reload();
+        });
+
+        async function loadAll() {
             try {
-                console.log('🚀 Iniciando aplicação...');
-                
-                // Carregar configurações de pagamento
-                loadPaymentConfig();
-                
-                // Renderizar calendário
+                allProfessionals = await DB.profissionais.listar();
+                allClients = await DB.clientes.listar();
+                allServices = await DB.servicos.listar();
+                await loadPaymentConfig();
+                populateSelects();
+                populateEditSelects();
                 renderCalendar();
-                
-                // Renderizar horários
                 renderSchedule();
-                
-                // Renderizar agendamentos
-                renderAppointments();
-                
-                console.log('✅ Aplicação inicializada com sucesso');
             } catch (error) {
-                console.error('❌ Erro ao inicializar aplicação:', error);
-                alert('Erro ao inicializar a aplicação. Verifique o console para mais detalhes.');
+                console.error('Erro ao carregar:', error);
             }
         }
 
-        // ============================================
-        // CONFIGURAÇÃO DE PAGAMENTO
-        // ============================================
-        function loadPaymentConfig() {
+        async function loadPaymentConfig() {
             try {
-                document.getElementById('pixChave').value = paymentConfig.pix_chave || '';
-                document.getElementById('pixNome').value = paymentConfig.pix_nome || '';
-                document.getElementById('pixCidade').value = paymentConfig.pix_cidade || '';
-                
-                console.log('✅ Configuração Pix carregada:', paymentConfig);
-            } catch (error) {
-                console.error('❌ Erro ao carregar configuração Pix:', error);
+                const tenantId = await Auth.getTenantId();
+                const supabase = window.getSupabase();
+                const { data, error } = await supabase
+                    .from('config_pagamentos')
+                    .select('pix_chave, pix_nome, pix_cidade')
+                    .eq('tenant_id', tenantId)
+                    .maybeSingle();
+                if (error) throw error;
+                paymentConfig = data || { pix_chave: null, pix_nome: null, pix_cidade: null };
+                console.log('✅ Config Pagamentos:', paymentConfig);
+            } catch (err) {
+                console.warn('⚠️ Erro ao carregar config Pix:', err);
+                paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
             }
         }
 
-        function openPaymentConfigModal() {
-            document.getElementById('paymentConfigModal').classList.add('active');
-        }
-
-        function closePaymentConfigModal() {
-            document.getElementById('paymentConfigModal').classList.remove('active');
-        }
-
-        function handlePaymentConfigSubmit(event) {
-            event.preventDefault();
-            
-            const chave = document.getElementById('pixChave').value.trim();
-            const nome = document.getElementById('pixNome').value.trim();
-            const cidade = document.getElementById('pixCidade').value.trim();
-            
-            if (!chave || !nome || !cidade) {
-                alert('⚠️ Preencha todos os campos obrigatórios!');
-                return;
-            }
-            
-            paymentConfig = {
-                pix_chave: chave,
-                pix_nome: nome,
-                pix_cidade: cidade
-            };
-            
-            console.log('✅ Configuração Pix salva:', paymentConfig);
-            alert('✅ Configurações de Pix salvas com sucesso!');
-            closePaymentConfigModal();
-        }
-
-        // ============================================
-        // RENDERIZAÇÃO DO CALENDÁRIO
-        // ============================================
-        function renderCalendar() {
-            const year = currentMonth.getFullYear();
-            const month = currentMonth.getMonth();
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDay = new Date(year, month + 1, 0).getDate();
-            const today = new Date();
-
-            // Atualizar título
-            const monthName = currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-            document.getElementById('calendarTitle').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-
-            const calendar = document.getElementById('calendar');
-            calendar.innerHTML = '';
-
-            // Adicionar nomes dos dias da semana
-            const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
-            weekDays.forEach(day => {
-                const dayHeader = document.createElement('div');
-                dayHeader.className = 'calendar-weekday';
-                dayHeader.textContent = day;
-                calendar.appendChild(dayHeader);
+        function populateSelects() {
+            const clientSelect = document.getElementById('clientSelect');
+            const serviceSelect = document.getElementById('serviceSelect');
+            clientSelect.innerHTML = '<option value="">Selecione...</option>';
+            serviceSelect.innerHTML = '<option value="">Selecione...</option>';
+            allClients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nome;
+                clientSelect.appendChild(opt);
             });
+            allServices.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.nome;
+                serviceSelect.appendChild(opt);
+            });
+        }
 
-            // Adicionar dias vazios do mês anterior
+        function populateEditSelects() {
+            const clientSelect = document.getElementById('editClientSelect');
+            const serviceSelect = document.getElementById('editServiceSelect');
+            clientSelect.innerHTML = '<option value="">Selecione...</option>';
+            serviceSelect.innerHTML = '<option value="">Selecione...</option>';
+            allClients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nome;
+                clientSelect.appendChild(opt);
+            });
+            allServices.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.nome;
+                serviceSelect.appendChild(opt);
+            });
+        }
+
+        function renderCalendar() {
+            const year = currentCalendar.getFullYear();
+            const month = currentCalendar.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthName = currentCalendar.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            document.getElementById('monthYear').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            let html = `<div class="calendar-month-title">${monthName.toUpperCase()}</div>`;
+            html += '<div class="calendar-weekdays">';
+            ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'].forEach(d => {
+                html += `<div class="calendar-weekday">${d}</div>`;
+            });
+            html += '</div><div class="calendar-days">';
             for (let i = 0; i < firstDay; i++) {
-                const emptyDay = document.createElement('div');
-                emptyDay.className = 'calendar-day other-month';
-                emptyDay.textContent = '';
-                calendar.appendChild(emptyDay);
+                html += '<div class="calendar-day other-month"></div>';
             }
-
-            // Adicionar dias do mês
-            for (let day = 1; day <= lastDay; day++) {
+            for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
-                const isToday = date.toDateString() === today.toDateString();
-                const isSelected = date.toDateString() === selectedDate.toDateString();
-
-                const dayDiv = document.createElement('div');
-                dayDiv.className = 'calendar-day';
-                if (isToday) dayDiv.classList.add('today');
-                if (isSelected) dayDiv.classList.add('selected');
-                dayDiv.textContent = day;
-                dayDiv.onclick = () => selectDate(date);
-
-                calendar.appendChild(dayDiv);
+                const isToday = new Date().toDateString() === date.toDateString();
+                const isSelected = selectedDay.toDateString() === date.toDateString();
+                const classes = ['calendar-day'];
+                if (isToday) classes.push('today');
+                if (isSelected) classes.push('selected');
+                html += `<div class="${classes.join(' ')}" onclick="selectDay(new Date(${year}, ${month}, ${day}))">${day}</div>`;
             }
+            html += '</div>';
+            document.getElementById('miniCalendar').innerHTML = html;
         }
 
-        function selectDate(date) {
-            selectedDate = new Date(date);
-            selectedTime = null;
-            console.log('📅 Data selecionada:', selectedDate.toLocaleDateString('pt-BR'));
-            renderCalendar();
-            renderSchedule();
-            renderAppointments();
-        }
-
-        function previousMonth() {
-            currentMonth.setMonth(currentMonth.getMonth() - 1);
+        function prevMonth() {
+            currentCalendar.setMonth(currentCalendar.getMonth() - 1);
             renderCalendar();
         }
 
         function nextMonth() {
-            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            currentCalendar.setMonth(currentCalendar.getMonth() + 1);
             renderCalendar();
         }
 
-        // ============================================
-        // RENDERIZAÇÃO DE HORÁRIOS
-        // ============================================
-        function renderSchedule() {
-            const schedule = document.getElementById('schedule');
-            schedule.innerHTML = '';
+        function selectDay(date) {
+            selectedDay = date;
+            renderCalendar();
+            renderSchedule();
+        }
 
-            const hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
-
-            // Atualizar data no cabeçalho
-            document.getElementById('scheduleDate').textContent = selectedDate.toLocaleDateString('pt-BR', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-
-            // Horários ocupados (simulação)
-            const bookedHours = ['11:00', '14:00', '16:00'];
-
-            hours.forEach(hour => {
-                const slot = document.createElement('div');
-                slot.className = 'time-slot available';
-
-                if (bookedHours.includes(hour)) {
-                    slot.classList.remove('available');
-                    slot.classList.add('booked');
-                    slot.textContent = hour;
-                } else {
-                    slot.textContent = hour;
-                    slot.onclick = () => {
-                        selectTime(hour, slot);
-                    };
+        async function renderSchedule() {
+            try {
+                const dateStr = selectedDay.toISOString().split('T')[0];
+                allAppointments = await DB.agendamentos.listarPorData(dateStr);
+                const container = document.getElementById('scheduleContainer');
+                const dateLabel = selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+                document.getElementById('dateLabel').textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
+                if (!allProfessionals.length) {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional</span></div>';
+                    return;
                 }
-
-                schedule.appendChild(slot);
-            });
-        }
-
-        function selectTime(time, element) {
-            selectedTime = time;
-            document.querySelectorAll('.time-slot').forEach(slot => {
-                slot.classList.remove('selected');
-            });
-            element.classList.add('selected');
-            console.log('🕐 Horário selecionado:', time);
-        }
-
-        // ============================================
-        // RENDERIZAÇÃO DE AGENDAMENTOS
-        // ============================================
-        function renderAppointments() {
-            const appointmentsList = document.getElementById('appointmentsList');
-
-            // Atualizar data no cabeçalho
-            document.getElementById('appointmentsDate').textContent = selectedDate.toLocaleDateString('pt-BR', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-
-            // Filtrar agendamentos para a data selecionada
-            const dateString = selectedDate.toISOString().split('T')[0];
-            const filtered = appointments.filter(a => a.appointment_date === dateString);
-
-            if (filtered.length === 0) {
-                appointmentsList.innerHTML = `
-                    <div class="appointments-empty">
-                        <i class="fas fa-inbox"></i>
-                        <p>Nenhum agendamento para esta data</p>
-                    </div>
-                `;
-                return;
+                const times = generateTimes('08:00', '18:00', 30);
+                let html = '<div class="schedule-grid">';
+                html += '<div class="time-row"><div class="time-cell header"></div>';
+                allProfessionals.forEach((prof, idx) => {
+                    const color = COLORS[idx % 3];
+                    html += `<div class="prof-name-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</div>`;
+                });
+                html += '</div>';
+                times.forEach(time => {
+                    html += `<div class="time-row"><div class="time-cell hour">${time}</div>`;
+                    allProfessionals.forEach((prof, idx) => {
+                        const color = COLORS[idx % 3];
+                        const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora.substring(0, 5) === time);
+                        if (apt) {
+                            html += `<div class="schedule-slot booked ${color.slot}" data-apt-id="${apt.id}">
+                                        <div class="slot-content">
+                                            <div class="slot-client">${apt.cliente?.nome || '-'}</div>
+                                            <div class="slot-service">${apt.servico?.nome || '-'}</div>
+                                        </div>
+                                     </div>`;
+                        } else {
+                            html += `<div class="schedule-slot empty ${color.bg}" data-prof-id="${prof.id}" data-prof-name="${prof.nome}" data-date="${dateStr}" data-time="${time}">Disponível</div>`;
+                        }
+                    });
+                    html += '</div>';
+                });
+                html += '</div>';
+                container.innerHTML = html;
+                container.querySelectorAll('.schedule-slot.booked').forEach(slot => {
+                    slot.addEventListener('click', function() {
+                        const aptId = this.getAttribute('data-apt-id');
+                        viewAppointment(aptId);
+                    });
+                });
+                container.querySelectorAll('.schedule-slot.empty').forEach(slot => {
+                    slot.addEventListener('click', function() {
+                        const profId = this.getAttribute('data-prof-id');
+                        const profName = this.getAttribute('data-prof-name');
+                        const dateStr = this.getAttribute('data-date');
+                        const time = this.getAttribute('data-time');
+                        openModal(profId, profName, dateStr, time);
+                    });
+                });
+            } catch (error) {
+                console.error('Erro:', error);
             }
-
-            appointmentsList.innerHTML = '';
-
-            filtered.forEach(apt => {
-                const card = document.createElement('div');
-                card.className = 'appointment-card';
-
-                if (apt.status === 'completed') {
-                    card.classList.add('completed');
-                } else if (apt.status === 'cancelled') {
-                    card.classList.add('cancelled');
-                }
-
-                const statusLabel = {
-                    'scheduled': 'Agendado',
-                    'completed': 'Concluído',
-                    'cancelled': 'Cancelado'
-                }[apt.status] || apt.status;
-
-                const statusClass = {
-                    'scheduled': 'pending',
-                    'completed': 'completed',
-                    'cancelled': 'cancelled'
-                }[apt.status] || 'pending';
-
-                card.innerHTML = `
-                    <div class="appointment-info">
-                        <div class="appointment-time">
-                            <i class="fas fa-clock"></i>
-                            ${apt.appointment_time}
-                        </div>
-                        <div class="appointment-client">
-                            <i class="fas fa-user"></i>
-                            ${apt.client_name}
-                        </div>
-                        <div class="appointment-service">
-                            <i class="fas fa-briefcase"></i>
-                            ${apt.service_type}
-                        </div>
-                        <div class="appointment-value">
-                            <i class="fas fa-money-bill-wave"></i>
-                            R$ ${parseFloat(apt.valor).toFixed(2).replace('.', ',')}
-                        </div>
-                    </div>
-                    <div class="appointment-actions">
-                        <span class="appointment-status ${statusClass}">${statusLabel}</span>
-                    </div>
-                `;
-
-                card.onclick = () => viewAppointment(apt.id);
-                appointmentsList.appendChild(card);
-            });
         }
 
-        function viewAppointment(id) {
-            viewingAppointment = appointments.find(a => a.id === id);
+        function generateTimes(start, end, interval) {
+            const times = [];
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            let h = sh, m = sm;
+            while (h < eh || (h === eh && m < em)) {
+                times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+                m += interval;
+                if (m >= 60) {
+                    h += Math.floor(m / 60);
+                    m = m % 60;
+                }
+            }
+            return times;
+        }
+
+        function openModal(profId, profName, date, time) {
+            modalState = { profId, profName, date, time };
+            document.getElementById('profName').value = profName;
+            document.getElementById('dateField').value = new Date(date).toLocaleDateString('pt-BR');
+            document.getElementById('timeField').value = time;
+            document.getElementById('valueField').value = '';
+            document.getElementById('notesField').value = '';
+            document.getElementById('appointmentModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('appointmentModal').classList.remove('active');
+            clearFormFields('appointmentForm');
+        }
+
+        async function saveAppointment(e) {
+            e.preventDefault();
+            const clientId = document.getElementById('clientSelect').value;
+            const serviceId = document.getElementById('serviceSelect').value;
+            const value = parseFloat(document.getElementById('valueField').value) || 0;
+            const notes = document.getElementById('notesField').value;
+            try {
+                const result = await DB.agendamentos.criar({
+                    profissional_id: modalState.profId,
+                    cliente_id: clientId,
+                    servico_id: serviceId,
+                    data: modalState.date,
+                    hora: modalState.time + ':00',
+                    valor: value,
+                    observacoes: notes,
+                    status: 'confirmado'
+                });
+                if (result.success || result.data) {
+                    closeModal();
+                    renderSchedule();
+                    alert('✅ Agendamento criado!');
+                }
+            } catch (error) {
+                console.error('Erro ao criar:', error);
+                alert('Erro ao agendar');
+            }
+        }
+
+        async function viewAppointment(aptId) {
+            viewingAppointment = allAppointments.find(a => String(a.id) === String(aptId));
             if (!viewingAppointment) return;
-
-            const content = `
-                <div class="view-content">
-                    <div class="view-content-item">
-                        <strong><i class="fas fa-user"></i> Cliente</strong>
-                        <span>${viewingAppointment.client_name}</span>
-                    </div>
-
-                    <div class="view-content-item">
-                        <strong><i class="fas fa-envelope"></i> Email</strong>
-                        <span>${viewingAppointment.client_email}</span>
-                    </div>
-
-                    <div class="view-content-item">
-                        <strong><i class="fas fa-phone"></i> Telefone</strong>
-                        <span>${viewingAppointment.client_phone}</span>
-                    </div>
-
-                    <div class="view-content-item">
-                        <strong><i class="fas fa-calendar"></i> Data</strong>
-                        <span>${new Date(viewingAppointment.appointment_date).toLocaleDateString('pt-BR')}</span>
-                    </div>
-
-                    <div class="view-content-item">
-                        <strong><i class="fas fa-clock"></i> Horário</strong>
-                        <span>${viewingAppointment.appointment_time}</span>
-                    </div>
-
-                    <div class="view-content-item">
-                        <strong><i class="fas fa-briefcase"></i> Serviço</strong>
-                        <span>${viewingAppointment.service_type}</span>
-                    </div>
-
-                    <div class="view-content-item" style="border-left-color: #28a745; background: #f0fff4;">
-                        <strong><i class="fas fa-money-bill-wave"></i> Valor</strong>
-                        <span style="color: #28a745; font-weight: 700; font-size: 16px;">R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}</span>
-                    </div>
-
-                    ${viewingAppointment.notes ? `
-                    <div class="view-content-item">
-                        <strong><i class="fas fa-sticky-note"></i> Observações</strong>
-                        <span>${viewingAppointment.notes}</span>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-
-            document.getElementById('viewAppointmentContent').innerHTML = content;
+            document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
+            document.getElementById('viewClientName').textContent = viewingAppointment.cliente?.nome || '-';
+            document.getElementById('viewDate').textContent = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
+            document.getElementById('viewTime').textContent = viewingAppointment.hora.substring(0, 5);
+            document.getElementById('viewService').textContent = viewingAppointment.servico?.nome || '-';
+            document.getElementById('viewValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
+            document.getElementById('viewNotes').textContent = viewingAppointment.observacoes || '-';
+            const statusBadge = document.getElementById('viewStatus');
+            statusBadge.innerHTML = `<span class="modal-status-badge ${viewingAppointment.status}">${(viewingAppointment.status || '').charAt(0).toUpperCase() + (viewingAppointment.status || '').slice(1)}</span>`;
+            const actions = document.getElementById('viewActions');
+            if (viewingAppointment.status === 'concluido' || viewingAppointment.status === 'cancelado') {
+                actions.className = 'modal-actions full';
+                actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
+            } else {
+                actions.className = 'modal-actions';
+                actions.innerHTML = `
+                    <button type="button" class="pro-btn pro-btn-primary" onclick="handleEdit()"><i class="fas fa-edit"></i> Editar</button>
+                    <button type="button" class="pro-btn pro-btn-danger" onclick="handleCancel()"><i class="fas fa-times"></i> Cancelar</button>
+                    <button type="button" class="pro-btn pro-btn-success" onclick="handleFinalize()"><i class="fas fa-check"></i> Finalizar</button>
+                `;
+            }
             document.getElementById('viewAppointmentModal').classList.add('active');
         }
 
@@ -1981,240 +1335,188 @@
             viewingAppointment = null;
         }
 
-        // ============================================
-        // MODAL DE NOVO/EDITAR AGENDAMENTO
-        // ============================================
-        function openNewAppointmentModal() {
-            document.getElementById('appointmentModalTitle').textContent = 'Novo Agendamento';
-            document.getElementById('appointmentForm').reset();
-            document.getElementById('appointmentModal').classList.add('active');
-        }
-
-        function closeAppointmentModal() {
-            document.getElementById('appointmentModal').classList.remove('active');
-        }
-
-        function handleAppointmentSubmit(event) {
-            event.preventDefault();
-
-            const appointment = {
-                id: String(Date.now()),
-                client_name: document.getElementById('clientName').value.trim(),
-                client_email: document.getElementById('clientEmail').value.trim(),
-                client_phone: document.getElementById('clientPhone').value.trim(),
-                appointment_date: document.getElementById('appointmentDate').value,
-                appointment_time: document.getElementById('appointmentTime').value,
-                service_type: document.getElementById('serviceType').value,
-                valor: parseFloat(document.getElementById('appointmentValue').value),
-                notes: document.getElementById('appointmentNotes').value.trim(),
-                status: 'scheduled'
-            };
-
-            if (!appointment.valor || appointment.valor <= 0) {
-                alert('⚠️ O valor deve ser maior que zero!');
-                return;
-            }
-
-            console.log('✅ Novo agendamento criado:', appointment);
-            appointments.push(appointment);
-            alert('✅ Agendamento criado com sucesso!');
-            closeAppointmentModal();
-            renderAppointments();
-        }
-
-        function editAppointment() {
+        function handleEdit() {
             if (!viewingAppointment) return;
-
-            document.getElementById('appointmentModalTitle').textContent = 'Editar Agendamento';
-            document.getElementById('clientName').value = viewingAppointment.client_name;
-            document.getElementById('clientEmail').value = viewingAppointment.client_email;
-            document.getElementById('clientPhone').value = viewingAppointment.client_phone;
-            document.getElementById('appointmentDate').value = viewingAppointment.appointment_date;
-            document.getElementById('appointmentTime').value = viewingAppointment.appointment_time;
-            document.getElementById('serviceType').value = viewingAppointment.service_type;
-            document.getElementById('appointmentValue').value = viewingAppointment.valor;
-            document.getElementById('appointmentNotes').value = viewingAppointment.notes;
-
+            document.getElementById('editProfName').value = viewingAppointment.profissional?.nome || '';
+            document.getElementById('editDate').value = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
+            document.getElementById('editTime').value = viewingAppointment.hora.substring(0, 5);
+            document.getElementById('editClientSelect').value = viewingAppointment.cliente_id;
+            document.getElementById('editServiceSelect').value = viewingAppointment.servico_id;
+            document.getElementById('editValueField').value = viewingAppointment.valor;
+            document.getElementById('editNotesField').value = viewingAppointment.observacoes || '';
             closeViewModal();
-            document.getElementById('appointmentModal').classList.add('active');
+            document.getElementById('editAppointmentModal').classList.add('active');
         }
 
-        function cancelAppointment() {
+        function closeEditModal() {
+            document.getElementById('editAppointmentModal').classList.remove('active');
+        }
+
+        async function updateAppointment(e) {
+            e.preventDefault();
             if (!viewingAppointment) return;
-
-            if (!confirm('Tem certeza que deseja cancelar este agendamento?')) {
-                return;
+            const clientId = document.getElementById('editClientSelect').value;
+            const serviceId = document.getElementById('editServiceSelect').value;
+            const value = parseFloat(document.getElementById('editValueField').value) || 0;
+            const notes = document.getElementById('editNotesField').value;
+            try {
+                await DB.agendamentos.atualizar(viewingAppointment.id, {
+                    cliente_id: clientId,
+                    servico_id: serviceId,
+                    valor: value,
+                    observacoes: notes
+                });
+                closeEditModal();
+                await renderSchedule();
+                alert('✅ Atualizado!');
+            } catch (error) {
+                console.error('Erro ao atualizar:', error);
+                alert('Erro ao atualizar');
             }
-
-            viewingAppointment.status = 'cancelled';
-            const index = appointments.findIndex(a => a.id === viewingAppointment.id);
-            if (index !== -1) {
-                appointments[index].status = 'cancelled';
-            }
-
-            console.log('❌ Agendamento cancelado:', viewingAppointment.id);
-            alert('✅ Agendamento cancelado com sucesso!');
-            closeViewModal();
-            renderAppointments();
         }
 
-        // ============================================
-        // FINALIZAR AGENDAMENTO
-        // ============================================
+        function handleCancel() {
+            if (!confirm('Cancelar agendamento?')) return;
+            cancelAppointmentNow();
+        }
+
+        async function cancelAppointmentNow() {
+            if (!viewingAppointment) return;
+            try {
+                await DB.agendamentos.atualizar(viewingAppointment.id, { status: 'cancelado' });
+                closeViewModal();
+                await renderSchedule();
+                alert('✅ Cancelado!');
+            } catch (error) {
+                console.error('Erro ao cancelar:', error);
+                alert('Erro ao cancelar');
+            }
+        }
+
         function handleFinalize() {
             if (!viewingAppointment) return;
 
+            // ✅ VERIFICAÇÃO: Se não tiver valor, pede para preencher
             if (!viewingAppointment.valor || parseFloat(viewingAppointment.valor) <= 0) {
                 alert('⚠️ Este agendamento não tem valor configurado.\n\nClique em "Editar" para adicionar o valor antes de finalizar.');
                 return;
             }
 
             finalizingAppointment = { ...viewingAppointment };
-
-            const valor = parseFloat(viewingAppointment.valor).toFixed(2);
-            const valorFormatado = valor.replace('.', ',');
-
-            document.getElementById('finalizeValue').textContent = valorFormatado;
-            document.getElementById('finalizeValueLabel').textContent = `Valor total do agendamento (${new Date(viewingAppointment.appointment_date).toLocaleDateString('pt-BR')} às ${viewingAppointment.appointment_time})`;
-
-            // Limpar campos
-            clearPixQr();
-            document.getElementById('pixCopiaCola').value = '';
-            document.getElementById('nsuField').value = '';
-            document.getElementById('autField').value = '';
-
-            // Desselecionar métodos de pagamento
-            document.getElementById('paymentPix').checked = false;
-            document.getElementById('paymentCard').checked = false;
-            document.getElementById('paymentCash').checked = false;
+            document.getElementById('finalizeValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
+            clearFormFields('finalizeForm');
             document.getElementById('pixExtra').classList.remove('active');
             document.getElementById('cardExtra').classList.remove('active');
-
+            document.getElementById('pixCopiaCola').value = '';
+            clearPixQr();
+            document.getElementById('nsuField').value = '';
+            document.getElementById('autField').value = '';
             closeViewModal();
             document.getElementById('finalizeAppointmentModal').classList.add('active');
         }
 
         function closeFinalizeModal() {
             document.getElementById('finalizeAppointmentModal').classList.remove('active');
-            clearPixQr();
-            finalizingAppointment = null;
-        }
-
-        function onPaymentMethodChanged() {
-            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-
+            clearFormFields('finalizeForm');
             document.getElementById('pixExtra').classList.remove('active');
             document.getElementById('cardExtra').classList.remove('active');
+            document.getElementById('pixCopiaCola').value = '';
+            clearPixQr();
+            document.getElementById('nsuField').value = '';
+            document.getElementById('autField').value = '';
+            finalizingAppointment = null;
+            currentQRCode = null;
+        }
 
-            if (method === 'pix') {
-                document.getElementById('pixExtra').classList.add('active');
-                generatePixQrForCurrentAppointment();
-            } else if (method === 'card') {
-                document.getElementById('cardExtra').classList.add('active');
+        function clearFormFields(formId) {
+            const form = document.getElementById(formId);
+            if (form && typeof form.reset === 'function') {
+                form.reset();
+            } else if (form) {
+                const inputs = form.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        input.checked = false;
+                    } else {
+                        input.value = '';
+                    }
+                });
             }
         }
 
-        function confirmFinalize() {
-            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-
-            if (!method) {
-                alert('⚠️ Selecione um método de pagamento!');
-                return;
-            }
-
-            let paymentDetails = {
-                method: method,
-                appointment_id: finalizingAppointment.id,
-                amount: parseFloat(finalizingAppointment.valor),
-                client_name: finalizingAppointment.client_name,
-                appointment_date: finalizingAppointment.appointment_date,
-                appointment_time: finalizingAppointment.appointment_time
-            };
-
-            if (method === 'pix') {
-                paymentDetails.pix_code = document.getElementById('pixCopiaCola').value;
-                if (!paymentDetails.pix_code) {
-                    alert('⚠️ QR Code Pix não gerado. Tente novamente.');
-                    return;
+        function setupPaymentMethodListeners() {
+            document.addEventListener('change', async (e) => {
+                if (e.target && e.target.name === 'paymentMethod') {
+                    await onPaymentMethodChanged(e.target.value);
                 }
-            } else if (method === 'card') {
-                paymentDetails.nsu = document.getElementById('nsuField').value.trim();
-                paymentDetails.aut = document.getElementById('autField').value.trim();
-
-                if (!paymentDetails.nsu || !paymentDetails.aut) {
-                    alert('⚠️ Preencha NSU e AUT do cartão!');
-                    return;
-                }
-            }
-
-            console.log('✅ Pagamento confirmado:', paymentDetails);
-
-            // Atualizar status do agendamento
-            finalizingAppointment.status = 'completed';
-            const index = appointments.findIndex(a => a.id === finalizingAppointment.id);
-            if (index !== -1) {
-                appointments[index].status = 'completed';
-            }
-
-            const methodLabel = method === 'pix' ? 'Pix' : method === 'card' ? 'Cartão' : 'Dinheiro';
-            alert(`✅ Agendamento finalizado com sucesso!\n\nMétodo de pagamento: ${methodLabel}`);
-            closeFinalizeModal();
-            renderAppointments();
+            });
         }
 
-        // ============================================
-        // GERAÇÃO DO QR CODE PIX
-        // ============================================
+        async function onPaymentMethodChanged(method) {
+            const pixExtra = document.getElementById('pixExtra');
+            const cardExtra = document.getElementById('cardExtra');
+            pixExtra.classList.remove('active');
+            cardExtra.classList.remove('active');
+            if (method === 'pix') {
+                pixExtra.classList.add('active');
+                await new Promise(r => setTimeout(r, 100));
+                await generatePixQrForCurrentAppointment();
+            }
+            if (method === 'cartao' || method === 'debito') {
+                cardExtra.classList.add('active');
+            }
+        }
+
         function clearPixQr() {
             const container = document.getElementById('pixQr');
-            if (container) {
-                container.innerHTML = `
-                    <div class="qr-loading">
-                        <i class="fas fa-spinner"></i>
-                        <p>Gerando QR Code...</p>
-                    </div>
-                `;
-            }
+            if (container) container.innerHTML = '';
             currentQRCode = null;
+        }
+
+        function sanitizeBrcode(str) {
+            return String(str || '').replace(/[\r\n\s]+/g, '').trim();
         }
 
         async function generatePixQrForCurrentAppointment() {
             try {
                 const apt = finalizingAppointment;
-
                 if (!apt) {
                     console.error('❌ Sem agendamento');
-                    alert('Erro: Agendamento não carregado');
                     return;
                 }
 
                 console.log('📋 Agendamento:', apt);
                 console.log('💰 Valor bruto:', apt.valor, 'Tipo:', typeof apt.valor);
 
-                // Validar configuração Pix
                 if (!paymentConfig?.pix_chave || !paymentConfig?.pix_nome || !paymentConfig?.pix_cidade) {
                     document.getElementById('pixCopiaCola').value = '';
                     clearPixQr();
                     alert('⚠️ Configure Pix nas configurações (chave, nome, cidade)');
-                    console.error('❌ Config Pix incompleta:', paymentConfig);
                     return;
                 }
 
-                // Converter e validar valor
+                // ✅ CORREÇÃO: Garante que o valor é um número válido
                 let valor = parseFloat(apt.valor);
+                
                 if (isNaN(valor) || valor <= 0) {
                     console.error('❌ Valor inválido:', apt.valor);
-                    alert('⚠️ O agendamento não tem um valor válido.');
+                    alert('⚠️ O agendamento não tem um valor válido. Configure o valor antes de finalizar.');
                     return;
                 }
+
                 valor = valor.toFixed(2);
-                console.log('✅ Valor validado:', valor);
+                console.log('✅ Valor formatado:', valor);
 
-                // Gerar TXID
                 const txid = normalizeTxid(`AGEND${String(apt.id).replace(/[^0-9A-Za-z]/g, '').slice(0, 12)}`);
-                console.log('✅ TXID gerado:', txid);
 
-                // Construir payload Pix
+                console.log('📝 Gerando BR Code com:', {
+                    chave: paymentConfig.pix_chave,
+                    nome: paymentConfig.pix_nome,
+                    cidade: paymentConfig.pix_cidade,
+                    valor: valor,
+                    txid: txid
+                });
+
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
                     nome: paymentConfig.pix_nome,
@@ -2223,196 +1525,189 @@
                     descricao: 'AGENDAMENTO',
                     txid: txid
                 });
-                console.log('✅ BR Code gerado:', brcode);
 
-                // Sanitizar código
                 const brcodeForQr = sanitizeBrcode(brcode);
-                console.log('✅ BR Code sanitizado:', brcodeForQr);
-                console.log('📏 Tamanho do BR Code:', brcodeForQr.length);
 
-                // Validar tamanho
                 if (!brcodeForQr || brcodeForQr.length < 30) {
                     console.error('❌ BR Code inválido:', brcodeForQr);
-                    alert('Erro: BR Code inválido.');
+                    alert('Erro: BR Code inválido. Verifique os dados Pix.');
                     return;
                 }
 
-                // Preencher textarea
+                console.log('✅ BR Code gerado com sucesso!');
+                console.log('📏 Tamanho:', brcodeForQr.length, 'caracteres');
+
                 document.getElementById('pixCopiaCola').value = brcodeForQr;
 
-                // Limpar container
                 const container = document.getElementById('pixQr');
                 if (!container) {
                     console.error('❌ Container #pixQr não encontrado');
                     return;
                 }
-                container.innerHTML = '';
 
-                // Aguardar DOM renderizar
-                await new Promise(resolve => setTimeout(resolve, 100));
+                clearPixQr();
+                await new Promise(r => setTimeout(r, 100));
 
-                // Gerar QR Code usando a biblioteca QRCode
-                QRCode.toCanvas(container, brcodeForQr, {
+                // Gera QR Code com QRCode.js
+                currentQRCode = new QRCode(container, {
+                    text: brcodeForQr,
                     width: 280,
-                    margin: 1,
-                    color: {
-                        dark: '#000000',
-                        light: '#ffffff'
-                    },
-                    errorCorrectionLevel: 'M'
-                }, function (error) {
-                    if (error) {
-                        console.error('❌ Erro ao gerar QR Code:', error);
-                        container.innerHTML = '<div style="color: red; text-align: center; padding: 20px;">❌ Erro ao gerar QR Code</div>';
-                    } else {
-                        console.log('✅ QR Code renderizado com sucesso!');
-                    }
+                    height: 280,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
                 });
 
-            } catch (error) {
-                console.error('❌ Erro completo ao gerar QR Code:', error);
-                console.error('Stack:', error.stack);
-                alert('Erro ao gerar QR Code: ' + error.message);
-                clearPixQr();
+                console.log('✅ QR Code renderizado com sucesso!');
+
+            } catch (err) {
+                console.error('❌ Erro completo:', err);
+                console.error('Stack:', err.stack);
+                alert('Erro ao gerar QR Code: ' + err.message);
             }
         }
 
         function copyPixCode() {
             const textarea = document.getElementById('pixCopiaCola');
-
-            if (!textarea.value) {
-                alert('⚠️ Nenhum código Pix para copiar.');
+            const text = sanitizeBrcode(textarea.value);
+            if (!text) {
+                alert('Nenhum código para copiar');
                 return;
             }
-
-            textarea.select();
-
-            try {
-                document.execCommand('copy');
-                alert('✅ Código Pix copiado com sucesso! Cole no seu app de Pix.');
-                console.log('✅ Código copiado:', textarea.value);
-            } catch (err) {
-                console.error('❌ Erro ao copiar:', err);
-                alert('Erro ao copiar. Tente manualmente.');
-            }
+            navigator.clipboard.writeText(text)
+                .then(() => alert('✅ Copiado!'))
+                .catch(() => alert('Erro ao copiar'));
         }
 
-        function downloadQRCode() {
-            try {
-                const container = document.getElementById('pixQr');
-                const canvas = container.querySelector('canvas');
-
-                if (!canvas) {
-                    alert('⚠️ QR Code não gerado ainda.');
-                    return;
-                }
-
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = `pix-qrcode-${Date.now()}.png`;
-                link.click();
-
-                console.log('✅ QR Code baixado');
-                alert('✅ QR Code baixado com sucesso!');
-            } catch (error) {
-                console.error('❌ Erro ao baixar QR Code:', error);
-                alert('Erro ao baixar QR Code: ' + error.message);
-            }
+        function emv(id, value) {
+            const v = String(value);
+            return `${id}${String(v.length).padStart(2, '0')}${v}`;
         }
 
-        // ============================================
-        // FUNÇÕES AUXILIARES PIX
-        // ============================================
-        function sanitizeBrcode(str) {
-            if (!str) return '';
-            return str.replace(/\n/g, '').replace(/\s/g, '');
-        }
-
-        function emv(tag, value) {
-            const length = String(value).length.toString().padStart(2, '0');
-            return tag + length + value;
-        }
-
-        function crc16(str) {
+        function crc16(payload) {
             let crc = 0xFFFF;
-            for (let i = 0; i < str.length; i++) {
-                crc ^= str.charCodeAt(i) << 8;
+            for (let i = 0; i < payload.length; i++) {
+                crc ^= payload.charCodeAt(i) << 8;
                 for (let j = 0; j < 8; j++) {
-                    crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
+                    if (crc & 0x8000) crc = (crc << 1) ^ 0x1021;
+                    else crc = crc << 1;
                     crc &= 0xFFFF;
                 }
             }
             return crc.toString(16).toUpperCase().padStart(4, '0');
         }
 
-        function normalizeNomeCidade(str) {
-            if (!str) return '';
-            return str
+        function normalizeNomeCidade(str, maxLen) {
+            return String(str || '')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                 .toUpperCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .substring(0, 25);
+                .replace(/[^A-Z0-9 \-\.]/g, '')
+                .trim()
+                .slice(0, maxLen);
         }
 
-        function normalizeTxid(str) {
-            if (!str) return '';
-            return str
+        function normalizeTxid(str, maxLen = 25) {
+            return String(str || '')
                 .toUpperCase()
-                .replace(/[^0-9A-Z]/g, '')
-                .substring(0, 14)
-                .padEnd(14, '0');
+                .replace(/[^A-Z0-9]/g, '')
+                .slice(0, maxLen);
         }
 
-        function buildPixPayload(options) {
-            const { chave, nome, cidade, valor, descricao, txid } = options;
-
-            console.log('📦 Construindo payload com:', { chave, nome, cidade, valor, descricao, txid });
-
-            if (!chave || !nome || !cidade) {
-                throw new Error('Dados Pix inválidos: chave, nome e cidade são obrigatórios');
+        function buildPixPayload({ chave, nome, cidade, valor, descricao, txid }) {
+            if (!chave?.trim() || !nome?.trim() || !cidade?.trim() || !valor || parseFloat(valor) <= 0) {
+                throw new Error('Dados Pix inválidos');
             }
 
-            const nomeCidade = normalizeNomeCidade(nome);
-            const cidadeNorm = normalizeNomeCidade(cidade);
-
-            // Construir estrutura Pix (EMV)
-            let pixData = emv('26',
-                emv('00', 'br.gov.bcb.pix') +
-                emv('01', chave) +
-                (descricao ? emv('02', descricao) : '')
-            );
-
-            // Adicionar valor
-            let payload = pixData;
-            if (valor) {
-                payload += emv('54', parseFloat(valor).toFixed(2));
+            const merchantName = normalizeNomeCidade(nome, 25);
+            const merchantCity = normalizeNomeCidade(cidade, 15);
+            const gui = emv('00', 'BR.GOV.BCB.PIX');
+            const key = emv('01', String(chave).trim());
+            let desc = '';
+            if (descricao) {
+                const cleanDesc = String(descricao)
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^\w \-\.]/g, '')
+                    .trim()
+                    .slice(0, 50);
+                if (cleanDesc) desc = emv('02', cleanDesc);
             }
 
-            // País e moeda
-            payload += emv('58', '05');
-            payload += emv('59', nomeCidade);
-            payload += emv('60', cidadeNorm);
+            const merchantAccountInfo = emv('26', gui + key + desc);
+            const payloadFormatIndicator = emv('00', '01');
+            const pointOfInitiationMethod = emv('01', '11');
+            const merchantCategoryCode = emv('52', '0000');
+            const transactionCurrency = emv('53', '986');
+            const transactionAmount = emv('54', String(parseFloat(valor).toFixed(2)));
+            const countryCode = emv('58', 'BR');
+            const mName = emv('59', merchantName);
+            const mCity = emv('60', merchantCity);
+            const txidValue = normalizeTxid(txid || 'AGENDAMENTO', 25);
+            const txidField = emv('05', txidValue);
+            const additionalData = emv('62', txidField);
 
-            // TXID
-            if (txid) {
-                payload += emv('62', emv('05', txid));
+            const withoutCrc = payloadFormatIndicator + pointOfInitiationMethod + merchantAccountInfo +
+                merchantCategoryCode + transactionCurrency + transactionAmount + countryCode +
+                mName + mCity + additionalData + '6304';
+
+            const crc = crc16(withoutCrc);
+            return withoutCrc + crc;
+        }
+
+        async function finalizeAppointment(e) {
+            e.preventDefault();
+            const apt = finalizingAppointment;
+            if (!apt) {
+                alert('Erro: Agendamento não carregado');
+                return;
             }
 
-            // CRC
-            const crc = crc16(payload + '6304');
-            payload += emv('63', crc);
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+            const notes = document.getElementById('finalizeNotesField').value;
 
-            console.log('📋 Payload montado:', {
-                chave,
-                nome: nomeCidade,
-                cidade: cidadeNorm,
-                valor,
-                txid,
-                crc: crc,
-                tamanho: payload.length
-            });
+            if (!paymentMethod) {
+                alert('Selecione uma forma de pagamento');
+                return;
+            }
 
-            return payload;
+            let nsu = null;
+            let autorizacao = null;
+
+            if (paymentMethod === 'cartao' || paymentMethod === 'debito') {
+                nsu = document.getElementById('nsuField').value.trim();
+                autorizacao = document.getElementById('autField').value.trim();
+                if (!nsu || !autorizacao) {
+                    alert('Informe NSU e AUT');
+                    return;
+                }
+            }
+
+            try {
+                await DB.agendamentos.atualizar(apt.id, {
+                    status: 'concluido',
+                    forma_pagamento: paymentMethod,
+                    status_pagamento: 'pago',
+                    pago_em: new Date().toISOString(),
+                    nsu: nsu,
+                    autorizacao: autorizacao,
+                    observacoes: notes
+                });
+
+                closeFinalizeModal();
+                await renderSchedule();
+                alert('✅ Concluído!');
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao finalizar');
+            }
+        }
+
+        async function logout() {
+            try {
+                await supabase.auth.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Erro:', error);
+            }
         }
     </script>
 </body>
