@@ -55,9 +55,6 @@
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
-                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <div class="pro-user-profile">
                     <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
@@ -221,29 +218,25 @@
         let agendamentosMes = [];
         let perfilAtual = null;
 
-        // Inicializar dark mode
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
         });
 
-        // Carregar perfil e inicializar
-        window.addEventListener('perfilCarregado', (e) => {
-            const perfil = e.detail;
-            if (!perfil) return;
-            perfilAtual = perfil;
+        window.addEventListener('perfilCarregado', async (e) => {
+            perfilAtual = e.detail;
+            if (!perfilAtual) return;
 
-            const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = letra;
-            document.getElementById('userName').textContent = perfil.nome || perfil.email;
-            document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+            document.getElementById('userName').textContent = perfilAtual.nome || perfilAtual.email;
+            document.getElementById('userRole').textContent = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
 
             try {
                 const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
                 if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
             } catch (_) {}
 
-            // Mostrar botão de convite apenas para donos
-            if (perfil.role === 'dono') {
+            if (perfilAtual.role === 'dono') {
                 document.getElementById('btnNovoProfissional').style.display = 'inline-flex';
             } else {
                 document.getElementById('colunaAcoes').style.display = 'none';
@@ -268,11 +261,6 @@
                 filtrarLocalmente();
             } catch (error) {
                 console.error('Erro ao carregar profissionais:', error);
-                document.getElementById('profissionaisTable').innerHTML = `
-                    <tr><td colspan="7" class="pro-empty-state">
-                        <i class="fas fa-exclamation-circle pro-empty-state-icon"></i>
-                        <p>Erro ao carregar profissionais</p>
-                    </td></tr>`;
             }
         }
 
@@ -308,13 +296,7 @@
             const isDono = perfilAtual?.role === 'dono';
 
             if (lista.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="pro-empty-state">
-                            <i class="fas fa-user-tie pro-empty-state-icon"></i>
-                            <p>${isDono ? 'Nenhum profissional cadastrado. Clique em "Gerar Link de Convite"!' : 'Carregando...'}</p>
-                        </td>
-                    </tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="pro-empty-state"><p>${isDono ? 'Nenhum profissional cadastrado. Clique em "Gerar Link de Convite"!' : 'Carregando...'}</p></td></tr>`;
                 return;
             }
 
@@ -331,27 +313,26 @@
                         </button>
                     </div>` : '—';
 
-                return `
-                    <tr>
-                        <td>
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <div class="pro-user-avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0;">
-                                    ${(prof.nome || 'P')[0].toUpperCase()}
-                                </div>
-                                <strong>${prof.nome || '—'}</strong>
+                return `<tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div class="pro-user-avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0;">
+                                ${(prof.nome || 'P')[0].toUpperCase()}
                             </div>
-                        </td>
-                        <td>${prof.especialidade || '—'}</td>
-                        <td>${prof.telefone || '—'}</td>
-                        <td>${prof.email || '—'}</td>
-                        <td>${comissao}</td>
-                        <td>
-                            <span class="pro-badge pro-badge-${prof.status === 'ativo' ? 'success' : 'error'}">
-                                ${prof.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                            </span>
-                        </td>
-                        <td>${acoesHtml}</td>
-                    </tr>`;
+                            <strong>${prof.nome || '—'}</strong>
+                        </div>
+                    </td>
+                    <td>${prof.especialidade || '—'}</td>
+                    <td>${prof.telefone || '—'}</td>
+                    <td>${prof.email || '—'}</td>
+                    <td>${comissao}</td>
+                    <td>
+                        <span class="pro-badge pro-badge-${prof.status === 'ativo' ? 'success' : 'error'}">
+                            ${prof.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                        </span>
+                    </td>
+                    <td>${acoesHtml}</td>
+                </tr>`;
             }).join('');
         }
 
@@ -440,13 +421,12 @@
             try {
                 const dadosConvite = {
                     tenant_id: perfilAtual.tenant_id || perfilAtual.id,
-                    expiry: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 dias
+                    expiry: Date.now() + 7 * 24 * 60 * 60 * 1000
                 };
 
                 const token = btoa(JSON.stringify(dadosConvite));
                 const urlConvite = `${window.location.origin}/cadastro-profissional.html?convite=${token}`;
 
-                // Copiar para clipboard
                 navigator.clipboard.writeText(urlConvite).then(() => {
                     mostrarToast('🔗 Link copiado! Envie para o profissional.', 'success');
                     alert(`Link gerado e copiado:\n\n${urlConvite}\n\nEste link é válido por 7 dias.`);
@@ -480,6 +460,13 @@
                 await Auth.signOut();
             }
         }
+
+        // Sincronizar dark mode entre abas
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sispro_theme') {
+                location.reload();
+            }
+        });
     </script>
 </body>
 </html>
