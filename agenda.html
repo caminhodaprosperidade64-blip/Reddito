@@ -473,7 +473,7 @@
 
         .modal-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 1rem;
             margin-top: 2rem;
             padding-top: 2rem;
@@ -500,55 +500,96 @@
         }
 
         /* MODAL - FINALIZAR AGENDAMENTO */
-        .payment-options {
+        .payment-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
-        .payment-option {
-            padding: 1rem;
-            border: 2px solid var(--border-color);
-            border-radius: var(--border-radius);
+        .payment-option-label {
+            position: relative;
             cursor: pointer;
-            text-align: center;
-            transition: all var(--transition-fast);
         }
 
-        .payment-option:hover {
-            border-color: var(--primary);
-            background: var(--bg-main);
-        }
-
-        .payment-option input[type="radio"] {
+        .payment-option-label input {
             display: none;
         }
 
-        .payment-option input[type="radio"]:checked + label {
-            color: var(--primary);
-            font-weight: 600;
+        .payment-card {
+            padding: 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            text-align: center;
+            transition: all var(--transition-fast);
+            background: var(--card-bg);
         }
 
-        .payment-option input[type="radio"]:checked ~ .payment-option {
+        .payment-option-label input:checked ~ .payment-card {
             border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary) 100%);
+            color: white;
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+            transform: translateY(-4px);
         }
 
-        .payment-option label {
+        .payment-card i {
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            display: block;
+            line-height: 1;
+        }
+
+        .payment-card .payment-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .payment-option-label input:checked ~ .payment-card i,
+        .payment-option-label input:checked ~ .payment-card .payment-label {
+            color: white;
+        }
+
+        .finalize-info {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-lg);
+            margin-bottom: 1.5rem;
+        }
+
+        .finalize-info-row {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
-        .payment-option i {
-            font-size: 1.5rem;
+        .finalize-info-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
         }
 
-        .form-field.full {
-            grid-column: 1 / -1;
+        .finalize-info-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .finalize-info-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .finalize-info-value.commission {
+            color: var(--success);
+        }
+
+        .finalize-info-value.service-value {
+            color: var(--primary);
         }
     </style>
 </head>
@@ -824,42 +865,51 @@
             </div>
             <div style="padding: 0 2rem;">
                 <form id="finalizeForm" onsubmit="finalizeAppointment(event)">
-                    <div class="form-field">
-                        <label>Como foi o pagamento? *</label>
-                        <div class="payment-options">
-                            <label class="payment-option">
-                                <input type="radio" name="paymentMethod" value="dinheiro" required>
-                                <i class="fas fa-money-bill-wave"></i>
-                                <span>Dinheiro</span>
-                            </label>
-                            <label class="payment-option">
-                                <input type="radio" name="paymentMethod" value="debito" required>
-                                <i class="fas fa-credit-card"></i>
-                                <span>Débito</span>
-                            </label>
-                            <label class="payment-option">
-                                <input type="radio" name="paymentMethod" value="credito" required>
-                                <i class="fas fa-credit-card"></i>
-                                <span>Crédito</span>
-                            </label>
-                            <label class="payment-option">
-                                <input type="radio" name="paymentMethod" value="pix" required>
-                                <i class="fas fa-qrcode"></i>
-                                <span>PIX</span>
-                            </label>
+                    <div class="finalize-info">
+                        <div class="finalize-info-row">
+                            <span class="finalize-info-label">Valor do Serviço</span>
+                            <span class="finalize-info-value service-value" id="finalizeServiceValue">R$ 0,00</span>
+                        </div>
+                        <div class="finalize-info-row">
+                            <span class="finalize-info-label">Comissão do Profissional (20%)</span>
+                            <span class="finalize-info-value commission" id="finalizeProfCommission">R$ 0,00</span>
                         </div>
                     </div>
 
-                    <div class="modal-info-group">
-                        <div class="modal-info-row">
-                            <div class="modal-info-item">
-                                <span class="modal-info-label">Valor do Serviço</span>
-                                <span class="modal-info-value" id="finalizeServiceValue">R$ 0,00</span>
-                            </div>
-                            <div class="modal-info-item">
-                                <span class="modal-info-label">Comissão do Profissional</span>
-                                <span class="modal-info-value" id="finalizeProfCommission">R$ 0,00</span>
-                            </div>
+                    <div class="form-field">
+                        <label>Como foi o pagamento? *</label>
+                        <div class="payment-grid">
+                            <label class="payment-option-label">
+                                <input type="radio" name="paymentMethod" value="dinheiro" required>
+                                <div class="payment-card">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <div class="payment-label">Dinheiro</div>
+                                </div>
+                            </label>
+
+                            <label class="payment-option-label">
+                                <input type="radio" name="paymentMethod" value="debito" required>
+                                <div class="payment-card">
+                                    <i class="fas fa-credit-card"></i>
+                                    <div class="payment-label">Débito</div>
+                                </div>
+                            </label>
+
+                            <label class="payment-option-label">
+                                <input type="radio" name="paymentMethod" value="credito" required>
+                                <div class="payment-card">
+                                    <i class="fas fa-credit-card"></i>
+                                    <div class="payment-label">Crédito</div>
+                                </div>
+                            </label>
+
+                            <label class="payment-option-label">
+                                <input type="radio" name="paymentMethod" value="pix" required>
+                                <div class="payment-card">
+                                    <i class="fas fa-mobile"></i>
+                                    <div class="payment-label">PIX</div>
+                                </div>
+                            </label>
                         </div>
                     </div>
 
@@ -1256,14 +1306,24 @@
         async function updateAppointment(e) {
             e.preventDefault();
 
-            if (!viewingAppointment) return;
+            if (!viewingAppointment) {
+                console.error('❌ Nenhum agendamento selecionado para editar');
+                return;
+            }
 
             const clientId = document.getElementById('editClientSelect').value;
             const serviceId = document.getElementById('editServiceSelect').value;
             const value = parseFloat(document.getElementById('editValueField').value) || 0;
             const notes = document.getElementById('editNotesField').value;
 
+            if (!clientId || !serviceId) {
+                alert('Preencha cliente e serviço');
+                return;
+            }
+
             try {
+                console.log('📝 Atualizando agendamento:', viewingAppointment.id);
+
                 const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
                     cliente_id: clientId,
                     servico_id: serviceId,
@@ -1271,16 +1331,20 @@
                     observacoes: notes
                 });
 
+                console.log('Resultado da atualização:', result);
+
                 if (result.success || result.data) {
+                    console.log('✅ Agendamento atualizado com sucesso!');
                     closeEditModal();
-                    renderSchedule();
-                    console.log('✅ Agendamento atualizado!');
+                    await renderSchedule();
+                    alert('Agendamento atualizado com sucesso!');
                 } else {
+                    console.error('❌ Erro na resposta:', result);
                     alert('Erro: ' + (result.error || 'Erro desconhecido'));
                 }
             } catch (error) {
                 console.error('❌ Erro ao atualizar:', error);
-                alert('Erro ao atualizar agendamento');
+                alert('Erro ao atualizar agendamento: ' + error.message);
             }
         }
 
@@ -1332,7 +1396,10 @@
         async function finalizeAppointment(e) {
             e.preventDefault();
 
-            if (!viewingAppointment) return;
+            if (!viewingAppointment) {
+                console.error('❌ Nenhum agendamento selecionado para finalizar');
+                return;
+            }
 
             const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
             const notes = document.getElementById('finalizeNotesField').value;
@@ -1343,6 +1410,8 @@
             }
 
             try {
+                console.log('💰 Finalizando agendamento com pagamento:', paymentMethod);
+
                 // Calcular comissão
                 const serviceValue = parseFloat(viewingAppointment.valor) || 0;
                 const commissionPercent = viewingAppointment.profissional?.comissao_percentual || 0;
@@ -1356,16 +1425,20 @@
                     comissao_profissional: commission
                 });
 
+                console.log('Resultado da finalização:', result);
+
                 if (result.success || result.data) {
-                    closeFinalizeModal();
-                    renderSchedule();
                     console.log('✅ Agendamento finalizado!');
+                    closeFinalizeModal();
+                    await renderSchedule();
+                    alert('Agendamento finalizado com sucesso!');
                 } else {
+                    console.error('❌ Erro na resposta:', result);
                     alert('Erro: ' + (result.error || 'Erro desconhecido'));
                 }
             } catch (error) {
                 console.error('❌ Erro ao finalizar:', error);
-                alert('Erro ao finalizar agendamento');
+                alert('Erro ao finalizar agendamento: ' + error.message);
             }
         }
 
