@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Configurar Empresa - Reddito</title>
+  <title>Configurar Empresa - RedditoApp</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/auth.js"></script>
   <style>
-    /* Seu CSS permanece igual */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', sans-serif;
@@ -28,6 +27,20 @@
       max-width: 680px;
       box-shadow: 0 24px 64px rgba(0,0,0,0.3);
       overflow: hidden;
+    }
+    .ob-header {
+      padding: 16px 40px;
+      text-align: center;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .ob-header-link {
+      color: #94a3b8;
+      font-size: 13px;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .ob-header-link:hover {
+      color: #667eea;
     }
     .ob-progress {
       background: #f1f5f9;
@@ -164,18 +177,19 @@
     .logo-upload-hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
     .horario-row {
       display: grid;
-      grid-template-columns: 32px 1fr 1fr 1fr;
+      grid-template-columns: 24px auto 1fr 1fr;
       align-items: center;
       gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      border: 1px solid #e2e8f0;
     }
-    .horario-row:last-child { border-bottom: none; }
     .horario-dia {
       font-size: 13px;
       font-weight: 600;
       color: #374151;
-      grid-column: 2;
     }
     .horario-row input[type="checkbox"] {
       width: 18px;
@@ -188,53 +202,32 @@
       font-size: 13px;
     }
     .horario-row input[type="time"]:disabled {
-      background: #f8fafc;
+      background: #f1f5f9;
       color: #cbd5e1;
+      cursor: not-allowed;
     }
-    .item-list { display: flex; flex-direction: column; gap: 12px; }
-    .item-card {
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 16px;
-      position: relative;
-    }
-    .item-card-header {
+    .horarios-container {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .item-card-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #374151;
-    }
-    .btn-remove {
-      background: none;
-      border: none;
-      color: #ef4444;
-      cursor: pointer;
-      font-size: 16px;
-      padding: 2px 6px;
-    }
-    .item-card .form-row { margin-bottom: 0; }
-    .btn-add {
-      display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 8px;
-      padding: 10px 16px;
-      background: #f8f7ff;
-      border: 2px dashed #667eea;
-      border-radius: 10px;
-      color: #667eea;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-      justify-content: center;
-      transition: background 0.2s;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 8px;
     }
-    .btn-add:hover { background: #ede9fe; }
+    .horarios-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .horarios-container::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+    .horarios-container::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    .horarios-container::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
     .ob-nav {
       display: flex;
       justify-content: space-between;
@@ -271,22 +264,25 @@
     }
     .btn-next:hover { opacity: 0.9; }
     .btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-skip {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      font-size: 13px;
-      cursor: pointer;
-      text-decoration: underline;
-    }
     .msg-error {
       background: #fef2f2;
       color: #dc2626;
-      padding: 10px 14px;
+      padding: 12px 14px;
       border-radius: 8px;
       font-size: 13px;
       margin-bottom: 16px;
       display: none;
+      border-left: 4px solid #dc2626;
+    }
+    .msg-success {
+      background: #f0fdf4;
+      color: #15803d;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+      border-left: 4px solid #15803d;
     }
     .loading-spin {
       display: inline-block;
@@ -298,27 +294,21 @@
       animation: spin 0.6s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .invite-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      background: #dcfce7;
-      color: #16a34a;
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-weight: 600;
-    }
     @media (max-width: 600px) {
       .ob-content { padding: 24px 20px 32px; }
       .ob-progress { padding: 20px 20px 0; }
       .form-row { grid-template-columns: 1fr; }
-      .horario-row { grid-template-columns: 24px 1fr 1fr 1fr; gap: 8px; }
+      .horario-row { grid-template-columns: 24px 80px 1fr 1fr; font-size: 12px; padding: 12px; }
+      .horario-row input[type="time"] { font-size: 12px; padding: 6px 8px; }
     }
   </style>
 </head>
 <body>
   <div class="ob-container">
+
+    <div class="ob-header">
+      <a href="login.html" class="ob-header-link">← Voltar para Login</a>
+    </div>
 
     <div class="ob-progress">
       <div class="ob-steps">
@@ -330,19 +320,12 @@
           <div class="ob-step-circle">2</div>
           <span class="ob-step-label">Horários</span>
         </div>
-        <div class="ob-step" id="step-ind-3">
-          <div class="ob-step-circle">3</div>
-          <span class="ob-step-label">Serviços</span>
-        </div>
-        <div class="ob-step" id="step-ind-4">
-          <div class="ob-step-circle">4</div>
-          <span class="ob-step-label">Equipe</span>
-        </div>
       </div>
     </div>
 
     <div class="ob-content">
       <div id="msgError" class="msg-error"></div>
+      <div id="msgSuccess" class="msg-success"></div>
 
       <!-- STEP 1: Empresa -->
       <div class="ob-step-content active" id="content-1">
@@ -382,14 +365,14 @@
         </div>
 
         <div class="form-group">
-          <label>Logotipo da Empresa</label>
+          <label>Logotipo da Empresa (opcional)</label>
           <div class="logo-upload" id="logoUploadArea">
-            <input type="file" id="logoFile" accept="image/jpeg,image/png" onchange="previewLogo(this)" />
+            <input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp" onchange="previewLogo(this)" />
             <img id="logoPreview" class="logo-preview" src="" alt="Preview" />
             <div id="logoPlaceholder">
               <div class="logo-upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
               <div class="logo-upload-text">Clique para enviar o logotipo</div>
-              <div class="logo-upload-hint">JPEG ou PNG • Máx. 2MB</div>
+              <div class="logo-upload-hint">JPEG, PNG ou WebP • Máx. 2MB</div>
             </div>
           </div>
         </div>
@@ -405,63 +388,17 @@
       <!-- STEP 2: Horários -->
       <div class="ob-step-content" id="content-2">
         <h2 class="ob-title">Horários de Atendimento 🕐</h2>
-        <p class="ob-subtitle">Configure os dias e horários que sua empresa atende.</p>
+        <p class="ob-subtitle">Configure os dias e horários que sua empresa atende. Cada dia pode ter horários diferentes.</p>
 
-        <div id="horariosContainer"></div>
+        <div class="horarios-container" id="horariosContainer"></div>
 
         <div class="ob-nav">
           <button class="btn-back" onclick="irParaStep(1)">
             <i class="fas fa-arrow-left"></i> Voltar
           </button>
-          <button class="btn-next" onclick="irParaStep(3)">
-            Próximo <i class="fas fa-arrow-right"></i>
+          <button class="btn-next" id="btnFinalizar" onclick="finalizarOnboarding()">
+            <span id="btnFinalizarText">Concluir <i class="fas fa-check"></i></span>
           </button>
-        </div>
-      </div>
-
-      <!-- STEP 3: Serviços -->
-      <div class="ob-step-content" id="content-3">
-        <h2 class="ob-title">Seus Serviços ✂️</h2>
-        <p class="ob-subtitle">Adicione os serviços que sua empresa oferece.</p>
-
-        <div class="item-list" id="servicosList"></div>
-        <button class="btn-add" onclick="adicionarServico()" style="margin-top:12px;">
-          <i class="fas fa-plus"></i> Adicionar Serviço
-        </button>
-
-        <div class="ob-nav">
-          <button class="btn-back" onclick="irParaStep(2)">
-            <i class="fas fa-arrow-left"></i> Voltar
-          </button>
-          <div style="display:flex;gap:12px;align-items:center;">
-            <button class="btn-skip" onclick="irParaStep(4)">Pular</button>
-            <button class="btn-next" onclick="irParaStep(4)">
-              Próximo <i class="fas fa-arrow-right"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP 4: Profissionais -->
-      <div class="ob-step-content" id="content-4">
-        <h2 class="ob-title">Sua Equipe 👥</h2>
-        <p class="ob-subtitle">Adicione profissionais e envie convites por email.</p>
-
-        <div class="item-list" id="profissionaisList"></div>
-        <button class="btn-add" onclick="adicionarProfissional()" style="margin-top:12px;">
-          <i class="fas fa-plus"></i> Adicionar Profissional
-        </button>
-
-        <div class="ob-nav">
-          <button class="btn-back" onclick="irParaStep(3)">
-            <i class="fas fa-arrow-left"></i> Voltar
-          </button>
-          <div style="display:flex;gap:12px;align-items:center;">
-            <button class="btn-skip" onclick="finalizarOnboarding()">Pular</button>
-            <button class="btn-next" id="btnFinalizar" onclick="finalizarOnboarding()">
-              <span id="btnFinalizarText">Concluir <i class="fas fa-check"></i></span>
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -495,15 +432,18 @@
               inicializar();
             }
           }, 50);
+          setTimeout(() => clearInterval(t), 5000);
         }, { once: true });
       }
     }
 
     async function inicializar() {
+      console.log('✅ [Onboarding] Sistema inicializado');
       const supabase = window.getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.user) {
+        console.log('❌ [Onboarding] Sem sessão, redirecionando para login');
         window.location.href = 'login.html';
         return;
       }
@@ -511,6 +451,9 @@
       userId = session.user.id;
       tenantId = session.user.id;
 
+      console.log('✅ [Onboarding] Usuário autenticado:', userId);
+
+      // Verificar se onboarding já foi completo
       const { data: perfil } = await supabase
         .from('perfis')
         .select('onboarding_completo')
@@ -518,12 +461,12 @@
         .single();
 
       if (perfil?.onboarding_completo) {
+        console.log('✅ [Onboarding] Já completo, redirecionando para dashboard');
         window.location.href = 'dashboard.html';
         return;
       }
 
       renderHorarios();
-      adicionarServico();
     }
 
     if (document.readyState === 'loading') {
@@ -535,7 +478,8 @@
     function irParaStep(step) {
       if (step > currentStep && !validarStep(currentStep)) return;
 
-      for (let i = 1; i <= 4; i++) {
+      // Atualizar indicadores
+      for (let i = 1; i <= 2; i++) {
         const ind = document.getElementById(`step-ind-${i}`);
         ind.className = 'ob-step';
         if (i < step) ind.classList.add('done');
@@ -549,24 +493,41 @@
       document.getElementById(`content-${step}`).classList.add('active');
       currentStep = step;
       esconderErro();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function validarStep(step) {
       esconderErro();
+      
       if (step === 1) {
-        if (!document.getElementById('nomeEmpresa').value.trim()) {
-          mostrarErro('Informe o nome da empresa.');
+        const nome = document.getElementById('nomeEmpresa').value.trim();
+        const segmento = document.getElementById('segmento').value;
+        const telefone = document.getElementById('telefone').value.trim();
+
+        if (!nome) {
+          mostrarErro('⚠️ Informe o nome da empresa.');
           return false;
         }
-        if (!document.getElementById('segmento').value) {
-          mostrarErro('Selecione o segmento.');
+        if (!segmento) {
+          mostrarErro('⚠️ Selecione o segmento.');
           return false;
         }
-        if (!document.getElementById('telefone').value.trim()) {
-          mostrarErro('Informe o telefone.');
+        if (!telefone) {
+          mostrarErro('⚠️ Informe o telefone.');
           return false;
         }
       }
+
+      if (step === 2) {
+        const temAtivoAlgumDia = DIAS.some((_, i) => 
+          document.getElementById(`ativo-${i}`).checked
+        );
+        if (!temAtivoAlgumDia) {
+          mostrarErro('⚠️ Selecione pelo menos um dia de funcionamento.');
+          return false;
+        }
+      }
+
       return true;
     }
 
@@ -577,8 +538,18 @@
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    function mostrarSucesso(msg) {
+      const el = document.getElementById('msgSuccess');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
     function esconderErro() {
       document.getElementById('msgError').style.display = 'none';
+    }
+
+    function esconderSucesso() {
+      document.getElementById('msgSuccess').style.display = 'none';
     }
 
     function previewLogo(input) {
@@ -586,7 +557,7 @@
       if (!file) return;
 
       if (file.size > 2 * 1024 * 1024) {
-        mostrarErro('Imagem muito grande. Máximo 2MB.');
+        mostrarErro('⚠️ Imagem muito grande. Máximo 2MB.');
         input.value = '';
         return;
       }
@@ -622,81 +593,8 @@
       document.getElementById(`fim-${i}`).disabled = !ativo;
     }
 
-    let servicoCount = 0;
-
-    function adicionarServico() {
-      servicoCount++;
-      const id = `servico-${servicoCount}`;
-      const div = document.createElement('div');
-      div.className = 'item-card';
-      div.id = id;
-      div.innerHTML = `
-        <div class="item-card-header">
-          <span class="item-card-title">Serviço ${servicoCount}</span>
-          <button class="btn-remove" onclick="removerItem('${id}')" title="Remover">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nome do Serviço *</label>
-            <input type="text" class="srv-nome" placeholder="Ex: Corte masculino">
-          </div>
-          <div class="form-group">
-            <label>Duração (min) *</label>
-            <input type="number" class="srv-duracao" placeholder="30" min="5" max="480">
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label>Preço (R$) *</label>
-          <input type="number" class="srv-preco" placeholder="0,00" min="0" step="0.01">
-        </div>
-      `;
-      document.getElementById('servicosList').appendChild(div);
-    }
-
-    let profCount = 0;
-
-    function adicionarProfissional() {
-      profCount++;
-      const id = `prof-${profCount}`;
-      const div = document.createElement('div');
-      div.className = 'item-card';
-      div.id = id;
-      div.innerHTML = `
-        <div class="item-card-header">
-          <span class="item-card-title">Profissional ${profCount}</span>
-          <button class="btn-remove" onclick="removerItem('${id}')" title="Remover">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nome *</label>
-            <input type="text" class="prof-nome" placeholder="Nome completo">
-          </div>
-          <div class="form-group">
-            <label>Especialidade</label>
-            <input type="text" class="prof-especialidade" placeholder="Ex: Cabeleireiro">
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label>
-            Email para convite
-            <span class="invite-badge"><i class="fas fa-envelope"></i> Convite será enviado</span>
-          </label>
-          <input type="email" class="prof-email" placeholder="profissional@email.com">
-        </div>
-      `;
-      document.getElementById('profissionaisList').appendChild(div);
-    }
-
-    function removerItem(id) {
-      document.getElementById(id)?.remove();
-    }
-
     async function finalizarOnboarding() {
-      if (!validarStep(currentStep)) return;
+      if (!validarStep(2)) return;
 
       const btn = document.getElementById('btnFinalizar');
       btn.disabled = true;
@@ -704,45 +602,80 @@
 
       try {
         const supabase = window.getSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
+        const userEmail = session?.user?.email || '';
+
+        console.log('📝 [Onboarding] Iniciando salvamento...');
 
         // 1. Upload do logo (se houver)
         const logoFile = document.getElementById('logoFile').files[0];
         if (logoFile) {
-          const ext = logoFile.name.split('.').pop();
-          const path = `${userId}/logo.${ext}`;
-          const { error: uploadError } = await supabase.storage
-            .from('logos')
-            .upload(path, logoFile, { upsert: true });
+          try {
+            const ext = logoFile.name.split('.').pop().toLowerCase();
+            const path = `${userId}/logo.${ext}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('logos')
+              .upload(path, logoFile, { upsert: true });
 
-          if (!uploadError) {
-            const { data: urlData } = supabase.storage.from('logos').getPublicUrl(path);
-            logoUrl = urlData.publicUrl;
+            if (!uploadError) {
+              const { data: urlData } = supabase.storage.from('logos').getPublicUrl(path);
+              logoUrl = urlData.publicUrl;
+              console.log('✅ [Onboarding] Logo enviado:', logoUrl);
+            } else {
+              console.warn('⚠️ [Onboarding] Erro ao fazer upload do logo:', uploadError);
+            }
+          } catch (logoErr) {
+            console.warn('⚠️ [Onboarding] Erro no processamento do logo:', logoErr);
           }
         }
 
-        // 2. Salvar perfil
-        const { data: { session } } = await supabase.auth.getSession();
-        const userEmail = session?.user?.email || '';
+        // 2. Criar/Atualizar tabela tenants
+        const nomeEmpresa = document.getElementById('nomeEmpresa').value.trim();
+        const segmento = document.getElementById('segmento').value;
+        const telefone = document.getElementById('telefone').value.trim();
+        const endereco = document.getElementById('endereco').value.trim();
 
+        const { error: tenantError } = await supabase
+          .from('tenants')
+          .upsert({
+            id: tenantId,
+            nome_empresa: nomeEmpresa,
+            email_proprietario: userEmail,
+            telefone,
+            logo_url: logoUrl,
+            segmento,
+            endereco,
+            plano: 'basico', // Começa com plano básico
+            status: 'ativo',
+            data_inicio: new Date().toISOString(),
+            dias_trial: 7
+          }, { onConflict: 'id' });
+
+        if (tenantError) throw tenantError;
+        console.log('✅ [Onboarding] Tenant criado/atualizado');
+
+        // 3. Atualizar perfil
         const { error: perfilError } = await supabase
           .from('perfis')
           .upsert({
             id: userId,
             tenant_id: tenantId,
             role: 'dono',
-            nome: document.getElementById('nomeEmpresa').value.trim(),
+            nome: nomeEmpresa,
             email: userEmail,
-            nome_empresa: document.getElementById('nomeEmpresa').value.trim(),
-            segmento: document.getElementById('segmento').value,
-            telefone: document.getElementById('telefone').value.trim(),
-            endereco: document.getElementById('endereco').value.trim(),
+            nome_empresa: nomeEmpresa,
+            segmento,
+            telefone,
+            endereco,
             logo_url: logoUrl,
             onboarding_completo: true
-          });
+          }, { onConflict: 'id' });
 
         if (perfilError) throw perfilError;
+        console.log('✅ [Onboarding] Perfil atualizado');
 
-        // 3. Salvar horários
+        // 4. Salvar horários
         const horarios = DIAS.map((_, i) => ({
           tenant_id: tenantId,
           dia_semana: i,
@@ -751,73 +684,28 @@
           hora_fim: document.getElementById(`fim-${i}`).value || '18:00'
         }));
 
+        // Deletar horários antigos
         await supabase.from('horarios_atendimento').delete().eq('tenant_id', tenantId);
-        await supabase.from('horarios_atendimento').insert(horarios);
 
-        // 4. Salvar serviços
-        const servicoCards = document.querySelectorAll('#servicosList .item-card');
-        for (const card of servicoCards) {
-          const nome = card.querySelector('.srv-nome')?.value?.trim();
-          const duracao = card.querySelector('.srv-duracao')?.value;
-          const preco = card.querySelector('.srv-preco')?.value;
-          if (nome && duracao && preco) {
-            await supabase.from('servicos').insert({
-              tenant_id: tenantId,
-              nome,
-              duracao_minutos: parseInt(duracao),
-              preco: parseFloat(preco)
-            });
-          }
-        }
+        // Inserir novos horários
+        const { error: horariosError } = await supabase
+          .from('horarios_atendimento')
+          .insert(horarios);
 
-        // 5. Salvar profissionais e enviar convite
-        const profCards = document.querySelectorAll('#profissionaisList .item-card');
-        for (const card of profCards) {
-          const nome = card.querySelector('.prof-nome')?.value?.trim();
-          const especialidade = card.querySelector('.prof-especialidade')?.value?.trim();
-          const email = card.querySelector('.prof-email')?.value?.trim();
-          if (nome) {
-            await supabase.from('profissionais').insert({
-              tenant_id: tenantId,
-              nome,
-              especialidade: especialidade || null,
-              email: email || null,
-              ativo: true
-            });
+        if (horariosError) throw horariosError;
+        console.log('✅ [Onboarding] Horários salvos');
 
-            if (email) {
-              try {
-                const endpoint = 'https://ldnbivvqzpaqcdhxkywl.supabase.co/functions/v1/dynamic-action';
-
-                const response = await fetch(endpoint, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${session?.access_token}`
-                  },
-                  body: JSON.stringify({ email })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                  console.log(`📧 Convite enviado para ${email}`);
-                } else {
-                  console.error(`❌ Erro ao enviar convite para ${email}:`, result.error);
-                }
-              } catch (err) {
-                console.error(`❌ Erro na requisição de convite para ${email}:`, err);
-              }
-            }
-          }
-        }
-
-        // 6. Redirecionar para dashboard
-        window.location.href = 'dashboard.html';
+        mostrarSucesso('✨ Empresa configurada com sucesso!');
+        console.log('✅ [Onboarding] Concluído com sucesso!');
+        
+        // Redirecionar para dashboard após 2 segundos
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 2000);
 
       } catch (error) {
         console.error('❌ [Onboarding] Erro:', error);
-        mostrarErro('Erro ao salvar: ' + error.message);
+        mostrarErro('❌ Erro ao salvar: ' + (error.message || error));
         btn.disabled = false;
         btn.innerHTML = 'Concluir <i class="fas fa-check"></i>';
       }
