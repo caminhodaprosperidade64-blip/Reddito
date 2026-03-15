@@ -55,9 +55,6 @@
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
-                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <div class="pro-user-profile">
                     <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
@@ -336,13 +333,12 @@
     <script>
         const STORAGE_KEY_WA = 'sispro_whatsapp';
 
-        // ─── Inicializar dark mode ────────────────────────────────────
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
         });
 
         // ─── Perfil na sidebar + controle de acesso ────────────────────
-        window.addEventListener('perfilCarregado', (e) => { // ✅ window, não document
+        window.addEventListener('perfilCarregado', (e) => {
             const perfil = e.detail;
             if (!perfil) return;
 
@@ -475,6 +471,13 @@
                 await Auth.signOut();
             }
         }
+
+        // Sincronizar dark mode entre abas
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sispro_theme') {
+                location.reload();
+            }
+        });
     </script>
 </body>
 </html>
