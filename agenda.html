@@ -1475,8 +1475,12 @@
                 const apt = finalizingAppointment;
                 if (!apt) {
                     console.error('❌ Sem agendamento');
+                    alert('Erro: Agendamento não carregado');
                     return;
                 }
+
+                console.log('📋 Agendamento:', apt);
+                console.log('💰 Valor bruto:', apt.valor, 'Tipo:', typeof apt.valor);
 
                 if (!paymentConfig?.pix_chave || !paymentConfig?.pix_nome || !paymentConfig?.pix_cidade) {
                     document.getElementById('pixCopiaCola').value = '';
@@ -1485,8 +1489,27 @@
                     return;
                 }
 
-                const valor = parseFloat(apt.valor || 0).toFixed(2);
+                // ✅ CORREÇÃO: Garante que o valor é um número válido
+                let valor = parseFloat(apt.valor);
+                
+                if (isNaN(valor) || valor <= 0) {
+                    console.error('❌ Valor inválido:', apt.valor);
+                    alert('⚠️ O agendamento não tem um valor válido. Configure o valor antes de finalizar.');
+                    return;
+                }
+
+                valor = valor.toFixed(2);
+                console.log('✅ Valor formatado:', valor);
+
                 const txid = normalizeTxid(`AGEND${String(apt.id).replace(/[^0-9A-Za-z]/g, '').slice(0, 12)}`);
+
+                console.log('📝 Gerando BR Code com:', {
+                    chave: paymentConfig.pix_chave,
+                    nome: paymentConfig.pix_nome,
+                    cidade: paymentConfig.pix_cidade,
+                    valor: valor,
+                    txid: txid
+                });
 
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
@@ -1500,21 +1523,27 @@
                 const brcodeForQr = sanitizeBrcode(brcode);
 
                 if (!brcodeForQr || brcodeForQr.length < 30) {
-                    alert('Erro: BR Code inválido');
+                    console.error('❌ BR Code inválido:', brcodeForQr);
+                    alert('Erro: BR Code inválido. Verifique os dados Pix.');
                     return;
                 }
 
-                console.log('✅ BR Code OK:', brcodeForQr.length, 'chars');
+                console.log('✅ BR Code gerado com sucesso!');
+                console.log('📏 Tamanho:', brcodeForQr.length, 'caracteres');
+                console.log('🔗 Código:', brcodeForQr);
 
                 document.getElementById('pixCopiaCola').value = brcodeForQr;
 
                 const container = document.getElementById('pixQr');
-                if (!container) return;
+                if (!container) {
+                    console.error('❌ Container #pixQr não encontrado');
+                    return;
+                }
 
                 clearPixQr();
-                await new Promise(r => setTimeout(r, 80));
+                await new Promise(r => setTimeout(r, 100));
 
-                // Usa QRCode.js
+                // Gera QR Code com QRCode.js
                 currentQRCode = new QRCode(container, {
                     text: brcodeForQr,
                     width: 280,
@@ -1524,11 +1553,12 @@
                     correctLevel: QRCode.CorrectLevel.M
                 });
 
-                console.log('✅ QR Code gerado!');
+                console.log('✅ QR Code renderizado com sucesso!');
 
             } catch (err) {
-                console.error('❌ Erro:', err);
-                alert('Erro ao gerar QR Code');
+                console.error('❌ Erro completo:', err);
+                console.error('Stack:', err.stack);
+                alert('Erro ao gerar QR Code: ' + err.message);
             }
         }
 
