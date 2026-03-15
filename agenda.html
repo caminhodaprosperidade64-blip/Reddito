@@ -485,8 +485,8 @@
                     <div class="calendar-header">
                         <h3 id="monthYear">Março 2026</h3>
                         <div class="calendar-nav">
-                            <button onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
-                            <button onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+                            <button onclick="prevMonth()" title="Mês anterior"><i class="fas fa-chevron-left"></i></button>
+                            <button onclick="nextMonth()" title="Próximo mês"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                     <div class="mini-calendar" id="miniCalendar"></div>
@@ -544,7 +544,7 @@
                 </div>
                 <div class="form-field">
                     <label>Observações</label>
-                    <textarea id="notesField" rows="3"></textarea>
+                    <textarea id="notesField" rows="3" placeholder="Digite observações..."></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -600,11 +600,17 @@
                 allClients = await DB.clientes.listar();
                 allServices = await DB.servicos.listar();
 
+                console.log('✅ Dados carregados:', {
+                    profissionais: allProfessionals.length,
+                    clientes: allClients.length,
+                    servicos: allServices.length
+                });
+
                 populateSelects();
                 renderCalendar();
                 renderSchedule();
             } catch (error) {
-                console.error('Erro ao carregar dados:', error);
+                console.error('❌ Erro ao carregar dados:', error);
             }
         }
 
@@ -612,22 +618,33 @@
             const clientSelect = document.getElementById('clientSelect');
             const serviceSelect = document.getElementById('serviceSelect');
 
+            if (!clientSelect || !serviceSelect) {
+                console.error('❌ Elementos do formulário não encontrados');
+                return;
+            }
+
             clientSelect.innerHTML = '<option value="">Selecione...</option>';
             serviceSelect.innerHTML = '<option value="">Selecione...</option>';
 
-            allClients.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.nome;
-                clientSelect.appendChild(opt);
-            });
+            if (allClients && allClients.length > 0) {
+                allClients.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.nome;
+                    clientSelect.appendChild(opt);
+                });
+            }
 
-            allServices.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s.id;
-                opt.textContent = s.nome;
-                serviceSelect.appendChild(opt);
-            });
+            if (allServices && allServices.length > 0) {
+                allServices.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.nome;
+                    serviceSelect.appendChild(opt);
+                });
+            }
+
+            console.log('✅ Selects populados. Clientes:', allClients.length, 'Serviços:', allServices.length);
         }
 
         function renderCalendar() {
@@ -690,14 +707,14 @@
             document.getElementById('dateLabel').textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
 
             if (!allProfessionals.length) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional</span></div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional cadastrado</span></div>';
                 return;
             }
 
             const times = generateTimes('08:00', '18:00', 30);
             let html = '<table class="schedule-table"><tbody>';
 
-            // Cabeçalho
+            // Cabeçalho com profissionais
             html += '<tr class="prof-header-row"><td class="time-col"></td>';
             allProfessionals.forEach((prof, idx) => {
                 const colorIdx = (idx % 5) + 1;
@@ -706,7 +723,7 @@
             });
             html += '</tr>';
 
-            // Horários
+            // Linhas de horários
             times.forEach(time => {
                 html += `<tr><td class="time-col">${time}</td>`;
                 allProfessionals.forEach((prof, idx) => {
@@ -751,6 +768,8 @@
             document.getElementById('profName').value = profName;
             document.getElementById('dateField').value = new Date(date).toLocaleDateString('pt-BR');
             document.getElementById('timeField').value = time;
+            document.getElementById('valueField').value = '';
+            document.getElementById('notesField').value = '';
             document.getElementById('appointmentModal').classList.add('active');
         }
 
@@ -783,24 +802,30 @@
 
                 if (result.success) {
                     closeModal();
-                    renderSchedule();
-                    alert('Agendamento criado!');
+                    await renderSchedule();
+                    console.log('✅ Agendamento criado com sucesso!');
                 } else {
                     alert('Erro: ' + result.error);
+                    console.error('❌ Erro ao criar agendamento:', result.error);
                 }
             } catch (error) {
-                console.error('Erro:', error);
+                console.error('❌ Erro:', error);
                 alert('Erro ao agendar');
             }
         }
 
         function editAppointment(id) {
-            alert('Funcionalidade em desenvolvimento');
+            console.log('✏️ Editar agendamento:', id);
+            alert('Funcionalidade de edição em desenvolvimento');
         }
 
         async function logout() {
-            await supabase.auth.signOut();
-            window.location.href = 'login.html';
+            try {
+                await supabase.auth.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('❌ Erro ao fazer logout:', error);
+            }
         }
     </script>
 </body>
