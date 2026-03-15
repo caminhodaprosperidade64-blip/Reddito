@@ -1395,6 +1395,13 @@
 
         function handleFinalize() {
             if (!viewingAppointment) return;
+
+            // ✅ VERIFICAÇÃO: Se não tiver valor, pede para preencher
+            if (!viewingAppointment.valor || parseFloat(viewingAppointment.valor) <= 0) {
+                alert('⚠️ Este agendamento não tem valor configurado.\n\nClique em "Editar" para adicionar o valor antes de finalizar.');
+                return;
+            }
+
             finalizingAppointment = { ...viewingAppointment };
             document.getElementById('finalizeValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
             clearFormFields('finalizeForm');
@@ -1475,7 +1482,6 @@
                 const apt = finalizingAppointment;
                 if (!apt) {
                     console.error('❌ Sem agendamento');
-                    alert('Erro: Agendamento não carregado');
                     return;
                 }
 
@@ -1530,7 +1536,6 @@
 
                 console.log('✅ BR Code gerado com sucesso!');
                 console.log('📏 Tamanho:', brcodeForQr.length, 'caracteres');
-                console.log('🔗 Código:', brcodeForQr);
 
                 document.getElementById('pixCopiaCola').value = brcodeForQr;
 
