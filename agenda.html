@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -13,8 +12,8 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
 
-    <!-- QR Code generator (usado para Pix estático) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- ✅ QR Code Styling (biblioteca moderna) -->
+    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.8.4/lib/qr-code-styling.js"></script>
 
     <style>
         .agenda-wrapper {
@@ -618,10 +617,7 @@
             gap: 0.75rem;
             align-items: center;
         }
-        .pix-qr canvas, .pix-qr img {
-            width: 220px;
-            height: 220px;
-        }
+
         .pix-copy {
             width: 100%;
             display: grid;
@@ -634,31 +630,46 @@
             min-height: 70px;
         }
 
-        /* ✅ GARANTE ÁREA VISÍVEL DO QR (AJUSTADO PARA LER MELHOR) */
+        /* ✅ GARANTE ÁREA VISÍVEL DO QR (OTIMIZADO) */
         #pixQr {
-            width: 400px;
-            height: 400px;
+            width: 380px;
+            height: 380px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #fff;
-            border: 1px solid var(--border-color);
+            background: #ffffff;
+            border: 2px solid var(--border-color);
             border-radius: 10px;
-            padding: 10px; /* quiet zone */
+            padding: 0;
             box-sizing: border-box;
             overflow: hidden;
+            margin: 1rem 0;
         }
+
         #pixQr img,
-        #pixQr canvas {
-            width: 380px !important;
-            height: 380px !important;
+        #pixQr canvas,
+        #pixQr svg {
+            width: 100% !important;
+            height: 100% !important;
             display: block !important;
             image-rendering: pixelated;
         }
 
+        #pixQr div {
+            width: 100%;
+            height: 100%;
+        }
+
         @media (max-width: 520px) {
-            #pixQr { width: 320px; height: 320px; padding: 10px; }
-            #pixQr img, #pixQr canvas { width: 300px !important; height: 300px !important; }
+            #pixQr {
+                width: 300px;
+                height: 300px;
+                padding: 0;
+            }
+            #pixQr img, #pixQr canvas, #pixQr svg {
+                width: 100% !important;
+                height: 100% !important;
+            }
         }
     </style>
 </head>
@@ -1049,7 +1060,7 @@
         let modalState = { profId: null, profName: null, date: null, time: null };
         let viewingAppointment = null;
 
-        // ✅ snapshot do agendamento que está sendo finalizado (evita null no change)
+        // ✅ snapshot do agendamento que está sendo finalizado
         let finalizingAppointment = null;
 
         // Configuração Pix (carregada do Supabase)
@@ -1508,20 +1519,25 @@
             container.innerHTML = '';
         }
 
-        // ✅ NOVO: sanitiza o BR Code antes de copiar/gerar QR
+        // ✅ Sanitiza o BR Code antes de copiar/gerar QR
         function sanitizeBrcode(str) {
             return String(str || '').replace(/[\r\n\s]+/g, '').trim();
         }
 
+        // ✅ FUNÇÃO CORRIGIDA PARA GERAR QR CODE
         async function generatePixQrForCurrentAppointment() {
             try {
                 const apt = finalizingAppointment;
-                if (!apt) return;
+                if (!apt) {
+                    console.error('❌ Nenhum agendamento em finalização');
+                    return;
+                }
 
                 if (!paymentConfig?.pix_chave || !paymentConfig?.pix_nome || !paymentConfig?.pix_cidade) {
                     document.getElementById('pixCopiaCola').value = '';
                     clearPixQr();
                     alert('⚠️ Para gerar Pix, cadastre chave/nome/cidade no Supabase (tabela config_pagamentos).');
+                    console.error('Config Pix incompleta:', paymentConfig);
                     return;
                 }
 
@@ -1529,7 +1545,7 @@
 
                 const txid = normalizeTxid(`AGEND${String(apt.id).replace(/[^0-9A-Za-z]/g, '').slice(0, 12)}`);
 
-                // 1) Gera o copia-e-cola (você já tinha isso)
+                // 1) Gera o copia-e-cola
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
                     nome: paymentConfig.pix_nome,
@@ -1539,33 +1555,71 @@
                     txid: txid
                 });
 
+                // 2) ✅ Valida e sanitiza o BR Code
+                const brcodeForQr = sanitizeBrcode(brcode);
+                
+                // Validações críticas
+                if (!brcodeForQr || brcodeForQr.length < 30) {
+                    console.error('❌ BR Code inválido:', brcodeForQr);
+                    alert('Erro: BR Code gerado está inválido. Verifique os dados Pix.');
+                    return;
+                }
+
+                console.log('✅ BR Code gerado com sucesso');
+                console.log('📏 Tamanho:', brcodeForQr.length);
+
+                // 3) Popula o textarea
                 const textarea = document.getElementById('pixCopiaCola');
-                textarea.value = brcode;
+                textarea.value = brcodeForQr;
 
-                // 2) ✅ QRCode é gerado A PARTIR DO TEXTO do textarea, sanitizado
-                const brcodeForQr = sanitizeBrcode(textarea.value);
-
+                // 4) ✅ Gera o QR Code com biblioteca moderna
                 const container = document.getElementById('pixQr');
-                if (!container) return;
+                if (!container) {
+                    console.error('❌ Container #pixQr não encontrado!');
+                    return;
+                }
 
                 clearPixQr();
 
-                // tempo pro modal terminar de renderizar
-                await new Promise(r => setTimeout(r, 80));
+                // Aguarda DOM estar pronto
+                await new Promise(r => setTimeout(r, 120));
 
-                new QRCode(container, {
-                    text: brcodeForQr,
-                    width: 380,
-                    height: 380,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    // ✅ correção baixa melhora leitura em QR muito denso
-                    correctLevel: QRCode.CorrectLevel.L
-                });
+                // ✅ Usa QR Code Styling (melhor que qrcodejs)
+                if (window.QRCodeStyling) {
+                    console.log('📱 Gerando QR Code com QRCodeStyling...');
+                    
+                    const qrCode = new QRCodeStyling({
+                        width: 380,
+                        height: 380,
+                        data: brcodeForQr,
+                        image: '',
+                        margin: 0,
+                        type: "canvas",
+                        dotsOptions: {
+                            color: "#000000",
+                            type: "square"
+                        },
+                        backgroundOptions: {
+                            color: "#ffffff",
+                        },
+                        imageOptions: {
+                            crossOrigin: "anonymous",
+                            margin: 0
+                        }
+                    });
+
+                    qrCode.append(container);
+                    console.log('✅ QR Code gerado com sucesso!');
+
+                } else {
+                    console.error('❌ QRCodeStyling não disponível no window');
+                    alert('Biblioteca QR Code não carregou. Recarregue a página.');
+                }
 
             } catch (err) {
-                console.error('Erro ao gerar QR Pix:', err);
-                alert('Erro ao gerar QR Pix');
+                console.error('❌ Erro ao gerar QR Pix:', err);
+                console.error('Stack:', err.stack);
+                alert('Erro ao gerar QR Pix. Verifique o console.');
             }
         }
 
@@ -1621,6 +1675,20 @@
         }
 
         function buildPixPayload({ chave, nome, cidade, valor, descricao, txid }) {
+            // ✅ Validações adicionais
+            if (!chave || chave.trim().length === 0) {
+                throw new Error('Chave Pix vazia');
+            }
+            if (!nome || nome.trim().length === 0) {
+                throw new Error('Nome Pix vazio');
+            }
+            if (!cidade || cidade.trim().length === 0) {
+                throw new Error('Cidade Pix vazia');
+            }
+            if (!valor || parseFloat(valor) <= 0) {
+                throw new Error('Valor inválido');
+            }
+
             const merchantName = normalizeNomeCidade(nome, 25);
             const merchantCity = normalizeNomeCidade(cidade, 15);
 
@@ -1643,12 +1711,12 @@
             const pointOfInitiationMethod = emv('01', '11');
             const merchantCategoryCode = emv('52', '0000');
             const transactionCurrency = emv('53', '986');
-            const transactionAmount = emv('54', String(valor));
+            const transactionAmount = emv('54', String(parseFloat(valor).toFixed(2)));
             const countryCode = emv('58', 'BR');
             const mName = emv('59', merchantName);
             const mCity = emv('60', merchantCity);
 
-            const txidValue = normalizeTxid(txid || 'AGENDAMENTO');
+            const txidValue = normalizeTxid(txid || 'AGENDAMENTO', 25);
             const txidField = emv('05', txidValue);
             const additionalData = emv('62', txidField);
 
@@ -1666,13 +1734,26 @@
                 '6304';
 
             const crc = crc16(withoutCrc);
-            return withoutCrc + crc;
+            const finalPayload = withoutCrc + crc;
+
+            console.log('📋 BR Code components:', {
+                merchantName,
+                merchantCity,
+                valor: String(parseFloat(valor).toFixed(2)),
+                txid: txidValue,
+                payloadLength: finalPayload.length
+            });
+
+            return finalPayload;
         }
 
         async function finalizeAppointment(e) {
             e.preventDefault();
             const apt = finalizingAppointment;
-            if (!apt) return;
+            if (!apt) {
+                alert('Erro: Agendamento não carregado');
+                return;
+            }
 
             const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
             const notes = document.getElementById('finalizeNotesField').value;
