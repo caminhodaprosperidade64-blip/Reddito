@@ -12,12 +12,33 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
     <style>
+        .pro-app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .pro-sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pro-main {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--bg-primary);
+        }
+
         .agenda-wrapper {
             display: grid;
             grid-template-columns: 320px 1fr;
             gap: 2rem;
             padding: 2rem;
-            height: calc(100vh - 100px);
+            height: 100%;
         }
 
         /* CALENDÁRIO */
@@ -725,7 +746,7 @@
                         if (apt) {
                             const clientName = apt.cliente?.nome || 'Cliente';
                             const serviceName = apt.servico?.nome || 'Serviço';
-                            html += `<div class="schedule-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></div>`;
+                            html += `<td class="schedule-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></td>`;
                         } else {
                             html += `<div class="schedule-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')"><span>Disponível</span></div>`;
                         }
