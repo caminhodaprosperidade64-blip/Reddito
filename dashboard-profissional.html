@@ -70,9 +70,6 @@
                 <a href="perfil.html" class="pro-nav-item"><i class="fas fa-user"></i><span>Meu Perfil</span></a>
             </nav>
             <div class="pro-sidebar-footer">
-                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <button class="pro-btn pro-btn-secondary w-full" onclick="Auth.signOut()">Sair</button>
             </div>
         </aside>
@@ -128,7 +125,6 @@
         let calendar;
         let perfilLogado = null;
 
-        // ─── Inicializar dark mode ────────────────────────────────────
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
         });
@@ -155,7 +151,6 @@
                     .single();
 
                 if (error && error.code !== 'PGRST116') {
-                    // PGRST116: no rows found (PostgREST) — tratamos com fallback
                     console.warn('Aviso ao buscar configurações:', error.message || error);
                 }
 
@@ -163,19 +158,16 @@
                 if (data && data.nome) {
                     nome = data.nome;
                 } else {
-                    // fallback: tentar pegar do localStorage (caso exista)
                     try {
                         const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
                         if (cfg.nome) nome = cfg.nome;
                     } catch (_) {}
                 }
 
-                // Atualiza texto no sidebar e título da página
                 const displayName = nome || 'Meu Estabelecimento';
                 document.getElementById('proTenantName').textContent = displayName;
                 document.title = `${displayName} — Dashboard`;
 
-                // Se houver logo, atualiza a imagem
                 if (data && data.logo_url) {
                     document.getElementById('imgLogoLoja').src = data.logo_url;
                 }
@@ -195,7 +187,6 @@
                     right: 'dayGridMonth,timeGridDay'
                 },
                 dateClick: function(info) {
-                    // Ao clicar no dia, redireciona para a agenda daquele dia
                     window.location.href = `agenda.html?data=${info.dateStr}`;
                 },
                 events: async function(info, successCallback, failureCallback) {
@@ -234,13 +225,12 @@
             const valorEl = document.getElementById('valorFaturamento');
             const labelEl = document.getElementById('labelPeriodo');
             
-            // Calcula intervalo conforme filtro
             const hoje = new Date();
             let inicio = new Date(hoje);
             inicio.setHours(0,0,0,0);
 
             if (periodo === 'semana') {
-                inicio.setDate(inicio.getDate() - (hoje.getDay() || 7) + 1); // início da semana (segunda)
+                inicio.setDate(inicio.getDate() - (hoje.getDay() || 7) + 1);
             } else if (periodo === 'quinzena') {
                 const dia = hoje.getDate();
                 if (dia <= 15) inicio.setDate(1);
@@ -248,9 +238,8 @@
             } else if (periodo === 'mes') {
                 inicio.setDate(1);
             } else if (periodo === 'personalizado') {
-                // Para personalizado, poderia abrir um datepicker — por enquanto usar mês
                 inicio.setDate(1);
-            } // 'dia' mantém hoje 00:00
+            }
 
             const dataInicioStr = inicio.toISOString().split('T')[0];
 
@@ -310,6 +299,13 @@
                 console.error('Erro ao buscar próximos:', err);
             }
         }
+
+        // Sincronizar dark mode entre abas
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sispro_theme') {
+                location.reload();
+            }
+        });
     </script>
 </body>
 </html>
