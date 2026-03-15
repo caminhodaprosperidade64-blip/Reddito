@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
 
-    <!-- ✅ QRCode.js - Biblioteca estável e confiável -->
+    <!-- ✅ QRCode.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
@@ -600,7 +600,7 @@
             background: #dc2626;
         }
 
-        /* Bloco Pix / Cartão no modal */
+        /* Bloco Pix / Cartão */
         .pay-extra {
             display: none;
             margin-top: 1rem;
@@ -632,7 +632,6 @@
             font-size: 0.85rem;
         }
 
-        /* ✅ CONTAINER QR CODE OTIMIZADO */
         #pixQr {
             width: 280px;
             height: 280px;
@@ -918,7 +917,7 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="pro-btn pro-btn-secondary" onclick="closeEditModal()">Cancelar</button>
-                        <button type="submit" class="pro-btn pro-btn-primary" id="editSaveBtn">Salvar Alterações</button>
+                        <button type="submit" class="pro-btn pro-btn-primary">Salvar Alterações</button>
                     </div>
                 </form>
             </div>
@@ -1024,7 +1023,7 @@
 
                     <div class="form-actions">
                         <button type="button" class="pro-btn pro-btn-secondary" onclick="closeFinalizeModal()">Cancelar</button>
-                        <button type="submit" class="pro-btn pro-btn-success" id="finalizeBtn">
+                        <button type="submit" class="pro-btn pro-btn-success">
                             <i class="fas fa-check"></i> Confirmar Finalização
                         </button>
                     </div>
@@ -1273,7 +1272,7 @@
 
         function closeModal() {
             document.getElementById('appointmentModal').classList.remove('active');
-            document.getElementById('appointmentForm').reset();
+            clearFormFields('appointmentForm');
         }
 
         async function saveAppointment(e) {
@@ -1398,8 +1397,7 @@
             if (!viewingAppointment) return;
             finalizingAppointment = { ...viewingAppointment };
             document.getElementById('finalizeValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
-            document.getElementById('finalizeNotesField').value = '';
-            document.getElementById('finalizeForm').reset();
+            clearFormFields('finalizeForm');
             document.getElementById('pixExtra').classList.remove('active');
             document.getElementById('cardExtra').classList.remove('active');
             document.getElementById('pixCopiaCola').value = '';
@@ -1412,7 +1410,7 @@
 
         function closeFinalizeModal() {
             document.getElementById('finalizeAppointmentModal').classList.remove('active');
-            document.getElementById('finalizeForm').reset();
+            clearFormFields('finalizeForm');
             document.getElementById('pixExtra').classList.remove('active');
             document.getElementById('cardExtra').classList.remove('active');
             document.getElementById('pixCopiaCola').value = '';
@@ -1421,6 +1419,22 @@
             document.getElementById('autField').value = '';
             finalizingAppointment = null;
             currentQRCode = null;
+        }
+
+        function clearFormFields(formId) {
+            const form = document.getElementById(formId);
+            if (form && typeof form.reset === 'function') {
+                form.reset();
+            } else if (form) {
+                const inputs = form.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        input.checked = false;
+                    } else {
+                        input.value = '';
+                    }
+                });
+            }
         }
 
         function setupPaymentMethodListeners() {
