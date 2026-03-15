@@ -572,16 +572,24 @@
             transform: translateY(-4px);
         }
 
-        .payment-method-icon {
-            font-size: 2.5rem;
-            margin-bottom: 0.8rem;
-            display: block;
-            line-height: 1;
+        .payment-method-image {
+            width: 80px;
+            height: 60px;
+            margin: 0 auto 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: var(--border-radius);
         }
 
-        .payment-method input[type="radio"]:checked ~ .payment-method-card .payment-method-icon,
-        .payment-method input[type="radio"]:checked ~ .payment-method-card .payment-method-label {
-            color: white;
+        .payment-method-image img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .payment-method input[type="radio"]:checked ~ .payment-method-card .payment-method-image {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .payment-method-label {
@@ -849,7 +857,7 @@
                     <button type="button" class="pro-btn pro-btn-primary" onclick="openEditModal()">
                         <i class="fas fa-edit"></i> Editar
                     </button>
-                    <button type="button" class="pro-btn pro-btn-danger" onclick="cancelAppointment()">
+                    <button type="button" class="pro-btn pro-btn-danger" onclick="confirmCancel()">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
                     <button type="button" class="pro-btn pro-btn-success" onclick="openFinalizeModal()">
@@ -937,34 +945,42 @@
                         <label style="margin-bottom: 1rem;">Como foi o pagamento? *</label>
                         <div class="payment-methods">
                             <div class="payment-method">
-                                <input type="radio" id="payment_cash" name="paymentMethod" value="dinheiro" required>
-                                <label for="payment_cash" class="payment-method-card">
-                                    <span class="payment-method-icon">💵</span>
+                                <input type="radio" id="payment_pix" name="paymentMethod" value="pix" required>
+                                <label for="payment_pix" class="payment-method-card">
+                                    <div class="payment-method-image">
+                                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2300D4AA'/%3E%3Ctext x='50' y='50' font-size='40' font-weight='bold' text-anchor='middle' dy='.3em' fill='white'%3EPix%3C/text%3E%3C/svg%3E" alt="PIX" style="width: 60px; height: 45px;">
+                                    </div>
+                                    <span class="payment-method-label">PIX</span>
+                                </label>
+                            </div>
+
+                            <div class="payment-method">
+                                <input type="radio" id="payment_cartao" name="paymentMethod" value="cartao" required>
+                                <label for="payment_cartao" class="payment-method-card">
+                                    <div class="payment-method-image">
+                                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 130'%3E%3Crect width='200' height='130' rx='10' fill='%231434CB'/%3E%3Crect y='40' width='200' height='40' fill='%23000' opacity='0.2'/%3E%3Ccircle cx='160' cy='100' r='15' fill='none' stroke='gold' stroke-width='2'/%3E%3Ccircle cx='140' cy='100' r='15' fill='gold'/%3E%3C/svg%3E" alt="Cartão" style="width: 60px; height: 45px;">
+                                    </div>
+                                    <span class="payment-method-label">Cartão</span>
+                                </label>
+                            </div>
+
+                            <div class="payment-method">
+                                <input type="radio" id="payment_dinheiro" name="paymentMethod" value="dinheiro" required>
+                                <label for="payment_dinheiro" class="payment-method-card">
+                                    <div class="payment-method-image">
+                                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 80'%3E%3Crect width='120' height='80' rx='5' fill='%2300A652'/%3E%3Ctext x='60' y='50' font-size='30' font-weight='bold' text-anchor='middle' dy='.3em' fill='white'%3E%24%3C/text%3E%3C/svg%3E" alt="Dinheiro" style="width: 60px; height: 45px;">
+                                    </div>
                                     <span class="payment-method-label">Dinheiro</span>
                                 </label>
                             </div>
 
                             <div class="payment-method">
-                                <input type="radio" id="payment_debit" name="paymentMethod" value="debito" required>
-                                <label for="payment_debit" class="payment-method-card">
-                                    <span class="payment-method-icon">🏧</span>
+                                <input type="radio" id="payment_debito" name="paymentMethod" value="debito" required>
+                                <label for="payment_debito" class="payment-method-card">
+                                    <div class="payment-method-image">
+                                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 130'%3E%3Crect width='200' height='130' rx='10' fill='%23FF6B35'/%3E%3Crect y='40' width='200' height='40' fill='%23000' opacity='0.2'/%3E%3Ctext x='60' y='75' font-size='20' fill='white' font-weight='bold'%3EDEBITO%3C/text%3E%3C/svg%3E" alt="Débito" style="width: 60px; height: 45px;">
+                                    </div>
                                     <span class="payment-method-label">Débito</span>
-                                </label>
-                            </div>
-
-                            <div class="payment-method">
-                                <input type="radio" id="payment_credit" name="paymentMethod" value="credito" required>
-                                <label for="payment_credit" class="payment-method-card">
-                                    <span class="payment-method-icon">💳</span>
-                                    <span class="payment-method-label">Crédito</span>
-                                </label>
-                            </div>
-
-                            <div class="payment-method">
-                                <input type="radio" id="payment_pix" name="paymentMethod" value="pix" required>
-                                <label for="payment_pix" class="payment-method-card">
-                                    <span class="payment-method-icon">📱</span>
-                                    <span class="payment-method-label">PIX</span>
                                 </label>
                             </div>
                         </div>
@@ -1028,18 +1044,14 @@
                 allClients = await DB.clientes.listar();
                 allServices = await DB.servicos.listar();
 
-                console.log('✅ Dados carregados:', {
-                    profissionais: allProfessionals.length,
-                    clientes: allClients.length,
-                    servicos: allServices.length
-                });
+                console.log('✅ Dados carregados');
 
                 populateSelects();
                 populateEditSelects();
                 renderCalendar();
                 renderSchedule();
             } catch (error) {
-                console.error('❌ Erro ao carregar dados:', error);
+                console.error('❌ Erro ao carregar:', error);
             }
         }
 
@@ -1047,33 +1059,24 @@
             const clientSelect = document.getElementById('clientSelect');
             const serviceSelect = document.getElementById('serviceSelect');
 
-            if (!clientSelect || !serviceSelect) {
-                console.error('❌ Elementos do formulário não encontrados');
-                return;
-            }
+            if (!clientSelect || !serviceSelect) return;
 
             clientSelect.innerHTML = '<option value="">Selecione...</option>';
             serviceSelect.innerHTML = '<option value="">Selecione...</option>';
 
-            if (allClients && allClients.length > 0) {
-                allClients.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = c.nome;
-                    clientSelect.appendChild(opt);
-                });
-            }
+            allClients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nome;
+                clientSelect.appendChild(opt);
+            });
 
-            if (allServices && allServices.length > 0) {
-                allServices.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.textContent = s.nome;
-                    serviceSelect.appendChild(opt);
-                });
-            }
-
-            console.log('✅ Selects populados');
+            allServices.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.nome;
+                serviceSelect.appendChild(opt);
+            });
         }
 
         function populateEditSelects() {
@@ -1085,23 +1088,19 @@
             clientSelect.innerHTML = '<option value="">Selecione...</option>';
             serviceSelect.innerHTML = '<option value="">Selecione...</option>';
 
-            if (allClients && allClients.length > 0) {
-                allClients.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = c.nome;
-                    clientSelect.appendChild(opt);
-                });
-            }
+            allClients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nome;
+                clientSelect.appendChild(opt);
+            });
 
-            if (allServices && allServices.length > 0) {
-                allServices.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.textContent = s.nome;
-                    serviceSelect.appendChild(opt);
-                });
-            }
+            allServices.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.nome;
+                serviceSelect.appendChild(opt);
+            });
         }
 
         function renderCalendar() {
@@ -1160,22 +1159,19 @@
                 const dateStr = selectedDay.toISOString().split('T')[0];
                 allAppointments = await DB.agendamentos.listarPorData(dateStr);
 
-                console.log('✅ Agendamentos carregados:', allAppointments.length);
-
                 const container = document.getElementById('scheduleContainer');
                 const dateLabel = selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
                 document.getElementById('dateLabel').textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
 
                 if (!allProfessionals.length) {
-                    container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional cadastrado</span></div>';
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional</span></div>';
                     return;
                 }
 
                 const times = generateTimes('08:00', '18:00', 30);
                 let html = '<div class="schedule-grid">';
 
-                html += '<div class="time-row">';
-                html += '<div class="time-cell header"></div>';
+                html += '<div class="time-row"><div class="time-cell header"></div>';
                 allProfessionals.forEach((prof, idx) => {
                     const color = COLORS[idx % 3];
                     html += `<div class="prof-name-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</div>`;
@@ -1183,20 +1179,12 @@
                 html += '</div>';
 
                 times.forEach(time => {
-                    html += '<div class="time-row">';
-                    html += `<div class="time-cell hour">${time}</div>`;
-                    
+                    html += '<div class="time-row"><div class="time-cell hour">${time}</div>';
                     allProfessionals.forEach((prof, idx) => {
                         const color = COLORS[idx % 3];
-                        const apt = allAppointments.find(a => 
-                            a.profissional_id === prof.id && 
-                            a.hora.substring(0, 5) === time
-                        );
-
+                        const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora.substring(0, 5) === time);
                         if (apt) {
-                            const clientName = apt.cliente?.nome || 'Cliente';
-                            const serviceName = apt.servico?.nome || 'Serviço';
-                            html += `<div class="schedule-slot booked ${color.slot}" onclick="viewAppointment('${apt.id}')"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></div>`;
+                            html += `<div class="schedule-slot booked ${color.slot}" onclick="viewAppointment('${apt.id}')"><div class="slot-content"><div class="slot-client">${apt.cliente?.nome}</div><div class="slot-service">${apt.servico?.nome}</div></div></div>`;
                         } else {
                             html += `<div class="schedule-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')">Disponível</div>`;
                         }
@@ -1206,9 +1194,8 @@
 
                 html += '</div>';
                 container.innerHTML = html;
-                console.log('✅ Agenda renderizada com sucesso!');
             } catch (error) {
-                console.error('❌ Erro ao renderizar agenda:', error);
+                console.error('❌ Erro ao renderizar:', error);
             }
         }
 
@@ -1273,7 +1260,7 @@
                     renderSchedule();
                     console.log('✅ Agendamento criado!');
                 } else {
-                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                    alert('Erro ao criar agendamento');
                 }
             } catch (error) {
                 console.error('❌ Erro:', error);
@@ -1286,11 +1273,9 @@
                 viewingAppointment = allAppointments.find(a => a.id === aptId);
                 
                 if (!viewingAppointment) {
-                    console.error('❌ Agendamento não encontrado');
+                    console.error('Agendamento não encontrado');
                     return;
                 }
-
-                console.log('👁️ Visualizando:', viewingAppointment);
 
                 document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
                 document.getElementById('viewClientName').textContent = viewingAppointment.cliente?.nome || '-';
@@ -1310,21 +1295,15 @@
                 } else {
                     actions.className = 'modal-actions';
                     actions.innerHTML = `
-                        <button type="button" class="pro-btn pro-btn-primary" onclick="openEditModal()">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <button type="button" class="pro-btn pro-btn-danger" onclick="cancelAppointment()">
-                            <i class="fas fa-times"></i> Cancelar
-                        </button>
-                        <button type="button" class="pro-btn pro-btn-success" onclick="openFinalizeModal()">
-                            <i class="fas fa-check"></i> Finalizar
-                        </button>
+                        <button type="button" class="pro-btn pro-btn-primary" onclick="openEditModal()"><i class="fas fa-edit"></i> Editar</button>
+                        <button type="button" class="pro-btn pro-btn-danger" onclick="confirmCancel()"><i class="fas fa-times"></i> Cancelar</button>
+                        <button type="button" class="pro-btn pro-btn-success" onclick="openFinalizeModal()"><i class="fas fa-check"></i> Finalizar</button>
                     `;
                 }
 
                 document.getElementById('viewAppointmentModal').classList.add('active');
             } catch (error) {
-                console.error('❌ Erro ao visualizar:', error);
+                console.error('❌ Erro:', error);
             }
         }
 
@@ -1350,14 +1329,13 @@
 
         function closeEditModal() {
             document.getElementById('editAppointmentModal').classList.remove('active');
-            document.getElementById('editAppointmentForm').reset();
         }
 
         async function updateAppointment(e) {
             e.preventDefault();
 
             if (!viewingAppointment) {
-                alert('Erro: nenhum agendamento selecionado');
+                alert('Erro ao atualizar');
                 return;
             }
 
@@ -1372,32 +1350,39 @@
             }
 
             try {
-                console.log('📝 Atualizando agendamento ID:', viewingAppointment.id);
-
-                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
+                const updateData = {
                     cliente_id: clientId,
                     servico_id: serviceId,
                     valor: value,
                     observacoes: notes
-                });
+                };
+
+                console.log('📝 Atualizando com dados:', updateData);
+
+                const result = await DB.agendamentos.atualizar(viewingAppointment.id, updateData);
+
+                console.log('Resposta:', result);
 
                 if (result.success || result.data) {
                     closeEditModal();
                     await renderSchedule();
-                    alert('✅ Agendamento atualizado com sucesso!');
+                    alert('✅ Atualizado com sucesso!');
                 } else {
-                    alert('❌ Erro ao atualizar: ' + (result.error || 'Erro desconhecido'));
+                    alert('❌ Erro na atualização');
                 }
             } catch (error) {
                 console.error('❌ Erro:', error);
-                alert('❌ Erro ao atualizar agendamento');
+                alert('❌ Erro ao atualizar');
             }
         }
 
-        async function cancelAppointment() {
-            if (!viewingAppointment) return;
+        function confirmCancel() {
+            if (!confirm('Deseja cancelar este agendamento?')) return;
+            cancelAppointmentNow();
+        }
 
-            if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+        async function cancelAppointmentNow() {
+            if (!viewingAppointment) return;
 
             try {
                 const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
@@ -1407,13 +1392,13 @@
                 if (result.success || result.data) {
                     closeViewModal();
                     renderSchedule();
-                    alert('✅ Agendamento cancelado!');
+                    alert('✅ Cancelado!');
                 } else {
-                    alert('❌ Erro: ' + (result.error || 'Erro desconhecido'));
+                    alert('❌ Erro ao cancelar');
                 }
             } catch (error) {
-                console.error('❌ Erro ao cancelar:', error);
-                alert('❌ Erro ao cancelar agendamento');
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao cancelar');
             }
         }
 
@@ -1442,7 +1427,7 @@
             e.preventDefault();
 
             if (!viewingAppointment) {
-                alert('Erro: nenhum agendamento selecionado');
+                alert('Erro ao finalizar');
                 return;
             }
 
@@ -1455,29 +1440,33 @@
             }
 
             try {
-                console.log('💰 Finalizando com pagamento:', paymentMethod);
-
                 const serviceValue = parseFloat(viewingAppointment.valor) || 0;
                 const commissionPercent = viewingAppointment.profissional?.comissao_percentual || 0;
                 const commission = (serviceValue * commissionPercent) / 100;
 
-                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
+                const updateData = {
                     status: 'finalizado',
                     observacoes: notes,
                     forma_pagamento: paymentMethod,
                     comissao_profissional: commission
-                });
+                };
+
+                console.log('💰 Finalizando com:', updateData);
+
+                const result = await DB.agendamentos.atualizar(viewingAppointment.id, updateData);
+
+                console.log('Resposta:', result);
 
                 if (result.success || result.data) {
                     closeFinalizeModal();
                     await renderSchedule();
-                    alert('✅ Agendamento finalizado com sucesso!');
+                    alert('✅ Finalizado com sucesso!');
                 } else {
-                    alert('❌ Erro ao finalizar: ' + (result.error || 'Erro desconhecido'));
+                    alert('❌ Erro ao finalizar');
                 }
             } catch (error) {
                 console.error('❌ Erro:', error);
-                alert('❌ Erro ao finalizar agendamento');
+                alert('❌ Erro ao finalizar');
             }
         }
 
