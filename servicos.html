@@ -55,9 +55,6 @@
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
-                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <div class="pro-user-profile">
                     <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
@@ -230,27 +227,30 @@
     </div>
 
     <script>
-        // ─── Estado ────────────────────────────────────────────────────
         let currentFilter = 'todos';
         let todosServicos = [];
 
-        // ─── Perfil na sidebar ─────────────────────────────────────────
-        document.addEventListener('perfilCarregado', (e) => {
+        window.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+        });
+
+        window.addEventListener('perfilCarregado', async (e) => {
             const perfil = e.detail;
             if (!perfil) return;
+
             const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = letra;
             document.getElementById('userName').textContent = perfil.nome || perfil.email;
             document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
-        });
 
-        // ─── Inicialização ─────────────────────────────────────────────
-        window.addEventListener('DOMContentLoaded', () => {
-            initDarkMode();
+            try {
+                const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
+                if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
+            } catch (_) {}
+
             loadServicos();
         });
 
-        // ─── Carregar serviços do banco ────────────────────────────────
         async function loadServicos() {
             try {
                 todosServicos = await DB.servicos.listar();
@@ -258,12 +258,9 @@
                 filtrarLocalmente();
             } catch (error) {
                 console.error('Erro ao carregar serviços:', error);
-                document.getElementById('servicosTable').innerHTML =
-                    '<tr><td colspan="6" class="pro-empty-state"><i class="fas fa-exclamation-circle pro-empty-state-icon"></i><p>Erro ao carregar serviços</p></td></tr>';
             }
         }
 
-        // ─── Filtrar localmente ────────────────────────────────────────
         function filtrarLocalmente() {
             const search = (document.getElementById('searchInput').value || '').toLowerCase();
             let lista = [...todosServicos];
@@ -282,7 +279,6 @@
             renderTable(lista);
         }
 
-        // ─── Métricas ──────────────────────────────────────────────────
         function atualizarMetricas(lista) {
             document.getElementById('totalServicos').textContent = lista.length;
 
@@ -301,18 +297,11 @@
             document.getElementById('duracaoMedia').textContent = Math.round(avgDuration) + ' min';
         }
 
-        // ─── Renderizar tabela ─────────────────────────────────────────
         function renderTable(servicos) {
             const tbody = document.getElementById('servicosTable');
 
             if (servicos.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="pro-empty-state">
-                            <i class="fas fa-cut pro-empty-state-icon"></i>
-                            <p>Nenhum serviço encontrado</p>
-                        </td>
-                    </tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="pro-empty-state"><p>Nenhum serviço encontrado</p></td></tr>`;
                 return;
             }
 
@@ -325,34 +314,30 @@
                     depilacao: 'Depilação', maquiagem: 'Maquiagem', outros: 'Outros'
                 }[s.categoria] || s.categoria || '—';
 
-                return `
-                    <tr>
-                        <td><strong>${s.nome}</strong></td>
-                        <td><span class="pro-badge pro-badge-primary">${categoriaLabel}</span></td>
-                        <td>${s.duracao || 0} min</td>
-                        <td><strong>${preco}</strong></td>
-                        <td>
-                            <span class="pro-badge pro-badge-${statusClass}">
-                                ${s.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="pro-table-actions">
-                                <button class="pro-action-btn" title="Editar"
-                                    onclick="editService('${s.id}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="pro-action-btn danger" title="Excluir"
-                                    onclick="deleteService('${s.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>`;
+                return `<tr>
+                    <td><strong>${s.nome}</strong></td>
+                    <td><span class="pro-badge pro-badge-primary">${categoriaLabel}</span></td>
+                    <td>${s.duracao || 0} min</td>
+                    <td><strong>${preco}</strong></td>
+                    <td>
+                        <span class="pro-badge pro-badge-${statusClass}">
+                            ${s.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="pro-table-actions">
+                            <button class="pro-action-btn" title="Editar" onclick="editService('${s.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="pro-action-btn danger" title="Excluir" onclick="deleteService('${s.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
             }).join('');
         }
 
-        // ─── Filtro por chip ───────────────────────────────────────────
         function setFilter(filter, btn) {
             currentFilter = filter;
             document.querySelectorAll('.pro-filter-chip').forEach(c => c.classList.remove('active'));
@@ -360,7 +345,6 @@
             filtrarLocalmente();
         }
 
-        // ─── Modal ─────────────────────────────────────────────────────
         function openServiceModal() {
             document.getElementById('modalTitle').textContent = 'Novo Serviço';
             document.getElementById('serviceForm').reset();
@@ -387,7 +371,6 @@
             document.getElementById('serviceModal').style.display = 'flex';
         }
 
-        // ─── Salvar serviço ────────────────────────────────────────────
         async function saveService(e) {
             e.preventDefault();
             try {
@@ -401,46 +384,41 @@
                     descricao: document.getElementById('serviceDescription').value.trim()
                 };
 
-                const resultado = id
-                    ? await DB.servicos.atualizar(id, dados)
-                    : await DB.servicos.criar(dados);
-
-                if (resultado.success) {
-                    alert(id ? '✅ Serviço atualizado!' : '✅ Serviço criado!');
-                    closeServiceModal();
-                    await loadServicos();
+                if (id) {
+                    await DB.servicos.atualizar(id, dados);
                 } else {
-                    alert('❌ Erro: ' + resultado.error);
+                    await DB.servicos.criar(dados);
                 }
+
+                closeServiceModal();
+                await loadServicos();
             } catch (error) {
                 console.error('Erro ao salvar serviço:', error);
-                alert('❌ Erro ao salvar serviço');
             }
         }
 
-        // ─── Excluir serviço ───────────────────────────────────────────
         async function deleteService(id) {
             if (!confirm('Deseja realmente excluir este serviço?')) return;
             try {
-                const resultado = await DB.servicos.excluir(id);
-                if (resultado.success) {
-                    alert('✅ Serviço excluído!');
-                    await loadServicos();
-                } else {
-                    alert('❌ Erro: ' + resultado.error);
-                }
+                await DB.servicos.excluir(id);
+                await loadServicos();
             } catch (error) {
                 console.error('Erro ao excluir serviço:', error);
-                alert('❌ Erro ao excluir serviço');
             }
         }
 
-        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
             }
         }
+
+        // Sincronizar dark mode entre abas
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sispro_theme') {
+                location.reload();
+            }
+        });
     </script>
 </body>
 </html>
