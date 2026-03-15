@@ -467,10 +467,7 @@
         return;
       }
 
-      // Renderizar horários com delay para garantir que o DOM está pronto
-      setTimeout(() => {
-        renderHorarios();
-      }, 100);
+      console.log('✅ [Onboarding] Pronto para iniciar');
     }
 
     if (document.readyState === 'loading') {
@@ -497,6 +494,12 @@
       document.getElementById(`content-${step}`).classList.add('active');
       currentStep = step;
       esconderErro();
+      
+      // SE FOR PARA O STEP 2, RENDERIZAR OS HORÁRIOS
+      if (step === 2) {
+        renderHorarios();
+      }
+      
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -581,7 +584,6 @@
       
       if (!container) {
         console.warn('⚠️ [Onboarding] Container não encontrado!');
-        setTimeout(renderHorarios, 100);
         return;
       }
 
