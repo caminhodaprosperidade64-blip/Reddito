@@ -47,9 +47,6 @@
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
-                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <div class="pro-user-profile">
                     <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
@@ -233,13 +230,11 @@
         let perfilAtual        = null;
         let profissionalIdAtual = null;
 
-        // ─── Inicializar dark mode ────
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
         });
 
         // ─── Helper: calcula comissão de um agendamento ────
-        // ✅ CORREÇÃO: usa profissional.comissao_percentual pois não existe comissao_valor na tabela
         function calcularComissao(apt) {
             const valor      = parseFloat(apt.valor || 0);
             const percentual = parseFloat(apt.profissional?.comissao_percentual || 0);
@@ -374,7 +369,7 @@
             }
 
             const somarValor    = (lista) => lista.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-            const somarComissao = (lista) => lista.reduce((s, a) => s + calcularComissao(a), 0); // ✅ usa helper
+            const somarComissao = (lista) => lista.reduce((s, a) => s + calcularComissao(a), 0);
 
             const deHoje   = base.filter(a => (a.data || '').startsWith(hoje));
             const daSemana = base.filter(a => new Date(a.data) >= inicioSemana);
@@ -441,7 +436,7 @@
 
             const rowsDono = lista.map(apt => {
                 const valorServico = parseFloat(apt.valor || 0);
-                const comissao     = calcularComissao(apt); // ✅ usa helper
+                const comissao     = calcularComissao(apt);
                 const valorLiquido = valorServico - comissao;
                 const clienteNome  = apt.cliente?.nome      || '—';
                 const servicoNome  = apt.servico?.nome      || '—';
@@ -462,7 +457,7 @@
 
             const rowsProf = lista.map(apt => {
                 const valorServico = parseFloat(apt.valor || 0);
-                const comissao     = calcularComissao(apt); // ✅ usa helper
+                const comissao     = calcularComissao(apt);
                 const valorLiquido = valorServico - comissao;
                 const clienteNome  = apt.cliente?.nome || '—';
                 const servicoNome  = apt.servico?.nome || '—';
@@ -485,7 +480,7 @@
         // ─── Totalizadores ────
         function renderTotalizadores(lista) {
             const totalFaturado  = lista.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-            const totalComissoes = lista.reduce((s, a) => s + calcularComissao(a), 0); // ✅ usa helper
+            const totalComissoes = lista.reduce((s, a) => s + calcularComissao(a), 0);
             const lucro          = totalFaturado - totalComissoes;
 
             document.getElementById('totalFaturado').textContent  = formatCurrency(totalFaturado);
@@ -506,7 +501,7 @@
             const resumo = profissionais.map(prof => {
                 const apts      = agendamentos.filter(a => a.profissional_id === prof.id);
                 const total     = apts.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-                const comissoes = apts.reduce((s, a) => s + calcularComissao(a), 0); // ✅ usa helper
+                const comissoes = apts.reduce((s, a) => s + calcularComissao(a), 0);
                 return { nome: prof.nome, total, comissoes, atendimentos: apts.length };
             })
             .filter(r => r.atendimentos > 0)
@@ -552,7 +547,7 @@
                 cabecalho,
                 ...lista.map(a => {
                     const valor    = parseFloat(a.valor || 0);
-                    const comissao = calcularComissao(a); // ✅ usa helper
+                    const comissao = calcularComissao(a);
                     const liquido  = (valor - comissao).toFixed(2).replace('.', ',');
                     const base = [
                         a.data || '',
@@ -601,6 +596,13 @@
                 await Auth.signOut();
             }
         }
+
+        // Sincronizar dark mode entre abas
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sispro_theme') {
+                location.reload();
+            }
+        });
     </script>
 </body>
 </html>
