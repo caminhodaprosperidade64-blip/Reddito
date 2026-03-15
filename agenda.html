@@ -645,8 +645,6 @@
             border-radius: 8px;
             overflow: hidden;
         }
-
-        /* ✅ garante que o elemento gerado (img/canvas) fique do tamanho correto */
         #pixQr img,
         #pixQr canvas {
             width: 220px !important;
@@ -1042,8 +1040,8 @@
         let modalState = { profId: null, profName: null, date: null, time: null };
         let viewingAppointment = null;
 
-        // ✅ guarda instância do QR (evita conflito/duplicação)
-        let pixQrInstance = null;
+        // ✅ NOVO: snapshot do agendamento que está sendo finalizado
+        let finalizingAppointment = null;
 
         // Configuração Pix (carregada do Supabase)
         let paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
@@ -1437,6 +1435,9 @@
         function handleFinalize() {
             if (!viewingAppointment) return;
 
+            // ✅ salva snapshot do agendamento que está sendo finalizado
+            finalizingAppointment = viewingAppointment;
+
             document.getElementById('finalizeValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
             document.getElementById('finalizeNotesField').value = '';
             document.getElementById('finalizeForm').reset();
@@ -1465,6 +1466,9 @@
             clearPixQr();
             document.getElementById('nsuField').value = '';
             document.getElementById('autField').value = '';
+
+            // ✅ limpa snapshot
+            finalizingAppointment = null;
         }
 
         function setupPaymentMethodListeners() {
@@ -1496,13 +1500,13 @@
             const container = document.getElementById('pixQr');
             if (!container) return;
             container.innerHTML = '';
-            pixQrInstance = null;
         }
 
-        // ✅ ALTERADO: qrcodejs com delay + retry
         async function generatePixQrForCurrentAppointment() {
             try {
-                if (!viewingAppointment) return;
+                // ✅ usa o agendamento "snapshot"
+                const apt = finalizingAppointment;
+                if (!apt) return;
 
                 if (!paymentConfig?.pix_chave || !paymentConfig?.pix_nome || !paymentConfig?.pix_cidade) {
                     document.getElementById('pixCopiaCola').value = '';
@@ -1511,8 +1515,8 @@
                     return;
                 }
 
-                const valor = parseFloat(viewingAppointment.valor || 0).toFixed(2);
-                const descricao = `Agendamento ${String(viewingAppointment.id).slice(0, 8)}`;
+                const valor = parseFloat(apt.valor || 0).toFixed(2);
+                const descricao = `Agendamento ${String(apt.id).slice(0, 8)}`;
 
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
@@ -1522,6 +1526,7 @@
                     descricao: descricao
                 });
 
+                // ✅ agora o textarea sempre deve aparecer preenchido
                 document.getElementById('pixCopiaCola').value = brcode;
 
                 const container = document.getElementById('pixQr');
@@ -1529,13 +1534,10 @@
 
                 clearPixQr();
 
-                // espera um tico pro modal/layout estabilizar
+                // espera um tico pro layout do modal estabilizar
                 await new Promise(r => setTimeout(r, 50));
 
-                console.log('[PIX] typeof QRCode:', typeof QRCode);
-                console.log('[PIX] container size:', container.clientWidth, container.clientHeight);
-
-                pixQrInstance = new QRCode(container, {
+                new QRCode(container, {
                     text: brcode,
                     width: 220,
                     height: 220,
@@ -1543,23 +1545,6 @@
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.M
                 });
-
-                // retry se não inseriu nada
-                if (!container.children || container.children.length === 0) {
-                    console.warn('[PIX] QR não inseriu elementos, tentando novamente...');
-                    await new Promise(r => setTimeout(r, 100));
-                    clearPixQr();
-                    pixQrInstance = new QRCode(container, {
-                        text: brcode,
-                        width: 220,
-                        height: 220,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.M
-                    });
-                }
-
-                console.log('[PIX] children after render:', container.children.length);
 
             } catch (err) {
                 console.error('Erro ao gerar QR Pix:', err);
@@ -1569,7 +1554,10 @@
 
         function copyPixCode() {
             const text = document.getElementById('pixCopiaCola').value;
-            if (!text) return;
+            if (!text) {
+                alert('Nenhum código Pix para copiar.');
+                return;
+            }
 
             navigator.clipboard.writeText(text)
                 .then(() => alert('✅ Pix copia e cola copiado!'))
@@ -1629,19 +1617,17 @@
             const merchantAccountInfo = emv('26', gui + key + desc);
 
             const payloadFormatIndicator = emv('00', '01');
-            const pointOfInitiationMethod = emv('01', '12'); // 12 = dinâmico/estático com valor (usado bastante para estático)
+            const pointOfInitiationMethod = emv('01', '12');
             const merchantCategoryCode = emv('52', '0000');
-            const transactionCurrency = emv('53', '986'); // BRL
-            const transactionAmount = emv('54', String(valor)); // "10.00"
+            const transactionCurrency = emv('53', '986');
+            const transactionAmount = emv('54', String(valor));
             const countryCode = emv('58', 'BR');
             const mName = emv('59', merchantName);
             const mCity = emv('60', merchantCity);
 
-            // TXID (referência) - obrigatório no 62/05, pode ser *** em alguns casos
             const txid = emv('05', '***');
             const additionalData = emv('62', txid);
 
-            // Monta sem CRC primeiro
             const withoutCrc =
                 payloadFormatIndicator +
                 pointOfInitiationMethod +
@@ -1661,7 +1647,10 @@
 
         async function finalizeAppointment(e) {
             e.preventDefault();
-            if (!viewingAppointment) return;
+
+            // ✅ usa snapshot aqui também (não depende de viewingAppointment)
+            const apt = finalizingAppointment;
+            if (!apt) return;
 
             const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
             const notes = document.getElementById('finalizeNotesField').value;
@@ -1671,7 +1660,6 @@
                 return;
             }
 
-            // valida NSU/AUT para cartão e débito
             let nsu = null;
             let autorizacao = null;
 
@@ -1685,7 +1673,6 @@
                 }
             }
 
-            // se for pix, garante que o brcode foi gerado (config cadastrada)
             if (paymentMethod === 'pix') {
                 const brcode = document.getElementById('pixCopiaCola').value;
                 if (!brcode) {
@@ -1695,7 +1682,7 @@
             }
 
             try {
-                await DB.agendamentos.atualizar(viewingAppointment.id, {
+                await DB.agendamentos.atualizar(apt.id, {
                     status: 'concluido',
                     forma_pagamento: paymentMethod,
                     status_pagamento: 'pago',
