@@ -297,7 +297,7 @@
         .slot-prof-2 { background-color: #818cf8; }
         .slot-prof-3 { background-color: #a855f7; }
 
-        /* MODAL - NOVO AGENDAMENTO */
+        /* MODAL */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -388,6 +388,7 @@
             font-family: var(--font-family);
             font-size: var(--font-size-sm);
             transition: all var(--transition-fast);
+            box-sizing: border-box;
         }
 
         .form-field input:focus,
@@ -410,7 +411,7 @@
             margin-top: 2rem;
         }
 
-        /* MODAL - VISUALIZAR AGENDAMENTO */
+        /* MODAL - VISUALIZAR */
         .modal-info-group {
             background: var(--bg-main);
             padding: 1rem;
@@ -499,33 +500,71 @@
             opacity: 0.4;
         }
 
-        /* MODAL - FINALIZAR AGENDAMENTO */
-        .payment-grid {
+        /* MODAL - FINALIZAR */
+        .finalize-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary) 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius-lg);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .finalize-header h3 {
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .finalize-values {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            gap: 1rem;
         }
 
-        .payment-option-label {
+        .finalize-value-item {
+            text-align: center;
+        }
+
+        .finalize-value-label {
+            font-size: 0.8rem;
+            opacity: 0.85;
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+
+        .finalize-value-amount {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .payment-method {
             position: relative;
-            cursor: pointer;
         }
 
-        .payment-option-label input {
+        .payment-method input[type="radio"] {
             display: none;
         }
 
-        .payment-card {
+        .payment-method-card {
             padding: 1.5rem;
             border: 2px solid var(--border-color);
             border-radius: var(--border-radius-lg);
             text-align: center;
-            transition: all var(--transition-fast);
+            cursor: pointer;
+            transition: all 0.3s ease;
             background: var(--card-bg);
         }
 
-        .payment-option-label input:checked ~ .payment-card {
+        .payment-method input[type="radio"]:checked ~ .payment-method-card {
             border-color: var(--primary);
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary) 100%);
             color: white;
@@ -533,63 +572,78 @@
             transform: translateY(-4px);
         }
 
-        .payment-card i {
+        .payment-method-icon {
             font-size: 2.5rem;
             margin-bottom: 0.8rem;
             display: block;
             line-height: 1;
         }
 
-        .payment-card .payment-label {
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .payment-option-label input:checked ~ .payment-card i,
-        .payment-option-label input:checked ~ .payment-card .payment-label {
+        .payment-method input[type="radio"]:checked ~ .payment-method-card .payment-method-icon,
+        .payment-method input[type="radio"]:checked ~ .payment-method-card .payment-method-label {
             color: white;
         }
 
-        .finalize-info {
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            padding: 1.5rem;
-            border-radius: var(--border-radius-lg);
-            margin-bottom: 1.5rem;
+        .payment-method-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: block;
         }
 
-        .finalize-info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .finalize-info-row:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-
-        .finalize-info-label {
-            font-size: 0.85rem;
+        .pro-btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: var(--border-radius);
             font-weight: 500;
-            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .finalize-info-value {
-            font-size: 1.1rem;
-            font-weight: 700;
+        .pro-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .pro-btn-primary:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .pro-btn-secondary {
+            background: var(--bg-main);
             color: var(--text-primary);
+            border: 1px solid var(--border-color);
         }
 
-        .finalize-info-value.commission {
-            color: var(--success);
+        .pro-btn-secondary:hover {
+            background: var(--border-color);
         }
 
-        .finalize-info-value.service-value {
-            color: var(--primary);
+        .pro-btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .pro-btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .pro-btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .pro-btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
     </style>
 </head>
@@ -865,51 +919,54 @@
             </div>
             <div style="padding: 0 2rem;">
                 <form id="finalizeForm" onsubmit="finalizeAppointment(event)">
-                    <div class="finalize-info">
-                        <div class="finalize-info-row">
-                            <span class="finalize-info-label">Valor do Serviço</span>
-                            <span class="finalize-info-value service-value" id="finalizeServiceValue">R$ 0,00</span>
-                        </div>
-                        <div class="finalize-info-row">
-                            <span class="finalize-info-label">Comissão do Profissional (20%)</span>
-                            <span class="finalize-info-value commission" id="finalizeProfCommission">R$ 0,00</span>
+                    <div class="finalize-header">
+                        <h3>Resumo Financeiro</h3>
+                        <div class="finalize-values">
+                            <div class="finalize-value-item">
+                                <span class="finalize-value-label">Valor do Serviço</span>
+                                <span class="finalize-value-amount" id="finalizeServiceValue">R$ 0,00</span>
+                            </div>
+                            <div class="finalize-value-item">
+                                <span class="finalize-value-label">Comissão Prof.</span>
+                                <span class="finalize-value-amount" id="finalizeProfCommission">R$ 0,00</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-field">
-                        <label>Como foi o pagamento? *</label>
-                        <div class="payment-grid">
-                            <label class="payment-option-label">
-                                <input type="radio" name="paymentMethod" value="dinheiro" required>
-                                <div class="payment-card">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                    <div class="payment-label">Dinheiro</div>
-                                </div>
-                            </label>
+                    <div class="form-field" style="margin-bottom: 1.5rem;">
+                        <label style="margin-bottom: 1rem;">Como foi o pagamento? *</label>
+                        <div class="payment-methods">
+                            <div class="payment-method">
+                                <input type="radio" id="payment_cash" name="paymentMethod" value="dinheiro" required>
+                                <label for="payment_cash" class="payment-method-card">
+                                    <span class="payment-method-icon">💵</span>
+                                    <span class="payment-method-label">Dinheiro</span>
+                                </label>
+                            </div>
 
-                            <label class="payment-option-label">
-                                <input type="radio" name="paymentMethod" value="debito" required>
-                                <div class="payment-card">
-                                    <i class="fas fa-credit-card"></i>
-                                    <div class="payment-label">Débito</div>
-                                </div>
-                            </label>
+                            <div class="payment-method">
+                                <input type="radio" id="payment_debit" name="paymentMethod" value="debito" required>
+                                <label for="payment_debit" class="payment-method-card">
+                                    <span class="payment-method-icon">🏧</span>
+                                    <span class="payment-method-label">Débito</span>
+                                </label>
+                            </div>
 
-                            <label class="payment-option-label">
-                                <input type="radio" name="paymentMethod" value="credito" required>
-                                <div class="payment-card">
-                                    <i class="fas fa-credit-card"></i>
-                                    <div class="payment-label">Crédito</div>
-                                </div>
-                            </label>
+                            <div class="payment-method">
+                                <input type="radio" id="payment_credit" name="paymentMethod" value="credito" required>
+                                <label for="payment_credit" class="payment-method-card">
+                                    <span class="payment-method-icon">💳</span>
+                                    <span class="payment-method-label">Crédito</span>
+                                </label>
+                            </div>
 
-                            <label class="payment-option-label">
-                                <input type="radio" name="paymentMethod" value="pix" required>
-                                <div class="payment-card">
-                                    <i class="fas fa-mobile"></i>
-                                    <div class="payment-label">PIX</div>
-                                </div>
-                            </label>
+                            <div class="payment-method">
+                                <input type="radio" id="payment_pix" name="paymentMethod" value="pix" required>
+                                <label for="payment_pix" class="payment-method-card">
+                                    <span class="payment-method-icon">📱</span>
+                                    <span class="payment-method-label">PIX</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -1117,7 +1174,6 @@
                 const times = generateTimes('08:00', '18:00', 30);
                 let html = '<div class="schedule-grid">';
 
-                // Cabeçalho com nomes dos profissionais
                 html += '<div class="time-row">';
                 html += '<div class="time-cell header"></div>';
                 allProfessionals.forEach((prof, idx) => {
@@ -1126,7 +1182,6 @@
                 });
                 html += '</div>';
 
-                // Linhas de horários
                 times.forEach(time => {
                     html += '<div class="time-row">';
                     html += `<div class="time-cell hour">${time}</div>`;
@@ -1235,9 +1290,8 @@
                     return;
                 }
 
-                console.log('👁️ Visualizando agendamento:', viewingAppointment);
+                console.log('👁️ Visualizando:', viewingAppointment);
 
-                // Preencher informações
                 document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
                 document.getElementById('viewClientName').textContent = viewingAppointment.cliente?.nome || '-';
                 document.getElementById('viewDate').textContent = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
@@ -1249,12 +1303,8 @@
                 const statusBadge = document.getElementById('viewStatus');
                 statusBadge.innerHTML = `<span class="modal-status-badge ${viewingAppointment.status}">${viewingAppointment.status.charAt(0).toUpperCase() + viewingAppointment.status.slice(1)}</span>`;
 
-                // Mostrar/ocultar ações conforme status
                 const actions = document.getElementById('viewActions');
-                if (viewingAppointment.status === 'finalizado') {
-                    actions.className = 'modal-actions full';
-                    actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
-                } else if (viewingAppointment.status === 'cancelado') {
+                if (viewingAppointment.status === 'finalizado' || viewingAppointment.status === 'cancelado') {
                     actions.className = 'modal-actions full';
                     actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
                 } else {
@@ -1274,7 +1324,7 @@
 
                 document.getElementById('viewAppointmentModal').classList.add('active');
             } catch (error) {
-                console.error('❌ Erro ao visualizar agendamento:', error);
+                console.error('❌ Erro ao visualizar:', error);
             }
         }
 
@@ -1307,7 +1357,7 @@
             e.preventDefault();
 
             if (!viewingAppointment) {
-                console.error('❌ Nenhum agendamento selecionado para editar');
+                alert('Erro: nenhum agendamento selecionado');
                 return;
             }
 
@@ -1322,7 +1372,7 @@
             }
 
             try {
-                console.log('📝 Atualizando agendamento:', viewingAppointment.id);
+                console.log('📝 Atualizando agendamento ID:', viewingAppointment.id);
 
                 const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
                     cliente_id: clientId,
@@ -1331,20 +1381,16 @@
                     observacoes: notes
                 });
 
-                console.log('Resultado da atualização:', result);
-
                 if (result.success || result.data) {
-                    console.log('✅ Agendamento atualizado com sucesso!');
                     closeEditModal();
                     await renderSchedule();
-                    alert('Agendamento atualizado com sucesso!');
+                    alert('✅ Agendamento atualizado com sucesso!');
                 } else {
-                    console.error('❌ Erro na resposta:', result);
-                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                    alert('❌ Erro ao atualizar: ' + (result.error || 'Erro desconhecido'));
                 }
             } catch (error) {
-                console.error('❌ Erro ao atualizar:', error);
-                alert('Erro ao atualizar agendamento: ' + error.message);
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao atualizar agendamento');
             }
         }
 
@@ -1361,20 +1407,19 @@
                 if (result.success || result.data) {
                     closeViewModal();
                     renderSchedule();
-                    console.log('✅ Agendamento cancelado!');
+                    alert('✅ Agendamento cancelado!');
                 } else {
-                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                    alert('❌ Erro: ' + (result.error || 'Erro desconhecido'));
                 }
             } catch (error) {
                 console.error('❌ Erro ao cancelar:', error);
-                alert('Erro ao cancelar agendamento');
+                alert('❌ Erro ao cancelar agendamento');
             }
         }
 
         function openFinalizeModal() {
             if (!viewingAppointment) return;
 
-            // Calcular comissão
             const serviceValue = parseFloat(viewingAppointment.valor) || 0;
             const commissionPercent = viewingAppointment.profissional?.comissao_percentual || 0;
             const commission = (serviceValue * commissionPercent) / 100;
@@ -1397,7 +1442,7 @@
             e.preventDefault();
 
             if (!viewingAppointment) {
-                console.error('❌ Nenhum agendamento selecionado para finalizar');
+                alert('Erro: nenhum agendamento selecionado');
                 return;
             }
 
@@ -1410,14 +1455,12 @@
             }
 
             try {
-                console.log('💰 Finalizando agendamento com pagamento:', paymentMethod);
+                console.log('💰 Finalizando com pagamento:', paymentMethod);
 
-                // Calcular comissão
                 const serviceValue = parseFloat(viewingAppointment.valor) || 0;
                 const commissionPercent = viewingAppointment.profissional?.comissao_percentual || 0;
                 const commission = (serviceValue * commissionPercent) / 100;
 
-                // Atualizar agendamento
                 const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
                     status: 'finalizado',
                     observacoes: notes,
@@ -1425,20 +1468,16 @@
                     comissao_profissional: commission
                 });
 
-                console.log('Resultado da finalização:', result);
-
                 if (result.success || result.data) {
-                    console.log('✅ Agendamento finalizado!');
                     closeFinalizeModal();
                     await renderSchedule();
-                    alert('Agendamento finalizado com sucesso!');
+                    alert('✅ Agendamento finalizado com sucesso!');
                 } else {
-                    console.error('❌ Erro na resposta:', result);
-                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                    alert('❌ Erro ao finalizar: ' + (result.error || 'Erro desconhecido'));
                 }
             } catch (error) {
-                console.error('❌ Erro ao finalizar:', error);
-                alert('Erro ao finalizar agendamento: ' + error.message);
+                console.error('❌ Erro:', error);
+                alert('❌ Erro ao finalizar agendamento');
             }
         }
 
