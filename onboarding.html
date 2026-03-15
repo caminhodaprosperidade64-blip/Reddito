@@ -294,6 +294,20 @@
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
     }
+    .login-link {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .login-link a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .login-link a:hover {
+      text-decoration: underline;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 600px) {
       .ob-content { padding: 24px 20px 32px; }
@@ -308,17 +322,21 @@
   <div class="ob-container">
 
     <div class="ob-header">
-      <a href="login.html" class="ob-header-link">← Voltar para Login</a>
+      <a href="index.html" class="ob-header-link">← Voltar</a>
     </div>
 
     <div class="ob-progress">
       <div class="ob-steps">
         <div class="ob-step active" id="step-ind-1">
           <div class="ob-step-circle">1</div>
-          <span class="ob-step-label">Empresa</span>
+          <span class="ob-step-label">Conta</span>
         </div>
         <div class="ob-step" id="step-ind-2">
           <div class="ob-step-circle">2</div>
+          <span class="ob-step-label">Empresa</span>
+        </div>
+        <div class="ob-step" id="step-ind-3">
+          <div class="ob-step-circle">3</div>
           <span class="ob-step-label">Horários</span>
         </div>
       </div>
@@ -328,9 +346,41 @@
       <div id="msgError" class="msg-error"></div>
       <div id="msgSuccess" class="msg-success"></div>
 
-      <!-- STEP 1: Empresa -->
+      <!-- STEP 1: Criar Conta -->
       <div class="ob-step-content active" id="content-1">
-        <h2 class="ob-title">Bem-vindo! Vamos configurar sua empresa 🎉</h2>
+        <h2 class="ob-title">Crie sua conta 🔐</h2>
+        <p class="ob-subtitle">Teste grátis por 7 dias. Sem cartão de crédito.</p>
+
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="email" placeholder="seu@email.com" />
+        </div>
+
+        <div class="form-group">
+          <label>Senha *</label>
+          <input type="password" id="senha" placeholder="Mínimo 8 caracteres" />
+        </div>
+
+        <div class="form-group">
+          <label>Confirmar Senha *</label>
+          <input type="password" id="confirmaSenha" placeholder="Digite a senha novamente" />
+        </div>
+
+        <div class="ob-nav">
+          <span></span>
+          <button class="btn-next" onclick="criarConta()">
+            Próximo <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+
+        <div class="login-link">
+          Já tem conta? <a href="login.html">Faça login aqui</a>
+        </div>
+      </div>
+
+      <!-- STEP 2: Empresa -->
+      <div class="ob-step-content" id="content-2">
+        <h2 class="ob-title">Configurar sua empresa 🎉</h2>
         <p class="ob-subtitle">Essas informações aparecerão para seus clientes.</p>
 
         <div class="form-group">
@@ -379,22 +429,24 @@
         </div>
 
         <div class="ob-nav">
-          <span></span>
-          <button class="btn-next" onclick="irParaStep(2)">
+          <button class="btn-back" onclick="irParaStep(1)">
+            <i class="fas fa-arrow-left"></i> Voltar
+          </button>
+          <button class="btn-next" onclick="irParaStep(3)">
             Próximo <i class="fas fa-arrow-right"></i>
           </button>
         </div>
       </div>
 
-      <!-- STEP 2: Horários -->
-      <div class="ob-step-content" id="content-2">
+      <!-- STEP 3: Horários -->
+      <div class="ob-step-content" id="content-3">
         <h2 class="ob-title">Horários de Atendimento 🕐</h2>
         <p class="ob-subtitle">Configure os dias e horários que sua empresa atende. Cada dia pode ter horários diferentes.</p>
 
         <div class="horarios-container" id="horariosContainer"></div>
 
         <div class="ob-nav">
-          <button class="btn-back" onclick="irParaStep(1)">
+          <button class="btn-back" onclick="irParaStep(2)">
             <i class="fas fa-arrow-left"></i> Voltar
           </button>
           <button class="btn-next" id="btnFinalizar" onclick="finalizarOnboarding()">
@@ -410,6 +462,7 @@
     let userId = null;
     let tenantId = null;
     let logoUrl = null;
+    let userEmail = null;
 
     const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
     const HORARIOS_PADRAO = [
@@ -423,51 +476,13 @@
     ];
 
     function aguardarSistema() {
-      if (window.isSupabaseReady && window.isSupabaseReady() && typeof Auth !== 'undefined') {
-        inicializar();
+      if (window.isSupabaseReady && window.isSupabaseReady()) {
+        console.log('✅ [Onboarding] Supabase pronto');
       } else {
         window.addEventListener('supabaseReady', () => {
-          const t = setInterval(() => {
-            if (typeof Auth !== 'undefined') {
-              clearInterval(t);
-              inicializar();
-            }
-          }, 50);
-          setTimeout(() => clearInterval(t), 5000);
+          console.log('✅ [Onboarding] Supabase pronto');
         }, { once: true });
       }
-    }
-
-    async function inicializar() {
-      console.log('✅ [Onboarding] Sistema inicializado');
-      const supabase = window.getSupabase();
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.user) {
-        console.log('❌ [Onboarding] Sem sessão, redirecionando para login');
-        window.location.href = 'login.html';
-        return;
-      }
-
-      userId = session.user.id;
-      tenantId = session.user.id;
-
-      console.log('✅ [Onboarding] Usuário autenticado:', userId);
-
-      // Verificar se onboarding já foi completo
-      const { data: perfil } = await supabase
-        .from('perfis')
-        .select('onboarding_completo')
-        .eq('id', userId)
-        .single();
-
-      if (perfil?.onboarding_completo) {
-        console.log('✅ [Onboarding] Já completo, redirecionando para dashboard');
-        window.location.href = 'dashboard.html';
-        return;
-      }
-
-      console.log('✅ [Onboarding] Pronto para iniciar');
     }
 
     if (document.readyState === 'loading') {
@@ -480,7 +495,7 @@
       if (step > currentStep && !validarStep(currentStep)) return;
 
       // Atualizar indicadores
-      for (let i = 1; i <= 2; i++) {
+      for (let i = 1; i <= 3; i++) {
         const ind = document.getElementById(`step-ind-${i}`);
         ind.className = 'ob-step';
         if (i < step) ind.classList.add('done');
@@ -495,8 +510,8 @@
       currentStep = step;
       esconderErro();
       
-      // SE FOR PARA O STEP 2, RENDERIZAR OS HORÁRIOS
-      if (step === 2) {
+      // SE FOR PARA O STEP 3, RENDERIZAR OS HORÁRIOS
+      if (step === 3) {
         renderHorarios();
       }
       
@@ -507,6 +522,25 @@
       esconderErro();
       
       if (step === 1) {
+        const email = document.getElementById('email').value.trim();
+        const senha = document.getElementById('senha').value;
+        const confirmaSenha = document.getElementById('confirmaSenha').value;
+
+        if (!email || !email.includes('@')) {
+          mostrarErro('⚠️ Informe um email válido.');
+          return false;
+        }
+        if (senha.length < 8) {
+          mostrarErro('⚠️ A senha deve ter no mínimo 8 caracteres.');
+          return false;
+        }
+        if (senha !== confirmaSenha) {
+          mostrarErro('⚠️ As senhas não correspondem.');
+          return false;
+        }
+      }
+
+      if (step === 2) {
         const nome = document.getElementById('nomeEmpresa').value.trim();
         const segmento = document.getElementById('segmento').value;
         const telefone = document.getElementById('telefone').value.trim();
@@ -525,7 +559,7 @@
         }
       }
 
-      if (step === 2) {
+      if (step === 3) {
         const temAtivoAlgumDia = DIAS.some((_, i) => 
           document.getElementById(`ativo-${i}`).checked
         );
@@ -579,6 +613,49 @@
       reader.readAsDataURL(file);
     }
 
+    async function criarConta() {
+      if (!validarStep(1)) return;
+
+      const btn = document.querySelector('button[onclick="criarConta()"]');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spin"></span> Criando conta...';
+
+      try {
+        const email = document.getElementById('email').value.trim();
+        const senha = document.getElementById('senha').value;
+
+        const supabase = window.getSupabase();
+        
+        console.log('📝 [Onboarding] Criando conta:', email);
+
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password: senha,
+          options: {
+            data: {
+              empresa_nome: ''
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        userId = data.user.id;
+        tenantId = data.user.id;
+        userEmail = email;
+
+        console.log('✅ [Onboarding] Conta criada:', userId);
+
+        irParaStep(2);
+
+      } catch (error) {
+        console.error('❌ [Onboarding] Erro ao criar conta:', error);
+        mostrarErro('❌ Erro: ' + (error.message || error));
+        btn.disabled = false;
+        btn.innerHTML = 'Próximo <i class="fas fa-arrow-right"></i>';
+      }
+    }
+
     function renderHorarios() {
       const container = document.getElementById('horariosContainer');
       
@@ -611,7 +688,7 @@
     }
 
     async function finalizarOnboarding() {
-      if (!validarStep(2)) return;
+      if (!validarStep(3)) return;
 
       const btn = document.getElementById('btnFinalizar');
       btn.disabled = true;
@@ -619,8 +696,6 @@
 
       try {
         const supabase = window.getSupabase();
-        const { data: { session } } = await supabase.auth.getSession();
-        const userEmail = session?.user?.email || '';
 
         console.log('📝 [Onboarding] Iniciando salvamento...');
 
