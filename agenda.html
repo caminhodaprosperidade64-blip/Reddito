@@ -1042,6 +1042,9 @@
         let modalState = { profId: null, profName: null, date: null, time: null };
         let viewingAppointment = null;
 
+        // ✅ guarda instância do QR (evita conflito/duplicação)
+        let pixQrInstance = null;
+
         // Configuração Pix (carregada do Supabase)
         let paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
 
@@ -1220,7 +1223,6 @@
                 html += '</div>';
 
                 times.forEach(time => {
-                    // CORREÇÃO: template string correta aqui
                     html += `<div class="time-row"><div class="time-cell hour">${time}</div>`;
                     allProfessionals.forEach((prof, idx) => {
                         const color = COLORS[idx % 3];
@@ -1494,9 +1496,10 @@
             const container = document.getElementById('pixQr');
             if (!container) return;
             container.innerHTML = '';
+            pixQrInstance = null;
         }
 
-        // ✅ ALTERADO: agora gera QR com qrcodejs (new QRCode) e garante layout antes
+        // ✅ ALTERADO: qrcodejs com delay + retry
         async function generatePixQrForCurrentAppointment() {
             try {
                 if (!viewingAppointment) return;
@@ -1526,10 +1529,13 @@
 
                 clearPixQr();
 
-                // força o browser a calcular o layout do modal antes de desenhar o QR
-                await new Promise(r => requestAnimationFrame(r));
+                // espera um tico pro modal/layout estabilizar
+                await new Promise(r => setTimeout(r, 50));
 
-                new QRCode(container, {
+                console.log('[PIX] typeof QRCode:', typeof QRCode);
+                console.log('[PIX] container size:', container.clientWidth, container.clientHeight);
+
+                pixQrInstance = new QRCode(container, {
                     text: brcode,
                     width: 220,
                     height: 220,
@@ -1537,6 +1543,23 @@
                     colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.M
                 });
+
+                // retry se não inseriu nada
+                if (!container.children || container.children.length === 0) {
+                    console.warn('[PIX] QR não inseriu elementos, tentando novamente...');
+                    await new Promise(r => setTimeout(r, 100));
+                    clearPixQr();
+                    pixQrInstance = new QRCode(container, {
+                        text: brcode,
+                        width: 220,
+                        height: 220,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                }
+
+                console.log('[PIX] children after render:', container.children.length);
 
             } catch (err) {
                 console.error('Erro ao gerar QR Pix:', err);
