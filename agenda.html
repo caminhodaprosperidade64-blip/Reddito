@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
     <style>
-        /* Apenas CSS específico da agenda - sem mexer no layout geral */
+        /* Apenas CSS específico da agenda */
         .agenda-wrapper {
             display: grid;
             grid-template-columns: 320px 1fr;
@@ -25,9 +25,9 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            background: var(--bg-secondary);
+            background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: var(--border-radius-lg);
             padding: 1.5rem;
             height: fit-content;
         }
@@ -42,6 +42,7 @@
             font-size: 1rem;
             font-weight: 600;
             margin: 0;
+            color: var(--text-primary);
         }
 
         .calendar-nav {
@@ -50,18 +51,18 @@
         }
 
         .calendar-nav button {
-            background: var(--bg-primary);
+            background: var(--bg-main);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
             width: 28px;
             height: 28px;
-            border-radius: 6px;
+            border-radius: var(--border-radius);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.8rem;
-            transition: all 0.2s;
+            transition: all var(--transition-fast);
         }
 
         .calendar-nav button:hover {
@@ -105,17 +106,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
+            border-radius: var(--border-radius);
             cursor: pointer;
             font-size: 0.8rem;
-            background: var(--bg-primary);
+            background: var(--bg-main);
             border: 1px solid transparent;
-            transition: all 0.2s;
+            transition: all var(--transition-fast);
             color: var(--text-secondary);
         }
 
         .calendar-day:hover:not(.other-month) {
-            background: var(--bg-hover);
+            background: #F0F4FF;
+            border-color: var(--border-color);
         }
 
         .calendar-day.other-month {
@@ -150,19 +152,21 @@
 
         .schedule-header h2 {
             margin: 0 0 0.5rem 0;
-            font-size: 1.3rem;
+            font-size: var(--font-size-xl);
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .schedule-date-label {
-            font-size: 0.9rem;
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
         }
 
         .schedule-container {
             flex: 1;
-            background: var(--bg-secondary);
+            background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: var(--border-radius-lg);
             overflow: auto;
             display: flex;
             flex-direction: column;
@@ -184,7 +188,7 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            background: var(--bg-primary);
+            background: var(--bg-main);
             border-bottom: 2px solid var(--border-color);
         }
 
@@ -206,7 +210,7 @@
         }
 
         .time-cell.hour {
-            background: var(--bg-primary);
+            background: var(--bg-main);
             position: sticky;
             left: 0;
             z-index: 5;
@@ -235,7 +239,7 @@
             padding: 0.75rem;
             border-right: 1px solid var(--border-color);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all var(--transition-fast);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -250,7 +254,7 @@
         }
 
         .schedule-slot.empty:hover {
-            background: rgba(0, 0, 0, 0.05);
+            background: rgba(0, 0, 0, 0.02);
         }
 
         .schedule-slot.booked {
@@ -296,7 +300,7 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            z-index: 2000;
             align-items: center;
             justify-content: center;
         }
@@ -306,15 +310,15 @@
         }
 
         .modal-box {
-            background: var(--bg-primary);
+            background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: var(--border-radius-lg);
             padding: 2rem;
             max-width: 500px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow-xl);
         }
 
         .modal-header {
@@ -328,18 +332,29 @@
 
         .modal-header h2 {
             margin: 0;
-            font-size: 1.2rem;
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .modal-close {
             background: none;
             border: none;
-            font-size: 1.5rem;
+            font-size: 24px;
             cursor: pointer;
             color: var(--text-secondary);
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius);
+            transition: all var(--transition-fast);
         }
 
         .modal-close:hover {
+            background: var(--bg-main);
             color: var(--text-primary);
         }
 
@@ -351,7 +366,8 @@
             display: block;
             margin-bottom: 0.4rem;
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: var(--font-size-sm);
+            color: var(--text-primary);
         }
 
         .form-field input,
@@ -360,11 +376,12 @@
             width: 100%;
             padding: 0.6rem;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            background: var(--card-bg);
             color: var(--text-primary);
-            font-family: inherit;
-            font-size: 0.9rem;
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+            transition: all var(--transition-fast);
         }
 
         .form-field input:focus,
@@ -372,7 +389,7 @@
         .form-field textarea:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px var(--primary-light);
         }
 
         .form-actions {
@@ -380,35 +397,6 @@
             gap: 1rem;
             justify-content: flex-end;
             margin-top: 2rem;
-        }
-
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            opacity: 0.9;
-        }
-
-        .btn-secondary {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--bg-hover);
         }
 
         .empty-state {
@@ -430,49 +418,71 @@
 <body>
     <div class="pro-app">
         <aside class="pro-sidebar">
-            <div class="sidebar-header">
-                <img src="assets/logo.svg" alt="Logo" class="sidebar-logo">
+            <div class="pro-sidebar-logo">
+                <a href="#" class="pro-logo">
+                    <div class="pro-logo-icon">📋</div>
+                    <span class="pro-logo-text">ReddIto</span>
+                </a>
             </div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-link">
-                    <i class="fas fa-chart-line"></i> Dashboard
-                </a>
-                <a href="agenda.html" class="nav-link active">
-                    <i class="fas fa-calendar"></i> Agenda
-                </a>
-                <a href="clientes.html" class="nav-link">
-                    <i class="fas fa-users"></i> Clientes
-                </a>
-                <a href="servicos.html" class="nav-link">
-                    <i class="fas fa-concierge-bell"></i> Serviços
-                </a>
-                <a href="profissionais.html" class="nav-link">
-                    <i class="fas fa-user-tie"></i> Profissionais
-                </a>
-                <a href="financeiro.html" class="nav-link">
-                    <i class="fas fa-money-bill-wave"></i> Financeiro
-                </a>
-                <a href="relatorios.html" class="nav-link">
-                    <i class="fas fa-chart-bar"></i> Relatórios
-                </a>
-                <a href="whatsapp.html" class="nav-link">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
-                </a>
-                <a href="configuracoes.html" class="nav-link">
-                    <i class="fas fa-cog"></i> Configurações
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <div class="user-profile">
-                    <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" class="user-avatar">
-                    <div class="user-info">
-                        <div class="user-name" id="userName">Usuário</div>
-                        <div class="user-role" id="userRole">-</div>
-                    </div>
+
+            <nav class="pro-sidebar-nav">
+                <div class="pro-nav-section">
+                    <a href="dashboard.html" class="pro-nav-item">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </a>
+                    <a href="agenda.html" class="pro-nav-item active">
+                        <i class="fas fa-calendar"></i> Agenda
+                    </a>
                 </div>
-                <button class="sidebar-btn" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Sair
-                </button>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">GESTÃO</div>
+                    <a href="clientes.html" class="pro-nav-item">
+                        <i class="fas fa-users"></i> Clientes
+                    </a>
+                    <a href="servicos.html" class="pro-nav-item">
+                        <i class="fas fa-concierge-bell"></i> Serviços
+                    </a>
+                    <a href="profissionais.html" class="pro-nav-item">
+                        <i class="fas fa-user-tie"></i> Profissionais
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">FINANCEIRO</div>
+                    <a href="financeiro.html" class="pro-nav-item">
+                        <i class="fas fa-money-bill-wave"></i> Financeiro
+                    </a>
+                    <a href="relatorios.html" class="pro-nav-item">
+                        <i class="fas fa-chart-bar"></i> Relatórios
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">AUTOMAÇÃO</div>
+                    <a href="whatsapp.html" class="pro-nav-item">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <a href="configuracoes.html" class="pro-nav-item">
+                        <i class="fas fa-cog"></i> Configurações
+                    </a>
+                </div>
+            </nav>
+
+            <div class="pro-sidebar-footer">
+                <div class="pro-user-profile">
+                    <div class="pro-user-avatar" id="userAvatar">U</div>
+                    <div class="pro-user-info">
+                        <div class="pro-user-name" id="userName">Usuário</div>
+                        <div class="pro-user-role" id="userRole">-</div>
+                    </div>
+                    <button class="pro-user-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -509,44 +519,46 @@
                 <h2>Novo Agendamento</h2>
                 <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
-            <form id="appointmentForm" onsubmit="saveAppointment(event)">
-                <div class="form-field">
-                    <label>Profissional</label>
-                    <input type="text" id="profName" disabled>
-                </div>
-                <div class="form-field">
-                    <label>Data</label>
-                    <input type="text" id="dateField" disabled>
-                </div>
-                <div class="form-field">
-                    <label>Horário</label>
-                    <input type="text" id="timeField" disabled>
-                </div>
-                <div class="form-field">
-                    <label>Cliente *</label>
-                    <select id="clientSelect" required>
-                        <option value="">Selecione...</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>Serviço *</label>
-                    <select id="serviceSelect" required>
-                        <option value="">Selecione...</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>Valor (R$)</label>
-                    <input type="number" id="valueField" min="0" step="0.01">
-                </div>
-                <div class="form-field">
-                    <label>Observações</label>
-                    <textarea id="notesField" rows="3" placeholder="Digite observações..."></textarea>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Agendar</button>
-                </div>
-            </form>
+            <div style="padding: 0 2rem;">
+                <form id="appointmentForm" onsubmit="saveAppointment(event)">
+                    <div class="form-field">
+                        <label>Profissional</label>
+                        <input type="text" id="profName" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Data</label>
+                        <input type="text" id="dateField" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Horário</label>
+                        <input type="text" id="timeField" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Cliente *</label>
+                        <select id="clientSelect" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Serviço *</label>
+                        <select id="serviceSelect" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Valor (R$)</label>
+                        <input type="number" id="valueField" min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>Observações</label>
+                        <textarea id="notesField" rows="3" placeholder="Digite observações..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="pro-btn pro-btn-secondary" onclick="closeModal()">Cancelar</button>
+                        <button type="submit" class="pro-btn pro-btn-primary">Agendar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
