@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
+    <link rel="stylesheet" href="css/dark-mode.css">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -19,6 +20,7 @@
     <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
     <script src="js/pro-ui.js"></script>
+    <script src="js/dark-mode.js"></script>
 </head>
 <body>
     <div class="pro-app">
@@ -54,6 +56,9 @@
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
+                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
                 <div class="pro-user-profile">
                     <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
@@ -231,6 +236,11 @@
         let profissionalIdAtual = null; // ✅ ID na tabela profissionais (não o user_id do perfil)
 
         const charts = {};
+
+        // ─── Inicializar dark mode ────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+        });
 
         // ─── Helpers ───────────────────────────────────────────────────
         function formatCurrency(val) {
