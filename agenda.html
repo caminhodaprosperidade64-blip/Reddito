@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
 
-    <!-- ✅ QR Code Styling CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.8.4/lib/qr-code-styling.js"></script>
+    <!-- ✅ QRCode.js - Biblioteca estável e confiável -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         .agenda-wrapper {
@@ -628,47 +628,38 @@
             width: 100%;
             resize: none;
             min-height: 70px;
+            font-family: monospace;
+            font-size: 0.85rem;
         }
 
         /* ✅ CONTAINER QR CODE OTIMIZADO */
         #pixQr {
-            width: 380px;
-            height: 380px;
+            width: 280px;
+            height: 280px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #ffffff;
             border: 2px solid var(--border-color);
             border-radius: 10px;
-            padding: 0;
+            padding: 10px;
             box-sizing: border-box;
             overflow: hidden;
             margin: 1rem 0;
         }
 
         #pixQr img,
-        #pixQr canvas,
-        #pixQr svg {
+        #pixQr canvas {
             width: 100% !important;
             height: 100% !important;
             display: block !important;
             image-rendering: pixelated;
         }
 
-        #pixQr div {
-            width: 100%;
-            height: 100%;
-        }
-
         @media (max-width: 520px) {
             #pixQr {
-                width: 300px;
-                height: 300px;
-                padding: 0;
-            }
-            #pixQr img, #pixQr canvas, #pixQr svg {
-                width: 100% !important;
-                height: 100% !important;
+                width: 240px;
+                height: 240px;
             }
         }
     </style>
@@ -992,20 +983,20 @@
                     <!-- EXTRAS: PIX -->
                     <div class="pay-extra" id="pixExtra">
                         <div class="pix-qr">
-                            <div style="width: 100%; text-align: center; font-weight: 600; margin-bottom: 0.25rem;">
+                            <div style="width: 100%; text-align: center; font-weight: 600; margin-bottom: 0.5rem;">
                                 Escaneie e pague com Pix
                             </div>
 
                             <div id="pixQr"></div>
 
                             <div class="pix-copy">
-                                <textarea id="pixCopiaCola" readonly></textarea>
+                                <textarea id="pixCopiaCola" readonly placeholder="Código Pix será gerado aqui"></textarea>
                                 <button type="button" class="pro-btn pro-btn-secondary" onclick="copyPixCode()">
                                     <i class="fas fa-copy"></i> Copiar
                                 </button>
                             </div>
 
-                            <div style="width:100%; font-size: 0.85rem; color: var(--text-secondary);">
+                            <div style="width:100%; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">
                                 Depois que o cliente pagar, clique em <b>Confirmar Finalização</b>.
                             </div>
                         </div>
@@ -1059,12 +1050,9 @@
         let allServices = [];
         let modalState = { profId: null, profName: null, date: null, time: null };
         let viewingAppointment = null;
-
-        // ✅ snapshot do agendamento que está sendo finalizado
         let finalizingAppointment = null;
-
-        // Configuração Pix (carregada do Supabase)
         let paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
+        let currentQRCode = null;
 
         const COLORS = {
             0: { bg: 'bg-prof-1', badge: 'badge-prof-1', slot: 'slot-prof-1' },
@@ -1087,10 +1075,7 @@
                 allProfessionals = await DB.profissionais.listar();
                 allClients = await DB.clientes.listar();
                 allServices = await DB.servicos.listar();
-
-                // carrega config Pix do tenant
                 await loadPaymentConfig();
-
                 populateSelects();
                 populateEditSelects();
                 renderCalendar();
@@ -1104,19 +1089,16 @@
             try {
                 const tenantId = await Auth.getTenantId();
                 const supabase = window.getSupabase();
-
                 const { data, error } = await supabase
                     .from('config_pagamentos')
                     .select('pix_chave, pix_nome, pix_cidade')
                     .eq('tenant_id', tenantId)
                     .maybeSingle();
-
                 if (error) throw error;
-
                 paymentConfig = data || { pix_chave: null, pix_nome: null, pix_cidade: null };
-                console.log('✅ Config Pagamentos carregada:', paymentConfig);
+                console.log('✅ Config Pagamentos:', paymentConfig);
             } catch (err) {
-                console.warn('⚠️ Não foi possível carregar config_pagamentos (Pix).', err);
+                console.warn('⚠️ Erro ao carregar config Pix:', err);
                 paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
             }
         }
@@ -1124,17 +1106,14 @@
         function populateSelects() {
             const clientSelect = document.getElementById('clientSelect');
             const serviceSelect = document.getElementById('serviceSelect');
-
             clientSelect.innerHTML = '<option value="">Selecione...</option>';
             serviceSelect.innerHTML = '<option value="">Selecione...</option>';
-
             allClients.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
                 opt.textContent = c.nome;
                 clientSelect.appendChild(opt);
             });
-
             allServices.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.id;
@@ -1146,17 +1125,14 @@
         function populateEditSelects() {
             const clientSelect = document.getElementById('editClientSelect');
             const serviceSelect = document.getElementById('editServiceSelect');
-
             clientSelect.innerHTML = '<option value="">Selecione...</option>';
             serviceSelect.innerHTML = '<option value="">Selecione...</option>';
-
             allClients.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
                 opt.textContent = c.nome;
                 clientSelect.appendChild(opt);
             });
-
             allServices.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.id;
@@ -1170,21 +1146,17 @@
             const month = currentCalendar.getMonth();
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-
             const monthName = currentCalendar.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
             document.getElementById('monthYear').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-
             let html = `<div class="calendar-month-title">${monthName.toUpperCase()}</div>`;
             html += '<div class="calendar-weekdays">';
             ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'].forEach(d => {
                 html += `<div class="calendar-weekday">${d}</div>`;
             });
             html += '</div><div class="calendar-days">';
-
             for (let i = 0; i < firstDay; i++) {
                 html += '<div class="calendar-day other-month"></div>';
             }
-
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
                 const isToday = new Date().toDateString() === date.toDateString();
@@ -1192,10 +1164,8 @@
                 const classes = ['calendar-day'];
                 if (isToday) classes.push('today');
                 if (isSelected) classes.push('selected');
-
                 html += `<div class="${classes.join(' ')}" onclick="selectDay(new Date(${year}, ${month}, ${day}))">${day}</div>`;
             }
-
             html += '</div>';
             document.getElementById('miniCalendar').innerHTML = html;
         }
@@ -1220,26 +1190,21 @@
             try {
                 const dateStr = selectedDay.toISOString().split('T')[0];
                 allAppointments = await DB.agendamentos.listarPorData(dateStr);
-
                 const container = document.getElementById('scheduleContainer');
                 const dateLabel = selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
                 document.getElementById('dateLabel').textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
-
                 if (!allProfessionals.length) {
                     container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional</span></div>';
                     return;
                 }
-
                 const times = generateTimes('08:00', '18:00', 30);
                 let html = '<div class="schedule-grid">';
-
                 html += '<div class="time-row"><div class="time-cell header"></div>';
                 allProfessionals.forEach((prof, idx) => {
                     const color = COLORS[idx % 3];
                     html += `<div class="prof-name-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</div>`;
                 });
                 html += '</div>';
-
                 times.forEach(time => {
                     html += `<div class="time-row"><div class="time-cell hour">${time}</div>`;
                     allProfessionals.forEach((prof, idx) => {
@@ -1258,17 +1223,14 @@
                     });
                     html += '</div>';
                 });
-
                 html += '</div>';
                 container.innerHTML = html;
-
                 container.querySelectorAll('.schedule-slot.booked').forEach(slot => {
                     slot.addEventListener('click', function() {
                         const aptId = this.getAttribute('data-apt-id');
                         viewAppointment(aptId);
                     });
                 });
-
                 container.querySelectorAll('.schedule-slot.empty').forEach(slot => {
                     slot.addEventListener('click', function() {
                         const profId = this.getAttribute('data-prof-id');
@@ -1278,7 +1240,6 @@
                         openModal(profId, profName, dateStr, time);
                     });
                 });
-
             } catch (error) {
                 console.error('Erro:', error);
             }
@@ -1289,7 +1250,6 @@
             const [sh, sm] = start.split(':').map(Number);
             const [eh, em] = end.split(':').map(Number);
             let h = sh, m = sm;
-
             while (h < eh || (h === eh && m < em)) {
                 times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
                 m += interval;
@@ -1322,7 +1282,6 @@
             const serviceId = document.getElementById('serviceSelect').value;
             const value = parseFloat(document.getElementById('valueField').value) || 0;
             const notes = document.getElementById('notesField').value;
-
             try {
                 const result = await DB.agendamentos.criar({
                     profissional_id: modalState.profId,
@@ -1334,7 +1293,6 @@
                     observacoes: notes,
                     status: 'confirmado'
                 });
-
                 if (result.success || result.data) {
                     closeModal();
                     renderSchedule();
@@ -1349,7 +1307,6 @@
         async function viewAppointment(aptId) {
             viewingAppointment = allAppointments.find(a => String(a.id) === String(aptId));
             if (!viewingAppointment) return;
-
             document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
             document.getElementById('viewClientName').textContent = viewingAppointment.cliente?.nome || '-';
             document.getElementById('viewDate').textContent = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
@@ -1357,10 +1314,8 @@
             document.getElementById('viewService').textContent = viewingAppointment.servico?.nome || '-';
             document.getElementById('viewValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
             document.getElementById('viewNotes').textContent = viewingAppointment.observacoes || '-';
-
             const statusBadge = document.getElementById('viewStatus');
             statusBadge.innerHTML = `<span class="modal-status-badge ${viewingAppointment.status}">${(viewingAppointment.status || '').charAt(0).toUpperCase() + (viewingAppointment.status || '').slice(1)}</span>`;
-
             const actions = document.getElementById('viewActions');
             if (viewingAppointment.status === 'concluido' || viewingAppointment.status === 'cancelado') {
                 actions.className = 'modal-actions full';
@@ -1368,18 +1323,11 @@
             } else {
                 actions.className = 'modal-actions';
                 actions.innerHTML = `
-                    <button type="button" class="pro-btn pro-btn-primary" onclick="handleEdit()">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button type="button" class="pro-btn pro-btn-danger" onclick="handleCancel()">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                    <button type="button" class="pro-btn pro-btn-success" onclick="handleFinalize()">
-                        <i class="fas fa-check"></i> Finalizar
-                    </button>
+                    <button type="button" class="pro-btn pro-btn-primary" onclick="handleEdit()"><i class="fas fa-edit"></i> Editar</button>
+                    <button type="button" class="pro-btn pro-btn-danger" onclick="handleCancel()"><i class="fas fa-times"></i> Cancelar</button>
+                    <button type="button" class="pro-btn pro-btn-success" onclick="handleFinalize()"><i class="fas fa-check"></i> Finalizar</button>
                 `;
             }
-
             document.getElementById('viewAppointmentModal').classList.add('active');
         }
 
@@ -1390,7 +1338,6 @@
 
         function handleEdit() {
             if (!viewingAppointment) return;
-
             document.getElementById('editProfName').value = viewingAppointment.profissional?.nome || '';
             document.getElementById('editDate').value = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
             document.getElementById('editTime').value = viewingAppointment.hora.substring(0, 5);
@@ -1398,7 +1345,6 @@
             document.getElementById('editServiceSelect').value = viewingAppointment.servico_id;
             document.getElementById('editValueField').value = viewingAppointment.valor;
             document.getElementById('editNotesField').value = viewingAppointment.observacoes || '';
-
             closeViewModal();
             document.getElementById('editAppointmentModal').classList.add('active');
         }
@@ -1410,12 +1356,10 @@
         async function updateAppointment(e) {
             e.preventDefault();
             if (!viewingAppointment) return;
-
             const clientId = document.getElementById('editClientSelect').value;
             const serviceId = document.getElementById('editServiceSelect').value;
             const value = parseFloat(document.getElementById('editValueField').value) || 0;
             const notes = document.getElementById('editNotesField').value;
-
             try {
                 await DB.agendamentos.atualizar(viewingAppointment.id, {
                     cliente_id: clientId,
@@ -1423,7 +1367,6 @@
                     valor: value,
                     observacoes: notes
                 });
-
                 closeEditModal();
                 await renderSchedule();
                 alert('✅ Atualizado!');
@@ -1440,7 +1383,6 @@
 
         async function cancelAppointmentNow() {
             if (!viewingAppointment) return;
-
             try {
                 await DB.agendamentos.atualizar(viewingAppointment.id, { status: 'cancelado' });
                 closeViewModal();
@@ -1454,22 +1396,16 @@
 
         function handleFinalize() {
             if (!viewingAppointment) return;
-
-            // ✅ snapshot do agendamento em finalização
             finalizingAppointment = { ...viewingAppointment };
-
             document.getElementById('finalizeValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
             document.getElementById('finalizeNotesField').value = '';
             document.getElementById('finalizeForm').reset();
-
             document.getElementById('pixExtra').classList.remove('active');
             document.getElementById('cardExtra').classList.remove('active');
             document.getElementById('pixCopiaCola').value = '';
             clearPixQr();
-
             document.getElementById('nsuField').value = '';
             document.getElementById('autField').value = '';
-
             closeViewModal();
             document.getElementById('finalizeAppointmentModal').classList.add('active');
         }
@@ -1477,15 +1413,14 @@
         function closeFinalizeModal() {
             document.getElementById('finalizeAppointmentModal').classList.remove('active');
             document.getElementById('finalizeForm').reset();
-
             document.getElementById('pixExtra').classList.remove('active');
             document.getElementById('cardExtra').classList.remove('active');
             document.getElementById('pixCopiaCola').value = '';
             clearPixQr();
             document.getElementById('nsuField').value = '';
             document.getElementById('autField').value = '';
-
             finalizingAppointment = null;
+            currentQRCode = null;
         }
 
         function setupPaymentMethodListeners() {
@@ -1499,16 +1434,13 @@
         async function onPaymentMethodChanged(method) {
             const pixExtra = document.getElementById('pixExtra');
             const cardExtra = document.getElementById('cardExtra');
-
             pixExtra.classList.remove('active');
             cardExtra.classList.remove('active');
-
             if (method === 'pix') {
                 pixExtra.classList.add('active');
-                await new Promise(r => setTimeout(r, 150));
+                await new Promise(r => setTimeout(r, 100));
                 await generatePixQrForCurrentAppointment();
             }
-
             if (method === 'cartao' || method === 'debito') {
                 cardExtra.classList.add('active');
             }
@@ -1516,36 +1448,32 @@
 
         function clearPixQr() {
             const container = document.getElementById('pixQr');
-            if (!container) return;
-            container.innerHTML = '';
+            if (container) container.innerHTML = '';
+            currentQRCode = null;
         }
 
-        // ✅ Sanitiza o BR Code
         function sanitizeBrcode(str) {
             return String(str || '').replace(/[\r\n\s]+/g, '').trim();
         }
 
-        // ✅ VERSÃO CORRIGIDA COM FALLBACK
         async function generatePixQrForCurrentAppointment() {
             try {
                 const apt = finalizingAppointment;
                 if (!apt) {
-                    console.error('❌ Nenhum agendamento em finalização');
+                    console.error('❌ Sem agendamento');
                     return;
                 }
 
                 if (!paymentConfig?.pix_chave || !paymentConfig?.pix_nome || !paymentConfig?.pix_cidade) {
                     document.getElementById('pixCopiaCola').value = '';
                     clearPixQr();
-                    alert('⚠️ Configure a chave Pix, nome e cidade nas configurações.');
-                    console.error('❌ Config Pix incompleta:', paymentConfig);
+                    alert('⚠️ Configure Pix nas configurações (chave, nome, cidade)');
                     return;
                 }
 
                 const valor = parseFloat(apt.valor || 0).toFixed(2);
                 const txid = normalizeTxid(`AGEND${String(apt.id).replace(/[^0-9A-Za-z]/g, '').slice(0, 12)}`);
 
-                // Gera o BR Code
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
                     nome: paymentConfig.pix_nome,
@@ -1556,45 +1484,33 @@
                 });
 
                 const brcodeForQr = sanitizeBrcode(brcode);
-                
+
                 if (!brcodeForQr || brcodeForQr.length < 30) {
-                    console.error('❌ BR Code inválido');
-                    alert('Erro: BR Code inválido. Verifique os dados.');
+                    alert('Erro: BR Code inválido');
                     return;
                 }
 
-                console.log('✅ BR Code gerado:', brcodeForQr.length, 'caracteres');
+                console.log('✅ BR Code OK:', brcodeForQr.length, 'chars');
 
-                // Popula textarea
                 document.getElementById('pixCopiaCola').value = brcodeForQr;
 
                 const container = document.getElementById('pixQr');
-                if (!container) {
-                    console.error('❌ Container não encontrado');
-                    return;
-                }
+                if (!container) return;
 
                 clearPixQr();
-                await new Promise(r => setTimeout(r, 150));
+                await new Promise(r => setTimeout(r, 80));
 
-                // ✅ Tenta usar QRCodeStyling primeiro
-                if (typeof QRCodeStyling !== 'undefined') {
-                    console.log('📱 Usando QRCodeStyling');
-                    const qrCode = new QRCodeStyling({
-                        width: 380,
-                        height: 380,
-                        data: brcodeForQr,
-                        type: "canvas",
-                        dotsOptions: { color: "#000000", type: "square" },
-                        backgroundOptions: { color: "#ffffff" }
-                    });
-                    qrCode.append(container);
-                    console.log('✅ QR Code gerado com sucesso!');
-                } else {
-                    // ✅ Fallback: cria canvas manualmente
-                    console.log('📱 QRCodeStyling não disponível, usando fallback');
-                    generateQRWithFallback(brcodeForQr, container);
-                }
+                // Usa QRCode.js
+                currentQRCode = new QRCode(container, {
+                    text: brcodeForQr,
+                    width: 280,
+                    height: 280,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+
+                console.log('✅ QR Code gerado!');
 
             } catch (err) {
                 console.error('❌ Erro:', err);
@@ -1602,50 +1518,18 @@
             }
         }
 
-        // ✅ FALLBACK: Gera QR com método alternativo
-        function generateQRWithFallback(text, container) {
-            try {
-                // Usa Canvas para criar QR simples
-                const canvas = document.createElement('canvas');
-                canvas.width = 380;
-                canvas.height = 380;
-                const ctx = canvas.getContext('2d');
-
-                // Fundo branco
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 380, 380);
-
-                // Mensagem de espera
-                ctx.fillStyle = '#000000';
-                ctx.font = '14px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Pix gerado com sucesso!', 190, 170);
-                ctx.fillText('Código: OK', 190, 200);
-
-                container.appendChild(canvas);
-                console.log('✅ Fallback QR gerado');
-            } catch (err) {
-                console.error('Erro fallback:', err);
-            }
-        }
-
         function copyPixCode() {
             const textarea = document.getElementById('pixCopiaCola');
             const text = sanitizeBrcode(textarea.value);
-
             if (!text) {
                 alert('Nenhum código para copiar');
                 return;
             }
-
             navigator.clipboard.writeText(text)
                 .then(() => alert('✅ Copiado!'))
                 .catch(() => alert('Erro ao copiar'));
         }
 
-        // ==========================
-        // PIX EMV (copia e cola)
-        // ==========================
         function emv(id, value) {
             const v = String(value);
             return `${id}${String(v.length).padStart(2, '0')}${v}`;
@@ -1687,10 +1571,8 @@
 
             const merchantName = normalizeNomeCidade(nome, 25);
             const merchantCity = normalizeNomeCidade(cidade, 15);
-
             const gui = emv('00', 'BR.GOV.BCB.PIX');
             const key = emv('01', String(chave).trim());
-
             let desc = '';
             if (descricao) {
                 const cleanDesc = String(descricao)
@@ -1710,7 +1592,6 @@
             const countryCode = emv('58', 'BR');
             const mName = emv('59', merchantName);
             const mCity = emv('60', merchantCity);
-
             const txidValue = normalizeTxid(txid || 'AGENDAMENTO', 25);
             const txidField = emv('05', txidValue);
             const additionalData = emv('62', txidField);
@@ -1745,9 +1626,8 @@
             if (paymentMethod === 'cartao' || paymentMethod === 'debito') {
                 nsu = document.getElementById('nsuField').value.trim();
                 autorizacao = document.getElementById('autField').value.trim();
-
                 if (!nsu || !autorizacao) {
-                    alert('Informe NSU e AUT para Cartão/Débito');
+                    alert('Informe NSU e AUT');
                     return;
                 }
             }
