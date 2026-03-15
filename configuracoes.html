@@ -55,9 +55,6 @@
                 </div>
             </nav>
             <div class="pro-sidebar-footer">
-                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
-                    <i class="fas fa-moon"></i>
-                </button>
                 <div class="pro-user-profile">
                     <div class="pro-user-avatar" id="userAvatar">A</div>
                     <div class="pro-user-info">
@@ -409,13 +406,12 @@
         const STORAGE_KEY_CONFIG = 'sispro_config';
         const STORAGE_KEY_PREFS  = 'sispro_prefs';
 
-        // ─── Inicializar dark mode ────────────────────────────────────
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
         });
 
         // ─── Perfil na sidebar + controle de acesso ────────────────────
-        window.addEventListener('perfilCarregado', async (e) => { // ✅ window, não document
+        window.addEventListener('perfilCarregado', async (e) => {
             perfilAtual = e.detail;
             if (!perfilAtual) return;
 
@@ -739,6 +735,13 @@
                 await Auth.signOut();
             }
         }
+
+        // Sincronizar dark mode entre abas
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sispro_theme') {
+                location.reload();
+            }
+        });
     </script>
 </body>
 </html>
