@@ -411,8 +411,8 @@
         </div>
 
         <div class="form-group">
-          <label>Endereço</label>
-          <input type="text" id="endereco" placeholder="Rua, número, bairro, cidade" />
+          <label>Endereço Completo</label>
+          <input type="text" id="endereco" placeholder="Rua, número, bairro, cidade, estado" />
         </div>
 
         <div class="form-group">
@@ -726,7 +726,6 @@
         const nomeEmpresa = document.getElementById('nomeEmpresa').value.trim();
         const segmento = document.getElementById('segmento').value;
         const telefone = document.getElementById('telefone').value.trim();
-        const endereco = document.getElementById('endereco').value.trim();
 
         const { error: tenantError } = await supabase
           .from('tenants')
@@ -737,7 +736,6 @@
             telefone,
             logo_url: logoUrl,
             segmento,
-            endereco,
             plano: 'basico',
             status: 'ativo',
             data_inicio: new Date().toISOString(),
@@ -759,7 +757,6 @@
             nome_empresa: nomeEmpresa,
             segmento,
             telefone,
-            endereco,
             logo_url: logoUrl,
             onboarding_completo: true
           }, { onConflict: 'id' });
@@ -767,7 +764,28 @@
         if (perfilError) throw perfilError;
         console.log('✅ [Onboarding] Perfil atualizado');
 
-        // 4. Salvar horários
+        // 4. Salvar endereço na tabela enderecos
+        const endereco = document.getElementById('endereco').value.trim();
+        if (endereco) {
+          try {
+            const { error: enderecoError } = await supabase
+              .from('enderecos')
+              .upsert({
+                tenant_id: tenantId,
+                endereco_completo: endereco
+              }, { onConflict: 'tenant_id' });
+
+            if (enderecoError) {
+              console.warn('⚠️ [Onboarding] Erro ao salvar endereço:', enderecoError);
+            } else {
+              console.log('✅ [Onboarding] Endereço salvo');
+            }
+          } catch (enderecoErr) {
+            console.warn('⚠️ [Onboarding] Erro no bloco de endereço:', enderecoErr);
+          }
+        }
+
+        // 5. Salvar horários
         try {
           const horarios = DIAS.map((_, i) => ({
             tenant_id: tenantId,
