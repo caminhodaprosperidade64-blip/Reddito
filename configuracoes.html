@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -206,6 +207,45 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- ====== CONFIGURAÇÕES: PAGAMENTOS (PIX) ====== -->
+                    <section class="pro-card" style="padding: 1.5rem; margin-top: 1.5rem;">
+                      <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                        <div>
+                          <h2 style="margin:0; font-size: 1.1rem;">Pagamentos (Pix)</h2>
+                          <p style="margin:0.25rem 0 0; color: var(--text-secondary); font-size: 0.9rem;">
+                            Configure a chave Pix para gerar QR Code na finalização do agendamento.
+                          </p>
+                        </div>
+
+                        <button class="pro-btn pro-btn-primary" type="button" onclick="savePixConfig()">
+                          <i class="fas fa-save"></i> Salvar
+                        </button>
+                      </div>
+
+                      <div style="margin-top: 1.25rem;">
+                        <div class="pro-form-group">
+                          <label class="pro-label">Chave Pix</label>
+                          <input id="pixChave" type="text" class="pro-input" placeholder="Ex: email, telefone, CPF/CNPJ ou chave aleatória">
+                        </div>
+
+                        <div class="pro-form-group">
+                          <label class="pro-label">Nome do recebedor</label>
+                          <input id="pixNome" type="text" class="pro-input" placeholder="Ex: SALAO DA MARIA">
+                        </div>
+
+                        <div class="pro-form-group">
+                          <label class="pro-label">Cidade</label>
+                          <input id="pixCidade" type="text" class="pro-input" placeholder="Ex: SAO PAULO">
+                        </div>
+
+                        <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">
+                          Dica: para o Pix funcionar em todos os bancos, use <b>nome</b> e <b>cidade</b> sem acentos (ex.: SAO PAULO).
+                        </div>
+
+                        <div id="pixConfigStatus" style="margin-top: 0.75rem; font-size: 0.9rem;"></div>
+                      </div>
+                    </section>
 
                     <!-- Convite de Profissional -->
                     <div class="pro-card" style="margin-top:24px;">
@@ -432,10 +472,83 @@
                 document.getElementById('avisoAcessoRestrito').style.display = 'block';
             } else {
                 carregarConfigEstabelecimento();
+                // Carregar configurações Pix (só para dono)
+                loadPixConfig();
             }
 
             carregarPreferencias();
         });
+
+        // ─── PIX: carregar/salvar config no Supabase ───────────────────
+        async function loadPixConfig() {
+            try {
+                const tenant_id = await Auth.getTenantId();
+                const supabase = window.getSupabase();
+
+                const { data, error } = await supabase
+                    .from('config_pagamentos')
+                    .select('pix_chave, pix_nome, pix_cidade')
+                    .eq('tenant_id', tenant_id)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                document.getElementById('pixChave').value  = data?.pix_chave  || '';
+                document.getElementById('pixNome').value   = data?.pix_nome   || '';
+                document.getElementById('pixCidade').value = data?.pix_cidade || '';
+
+                setPixStatus('✅ Configuração Pix carregada.', 'success');
+            } catch (err) {
+                console.error('Erro ao carregar config Pix:', err);
+                setPixStatus('⚠️ Não foi possível carregar a configuração Pix. Verifique o console.', 'warn');
+            }
+        }
+
+        async function savePixConfig() {
+            try {
+                const tenant_id = await Auth.getTenantId();
+                const supabase = window.getSupabase();
+
+                const pix_chave  = document.getElementById('pixChave').value.trim();
+                const pix_nome   = document.getElementById('pixNome').value.trim();
+                const pix_cidade = document.getElementById('pixCidade').value.trim();
+
+                if (!pix_chave || !pix_nome || !pix_cidade) {
+                    setPixStatus('Preencha chave, nome e cidade.', 'warn');
+                    return;
+                }
+
+                const { error } = await supabase
+                    .from('config_pagamentos')
+                    .upsert({
+                        tenant_id,
+                        pix_chave,
+                        pix_nome,
+                        pix_cidade,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'tenant_id' });
+
+                if (error) throw error;
+
+                setPixStatus('✅ Configuração Pix salva com sucesso!', 'success');
+            } catch (err) {
+                console.error('Erro ao salvar config Pix:', err);
+                setPixStatus('❌ Erro ao salvar. Verifique o console.', 'error');
+            }
+        }
+
+        function setPixStatus(text, type) {
+            const el = document.getElementById('pixConfigStatus');
+            if (!el) return;
+
+            let color = 'var(--text-secondary)';
+            if (type === 'success') color = 'var(--success)';
+            if (type === 'warn') color = '#b45309';
+            if (type === 'error') color = 'var(--error)';
+
+            el.style.color = color;
+            el.textContent = text;
+        }
 
         // ─── Carregar config do localStorage ──────────────────────────
         function carregarConfigEstabelecimento() {
@@ -745,3 +858,4 @@
     </script>
 </body>
 </html>
+```
