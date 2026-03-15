@@ -706,6 +706,9 @@
                 const dateStr = selectedDay.toISOString().split('T')[0];
                 allAppointments = await DB.agendamentos.listarPorData(dateStr);
 
+                console.log('✅ Agendamentos carregados:', allAppointments.length);
+                console.log('Agendamentos:', allAppointments);
+
                 const container = document.getElementById('scheduleContainer');
                 const dateLabel = selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
                 document.getElementById('dateLabel').textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
@@ -722,7 +725,7 @@
                 html += '<div class="time-row">';
                 html += '<div class="time-cell header"></div>';
                 allProfessionals.forEach((prof, idx) => {
-                    const color = COLORS[idx];
+                    const color = COLORS[idx % 3];
                     html += `<div class="prof-name-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</div>`;
                 });
                 html += '</div>';
@@ -731,9 +734,14 @@
                 times.forEach(time => {
                     html += '<div class="time-row">';
                     html += `<div class="time-cell hour">${time}</div>`;
+                    
                     allProfessionals.forEach((prof, idx) => {
-                        const color = COLORS[idx];
-                        const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora === time);
+                        const color = COLORS[idx % 3];
+                        // Comparar apenas os 5 primeiros caracteres (HH:MM)
+                        const apt = allAppointments.find(a => 
+                            a.profissional_id === prof.id && 
+                            a.hora.substring(0, 5) === time
+                        );
 
                         if (apt) {
                             const clientName = apt.cliente?.nome || 'Cliente';
@@ -748,7 +756,7 @@
 
                 html += '</div>';
                 container.innerHTML = html;
-                console.log('✅ Agenda renderizada');
+                console.log('✅ Agenda renderizada com sucesso!');
             } catch (error) {
                 console.error('❌ Erro ao renderizar agenda:', error);
             }
@@ -791,6 +799,7 @@
             const clientId = document.getElementById('clientSelect').value;
             const serviceId = document.getElementById('serviceSelect').value;
             const value = parseFloat(document.getElementById('valueField').value) || 0;
+            const notes = document.getElementById('notesField').value;
 
             if (!clientId || !serviceId) {
                 alert('Preencha cliente e serviço');
@@ -805,15 +814,16 @@
                     data: modalState.date,
                     hora: modalState.time,
                     valor: value,
+                    observacoes: notes,
                     status: 'confirmado'
                 });
 
-                if (result.success) {
+                if (result.success || result.data) {
                     closeModal();
                     renderSchedule();
                     console.log('✅ Agendamento criado!');
                 } else {
-                    alert('Erro: ' + result.error);
+                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
                 }
             } catch (error) {
                 console.error('❌ Erro:', error);
