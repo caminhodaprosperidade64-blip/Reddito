@@ -10,14 +10,690 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="css/pro-design-system.css">
-    <link rel="stylesheet" href="css/pro-components.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
-    <script src="js/pro-ui.js"></script>
+
+    <style>
+        :root {
+            --color-bg: #ffffff;
+            --color-text: #1f2937;
+            --color-border: #e5e7eb;
+            --color-card: #f9fafb;
+            --color-primary: #667eea;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #fbbf24;
+            --color-secondary: #764ba2;
+        }
+
+        body.dark-mode {
+            --color-bg: #0f172a;
+            --color-text: #f1f5f9;
+            --color-border: #334155;
+            --color-card: #1e293b;
+            --color-primary: #667eea;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #fbbf24;
+            --color-secondary: #764ba2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .pro-app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .pro-sidebar {
+            width: 260px;
+            background-color: var(--color-card);
+            border-right: 1px solid var(--color-border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            overflow-y: auto;
+        }
+
+        .pro-sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .pro-sidebar-logo img {
+            height: 48px;
+            width: auto;
+            border-radius: 8px;
+        }
+
+        .pro-logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .pro-sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pro-nav-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pro-nav-section-title {
+            padding: 0 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+
+        .pro-nav-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            color: var(--color-text);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .pro-nav-item:hover {
+            background-color: var(--color-border);
+            transform: translateX(4px);
+        }
+
+        .pro-nav-item.active {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .pro-nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .pro-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .pro-header {
+            background-color: var(--color-card);
+            border-bottom: 1px solid var(--color-border);
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pro-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .pro-header-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--color-border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--color-text);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--color-border);
+        }
+
+        .logout-btn {
+            background-color: var(--color-danger);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        .pro-content {
+            padding: 32px;
+        }
+
+        .pro-page-header {
+            margin-bottom: 32px;
+        }
+
+        .pro-page-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .pro-page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+
+        .pro-page-subtitle {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .period-select {
+            padding: 10px 14px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            background: var(--color-card);
+            color: var(--color-text);
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .period-select:hover,
+        .period-select:focus {
+            border-color: var(--color-primary);
+            outline: none;
+        }
+
+        .pro-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pro-btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .pro-btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .pro-btn-secondary {
+            background-color: var(--color-border);
+            color: var(--color-text);
+        }
+
+        .pro-btn-secondary:hover {
+            background-color: var(--color-border);
+            opacity: 0.8;
+        }
+
+        .pro-btn-ghost {
+            background: none;
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .pro-btn-ghost:hover {
+            background: var(--color-border);
+        }
+
+        .pro-btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .pro-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .pro-metric-card {
+            background-color: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+        }
+
+        .pro-metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .pro-metric-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .pro-metric-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pro-metric-icon {
+            width: 48px;
+            height: 48px;
+            background-color: var(--color-primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .pro-metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+
+        .pro-metric-change {
+            font-size: 12px;
+            color: var(--color-success);
+        }
+
+        .pro-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .pro-card {
+            background-color: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .pro-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .pro-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        .chart-period {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .pro-card-body {
+            padding: 0;
+        }
+
+        .pro-table-container {
+            overflow-x: auto;
+        }
+
+        .pro-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .pro-table thead {
+            background: var(--color-border);
+        }
+
+        .pro-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid var(--color-border);
+            font-weight: 600;
+            font-size: 13px;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .pro-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 14px;
+            color: var(--color-text);
+        }
+
+        .pro-table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .pro-table tbody tr:hover {
+            background-color: var(--color-border);
+        }
+
+        .pro-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .pro-badge-primary {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .pro-badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .pro-badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .pro-badge-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .pro-empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: #9ca3af;
+        }
+
+        .pro-empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .pro-table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pro-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--color-text);
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .pro-action-btn:hover {
+            background: var(--color-border);
+        }
+
+        .pro-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pro-modal.active {
+            display: flex;
+        }
+
+        .pro-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .pro-modal-content {
+            position: relative;
+            background-color: var(--color-card);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .pro-modal-header {
+            padding: 32px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--color-text);
+        }
+
+        .pro-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--color-text);
+        }
+
+        .pro-modal-body {
+            padding: 32px;
+        }
+
+        .pro-modal-footer {
+            padding: 32px;
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            gap: 12px;
+        }
+
+        .pro-form-group {
+            margin-bottom: 16px;
+        }
+
+        .pro-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            color: #6b7280;
+        }
+
+        .pro-input,
+        .pro-select,
+        .pro-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        .pro-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .pro-form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .pro-comparison-card {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        body.dark-mode .pro-comparison-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+        }
+
+        .comparison-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        body.dark-mode .comparison-content {
+            color: #93c5fd;
+        }
+
+        .comparison-content i {
+            font-size: 18px;
+        }
+
+        .pro-empty-chart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: var(--color-text);
+            font-size: 14px;
+            flex-direction: column;
+        }
+
+        .pro-empty-chart i {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .pro-sidebar {
+                width: 100%;
+                flex-direction: row;
+                padding: 12px;
+                gap: 12px;
+                border-right: none;
+                border-bottom: 1px solid var(--color-border);
+                overflow-x: auto;
+            }
+
+            .pro-sidebar-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .pro-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .pro-content {
+                padding: 16px;
+            }
+
+            .pro-metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pro-grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .pro-form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .period-select {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="pro-app">
@@ -25,7 +701,7 @@
         <aside class="pro-sidebar">
             <div class="pro-sidebar-logo">
                 <a href="dashboard.html" class="pro-logo" id="sidebarLogo">
-                    <div class="pro-logo-icon" id="logoIcon">
+                    <div id="logoIcon" style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">
                         <i class="fas fa-calendar-check"></i>
                     </div>
                     <span class="pro-logo-text">RedditoApp</span>
@@ -105,35 +781,14 @@
         <!-- Main Content -->
         <main class="pro-main">
             <header class="pro-header">
-                <div class="pro-search">
-                    <i class="fas fa-search pro-search-icon"></i>
-                    <input 
-                        type="text" 
-                        class="pro-search-input" 
-                        placeholder="Buscar clientes, agendamentos..."
-                        id="globalSearch"
-                    >
-                    <div id="searchResults" class="search-results-dropdown" style="display: none;"></div>
-                </div>
+                <h1>Dashboard</h1>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn notifications-btn" id="notificacoesBtn" title="Notificações" onclick="toggleNotificacoes()">
-                        <i class="fas fa-bell"></i>
-                        <span id="notificacoesBadge" style="display: none;" class="badge">0</span>
-                    </button>
-                    <div id="notificacoesDropdown" class="notifications-dropdown" style="display: none;">
-                        <div class="notifications-header">
-                            <h3>Notificações</h3>
-                            <button class="close-btn" onclick="toggleNotificacoes()"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div id="notificacoesList" class="notifications-list">
-                            <p style="text-align: center; color: #999; padding: 20px;">Nenhuma notificação</p>
-                        </div>
-                    </div>
-                    <div class="pro-header-divider"></div>
-                    <button class="pro-header-btn" id="themeToogle" title="Alternar Tema" onclick="toggleDarkMode()">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
                         <i class="fas fa-moon"></i>
                     </button>
-                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
                 </div>
             </header>
 
@@ -145,7 +800,7 @@
                             <p class="pro-page-subtitle">Visão geral do seu negócio</p>
                         </div>
                         <div class="header-controls">
-                            <select id="periodoFiltro" onchange="atualizarPeriodo()" class="pro-select period-select">
+                            <select id="periodoFiltro" onchange="atualizarPeriodo()" class="period-select">
                                 <option value="7d">Últimos 7 dias</option>
                                 <option value="14d">Últimas 2 semanas</option>
                                 <option value="30d">Últimos 30 dias</option>
@@ -172,7 +827,7 @@
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
                             <span class="pro-metric-label">Agendamentos Hoje</span>
-                            <div class="pro-metric-icon primary">
+                            <div class="pro-metric-icon" style="background-color: #e0e7ff; color: var(--color-primary);">
                                 <i class="fas fa-calendar-day"></i>
                             </div>
                         </div>
@@ -183,7 +838,7 @@
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
                             <span class="pro-metric-label">Agendamentos Amanhã</span>
-                            <div class="pro-metric-icon primary">
+                            <div class="pro-metric-icon" style="background-color: #e0e7ff; color: var(--color-primary);">
                                 <i class="fas fa-calendar-plus"></i>
                             </div>
                         </div>
@@ -194,7 +849,7 @@
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
                             <span class="pro-metric-label">Faturamento Hoje</span>
-                            <div class="pro-metric-icon success">
+                            <div class="pro-metric-icon" style="background-color: #d1fae5; color: var(--color-success);">
                                 <i class="fas fa-dollar-sign"></i>
                             </div>
                         </div>
@@ -205,7 +860,7 @@
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
                             <span class="pro-metric-label">Faturamento Período</span>
-                            <div class="pro-metric-icon success">
+                            <div class="pro-metric-icon" style="background-color: #d1fae5; color: var(--color-success);">
                                 <i class="fas fa-chart-line"></i>
                             </div>
                         </div>
@@ -279,11 +934,11 @@
     </div>
 
     <!-- New Appointment Modal -->
-    <div class="pro-modal" id="newAppointmentModal" style="display:none;">
+    <div class="pro-modal" id="newAppointmentModal">
         <div class="pro-modal-overlay" onclick="fecharModalAgendamento()"></div>
         <div class="pro-modal-content">
             <div class="pro-modal-header">
-                <h2 class="pro-modal-title">Novo Agendamento</h2>
+                <h2>Novo Agendamento</h2>
                 <button class="pro-modal-close" onclick="fecharModalAgendamento()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -330,7 +985,7 @@
                     </div>
                     <div class="pro-form-group">
                         <label class="pro-label">Observações</label>
-                        <textarea class="pro-textarea" id="appointmentNotes" rows="3" placeholder="Anotações adicionais..."></textarea>
+                        <textarea class="pro-textarea" id="appointmentNotes" placeholder="Anotações adicionais..."></textarea>
                     </div>
                 </form>
             </div>
@@ -346,343 +1001,21 @@
         </div>
     </div>
 
-    <style>
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f9fafb;
-            --bg-tertiary: #f3f4f6;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --border-color: #e5e7eb;
-        }
-
-        body.dark-mode {
-            --bg-primary: #2d3748;
-            --bg-secondary: #1a202c;
-            --bg-tertiary: #374151;
-            --text-primary: #f9fafb;
-            --text-secondary: #e2e8f0;
-            --border-color: #4a5568;
-        }
-
-        .badge {
-            display: inline-block;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-align: center;
-            line-height: 20px;
-            position: absolute;
-            top: -8px;
-            right: -8px;
-        }
-        
-        .pro-logo img {
-            max-height: 40px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        .pro-empty-chart {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 300px;
-            color: var(--text-secondary);
-            font-size: 14px;
-            flex-direction: column;
-        }
-
-        .pro-empty-chart i {
-            font-size: 36px;
-            margin-bottom: 12px;
-            opacity: 0.5;
-        }
-
-        /* ─── DARK MODE FIXES ─── */
-        .pro-card {
-            background: var(--bg-primary) !important;
-            border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-        }
-
-        .pro-metric-card {
-            background: var(--bg-primary) !important;
-            border-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-        }
-
-        .pro-card-header {
-            border-bottom-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-        }
-
-        .pro-card-title {
-            color: var(--text-primary) !important;
-        }
-
-        .pro-table thead {
-            background: var(--bg-tertiary) !important;
-            color: var(--text-primary) !important;
-        }
-
-        .pro-table tbody tr {
-            border-bottom-color: var(--border-color) !important;
-            color: var(--text-primary) !important;
-        }
-
-        .pro-table tbody tr:hover {
-            background: var(--bg-tertiary) !important;
-        }
-
-        .pro-table th {
-            color: var(--text-primary) !important;
-        }
-
-        .pro-comparison-card {
-            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%) !important;
-        }
-
-        body.dark-mode .pro-comparison-card {
-            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%) !important;
-        }
-
-        .search-results-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-top: none;
-            border-radius: 0 0 10px 10px;
-            max-height: 400px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .search-result-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: background 0.2s;
-            color: var(--text-primary);
-        }
-
-        .search-result-item:hover {
-            background: var(--bg-tertiary);
-        }
-
-        .search-result-title {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .search-result-subtitle {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        /* FEATURE #6: Notificações */
-        .notifications-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            width: 320px;
-            max-height: 400px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .notifications-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .notifications-header h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin: 0;
-            color: var(--text-primary);
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: 16px;
-        }
-
-        .notifications-list {
-            padding: 8px 0;
-        }
-
-        .notification-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            transition: background 0.2s;
-            cursor: pointer;
-            color: var(--text-primary);
-        }
-
-        .notification-item:hover {
-            background: var(--bg-tertiary);
-        }
-
-        .notification-item:last-child {
-            border-bottom: none;
-        }
-
-        .notification-icon {
-            display: inline-block;
-            width: 32px;
-            height: 32px;
-            background: #ede9fe;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            vertical-align: middle;
-            color: #667eea;
-        }
-
-        .notification-content {
-            display: inline-block;
-            vertical-align: middle;
-        }
-
-        .notification-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .notification-time {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-
-        /* FEATURE #7: Comparação com período anterior */
-        .comparison-content {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #1e40af;
-            font-weight: 600;
-        }
-
-        body.dark-mode .comparison-content {
-            color: #93c5fd;
-        }
-
-        .comparison-content i {
-            font-size: 18px;
-        }
-
-        /* FEATURE #8: Filtro por período */
-        .header-controls {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .period-select {
-            padding: 10px 14px;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 14px;
-            font-family: inherit;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-
-        .period-select:hover,
-        .period-select:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-
-        .chart-period {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .pro-metric-change {
-            font-size: 12px;
-            margin-top: 6px;
-            font-weight: 500;
-        }
-
-        .change-positive {
-            color: #10b981;
-        }
-
-        .change-negative {
-            color: #ef4444;
-        }
-
-        .pro-metric-label {
-            color: var(--text-secondary) !important;
-        }
-
-        .pro-metric-value {
-            color: var(--text-primary) !important;
-        }
-
-        @media (max-width: 768px) {
-            .header-controls {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .period-select {
-                width: 100%;
-            }
-
-            .notifications-dropdown {
-                width: 90vw;
-                right: auto;
-                left: 5vw;
-            }
-        }
-    </style>
-
     <script>
-        // ─── Variáveis globais ─────────────────────────────────────────
         let revenueChart = null;
         let appointmentsChart = null;
         let perfilCarregado = null;
         let periodoAtual = '7d';
         let todosAgendamentos = [];
 
-        // ─── FEATURE #6: Dark Mode ─────────────────────────────────────
-        function toggleDarkMode() {
+        // ─── DARK MODE ─────────────────────────────────────
+        function toggleTheme() {
             const isDark = document.body.classList.toggle('dark-mode');
             localStorage.setItem('darkMode', isDark ? 'true' : 'false');
-            const btn = document.getElementById('themeToogle');
+            const btn = document.querySelector('.theme-toggle');
             btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
             
-            // Atualizar gráficos com cores do novo tema
+            // Atualizar gráficos
             if (revenueChart) revenueChart.destroy();
             if (appointmentsChart) appointmentsChart.destroy();
             loadCharts();
@@ -691,103 +1024,12 @@
         function initDarkMode() {
             if (localStorage.getItem('darkMode') === 'true') {
                 document.body.classList.add('dark-mode');
-                document.getElementById('themeToogle').innerHTML = '<i class="fas fa-sun"></i>';
+                const btn = document.querySelector('.theme-toggle');
+                btn.innerHTML = '<i class="fas fa-sun"></i>';
             }
         }
 
-        // ─── FEATURE #5: Busca Global ──────────────────────────────────
-        document.getElementById('globalSearch').addEventListener('input', async (e) => {
-            const termo = e.target.value.toLowerCase().trim();
-            const resultsDiv = document.getElementById('searchResults');
-
-            if (termo.length < 2) {
-                resultsDiv.style.display = 'none';
-                return;
-            }
-
-            try {
-                const [clientes, agendamentos] = await Promise.all([
-                    DB.clientes.listar(),
-                    DB.agendamentos.listar()
-                ]);
-
-                const clientesEncontrados = (clientes || [])
-                    .filter(c => c.nome.toLowerCase().includes(termo))
-                    .slice(0, 5);
-
-                const agendamentosEncontrados = (agendamentos || [])
-                    .filter(a => a.cliente?.nome.toLowerCase().includes(termo))
-                    .slice(0, 5);
-
-                const todosResultados = [
-                    ...clientesEncontrados.map(c => ({
-                        tipo: 'cliente',
-                        id: c.id,
-                        titulo: c.nome,
-                        subtitulo: `${c.telefone || '—'} | ${c.email || '—'}`
-                    })),
-                    ...agendamentosEncontrados.map(a => ({
-                        tipo: 'agendamento',
-                        id: a.id,
-                        titulo: `${a.cliente?.nome || '—'} - ${a.servico?.nome || '—'}`,
-                        subtitulo: `${a.data} às ${a.hora}`
-                    }))
-                ];
-
-                if (todosResultados.length === 0) {
-                    resultsDiv.innerHTML = '<div class="search-result-item" style="text-align: center; color: #999;">Nenhum resultado encontrado</div>';
-                } else {
-                    resultsDiv.innerHTML = todosResultados.map(r => `
-                        <div class="search-result-item" onclick="selecionarResultado('${r.tipo}', '${r.id}')">
-                            <div class="search-result-title">${r.titulo}</div>
-                            <div class="search-result-subtitle">${r.subtitulo}</div>
-                        </div>
-                    `).join('');
-                }
-
-                resultsDiv.style.display = 'block';
-            } catch (error) {
-                console.error('Erro na busca:', error);
-            }
-        });
-
-        function selecionarResultado(tipo, id) {
-            console.log(`Selecionado: ${tipo} - ${id}`);
-            document.getElementById('globalSearch').value = '';
-            document.getElementById('searchResults').style.display = 'none';
-            // TODO: Navegar para página de detalhes ou abrir modal de edição
-        }
-
-        // ─── FEATURE #6: Notificações ──────────────────────────────────
-        function toggleNotificacoes() {
-            const dropdown = document.getElementById('notificacoesDropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function adicionarNotificacao(titulo, descricao, tipo = 'info') {
-            const notificacoesList = document.getElementById('notificacoesList');
-            const badge = document.getElementById('notificacoesBadge');
-
-            const item = document.createElement('div');
-            item.className = 'notification-item';
-            item.innerHTML = `
-                <span class="notification-icon"><i class="fas fa-${tipo === 'sucesso' ? 'check' : 'info'}-circle"></i></span>
-                <div class="notification-content">
-                    <div class="notification-title">${titulo}</div>
-                    <div class="notification-time">${descricao}</div>
-                </div>
-            `;
-
-            if (notificacoesList.querySelector('p')) {
-                notificacoesList.innerHTML = '';
-            }
-
-            notificacoesList.insertBefore(item, notificacoesList.firstChild);
-            badge.style.display = 'block';
-            badge.textContent = Math.min(parseInt(badge.textContent || 0) + 1, 99);
-        }
-
-        // ─── FEATURE #8: Filtro por período ────────────────────────────
+        // ─── FILTRO POR PERÍODO ────────────────────────────
         async function atualizarPeriodo() {
             periodoAtual = document.getElementById('periodoFiltro').value;
             const labels = {
@@ -804,74 +1046,16 @@
             await calcularComparacao();
         }
 
-        // ─── Calcular Comparação ───────────────────────────────────────
-        async function calcularComparacao() {
-            try {
-                const hoje = new Date();
-                let dataInicio, dataFim, dataInicioAnterior, dataFimAnterior;
-
-                if (periodoAtual === '7d') {
-                    dataFim = hoje;
-                    dataInicio = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
-                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 7 * 24 * 60 * 60 * 1000);
-                } else if (periodoAtual === '30d') {
-                    dataFim = hoje;
-                    dataInicio = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
-                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 30 * 24 * 60 * 60 * 1000);
-                } else {
-                    return; // Simplificar para outros períodos
-                }
-
-                // Filtrar agendamentos por período
-                const filtrarPorData = (agendamentos, inicio, fim) => {
-                    return (agendamentos || []).filter(a => {
-                        const data = new Date(a.data);
-                        return data >= inicio && data <= fim;
-                    });
-                };
-
-                const agendamentosAtual = filtrarPorData(todosAgendamentos, dataInicio, dataFim);
-                const agendamentosAnterior = filtrarPorData(todosAgendamentos, dataInicioAnterior, dataFimAnterior);
-
-                const receitaAtual = agendamentosAtual.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-                const receitaAnterior = agendamentosAnterior.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-
-                const variacao = receitaAnterior > 0 ? ((receitaAtual - receitaAnterior) / receitaAnterior * 100) : 0;
-                const sinal = variacao >= 0 ? '↑' : '↓';
-                const cor = variacao >= 0 ? '#10b981' : '#ef4444';
-
-                const card = document.getElementById('comparisonCard');
-                card.style.display = 'flex';
-                document.getElementById('comparisonText').innerHTML = 
-                    `<strong>${sinal}</strong> Receita <strong style="color: ${cor}">${Math.abs(variacao).toFixed(1)}%</strong> comparado ao período anterior`;
-
-            } catch (error) {
-                console.error('Erro ao calcular comparação:', error);
-            }
-        }
-
-        // ─── Modal helpers ─────────────────────────────────────────────
+        // ─── MODAL HELPERS ─────────────────────────────────
         function abrirModalAgendamento() {
-            document.getElementById('newAppointmentModal').style.display = 'flex';
+            document.getElementById('newAppointmentModal').classList.add('active');
         }
         
         function fecharModalAgendamento() {
-            document.getElementById('newAppointmentModal').style.display = 'none';
+            document.getElementById('newAppointmentModal').classList.remove('active');
         }
 
-        // Fechar dropdown ao clicar fora
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.pro-search') && document.getElementById('searchResults').style.display !== 'none') {
-                document.getElementById('searchResults').style.display = 'none';
-            }
-            if (!e.target.closest('.notifications-btn') && !e.target.closest('.notifications-dropdown')) {
-                document.getElementById('notificacoesDropdown').style.display = 'none';
-            }
-        });
-
-        // ─── Carregar info do usuário na sidebar ────────────────────────
+        // ─── CARREGAR PERFIL ───────────────────────────────
         window.addEventListener('perfilCarregado', async (e) => {
             const perfil = e.detail;
             if (!perfil) return;
@@ -895,12 +1079,11 @@
             document.getElementById('userAvatar').textContent = primeiraLetra;
             document.getElementById('userName').textContent = perfil.nome_empresa || perfil.nome || perfil.email;
             document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
-            document.getElementById('tenantName').textContent = perfil.nome_empresa || perfil.nome || 'Meu Estabelecimento';
 
             await loadDashboard();
         });
 
-        // ─── Carregar Dashboard ────────────────────────────────────────
+        // ─── CARREGAR DASHBOARD ────────────────────────────
         async function loadDashboard() {
             try {
                 console.log('📊 [Dashboard] Carregando dados...');
@@ -941,13 +1124,11 @@
             }
         }
 
-        // ─── Gráficos ──────────────────────────────────────────────────
+        // ─── GRÁFICOS ──────────────────────────────────────
         async function loadCharts() {
             try {
                 const hoje = new Date();
                 let dias = [];
-                let diasLabel = '';
-                const isDarkMode = document.body.classList.contains('dark-mode');
 
                 if (periodoAtual === '7d') {
                     for (let i = 6; i >= 0; i--) {
@@ -955,21 +1136,18 @@
                         d.setDate(d.getDate() - i);
                         dias.push(d.toISOString().split('T')[0]);
                     }
-                    diasLabel = 'Últimos 7 dias';
                 } else if (periodoAtual === '14d') {
                     for (let i = 13; i >= 0; i--) {
                         const d = new Date();
                         d.setDate(d.getDate() - i);
                         dias.push(d.toISOString().split('T')[0]);
                     }
-                    diasLabel = 'Últimas 2 semanas';
                 } else if (periodoAtual === '30d') {
                     for (let i = 29; i >= 0; i--) {
                         const d = new Date();
                         d.setDate(d.getDate() - i);
                         dias.push(d.toISOString().split('T')[0]);
                     }
-                    diasLabel = 'Últimos 30 dias';
                 }
 
                 const resultados = await Promise.all(
@@ -989,12 +1167,10 @@
 
                 const temDados = valores.some(v => v > 0) || quantidades.some(q => q > 0);
 
-                // Cores dinâmicas baseadas no tema
-                const lineColor = isDarkMode ? '#818cf8' : '#6366F1';
-                const backgroundColor = isDarkMode ? 'rgba(129, 140, 248, 0.1)' : 'rgba(99, 102, 241, 0.1)';
-                const barColor = isDarkMode ? '#34d399' : '#10B981';
-                const textColor = isDarkMode ? '#f9fafb' : '#1f2937';
-                const gridColor = isDarkMode ? '#4a5568' : '#e5e7eb';
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                const lineColor = isDarkMode ? '#818cf8' : '#6366f1';
+                const textColor = isDarkMode ? '#f1f5f9' : '#1f2937';
+                const gridColor = isDarkMode ? '#334155' : '#e5e7eb';
 
                 if (!temDados) {
                     document.getElementById('revenueChartContainer').innerHTML = 
@@ -1013,33 +1189,22 @@
                             label: 'Faturamento (R$)',
                             data: valores,
                             borderColor: lineColor,
-                            backgroundColor: backgroundColor,
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
                             tension: 0.4,
                             fill: true,
                             pointRadius: 4,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: lineColor
+                            pointHoverRadius: 6
                         }]
                     },
                     options: { 
                         responsive: true, 
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { 
-                                display: true, 
-                                position: 'top',
-                                labels: { color: textColor }
-                            }
+                            legend: { display: true, position: 'top', labels: { color: textColor } }
                         },
                         scales: {
-                            y: {
-                                ticks: { color: textColor },
-                                grid: { color: gridColor }
-                            },
-                            x: {
-                                ticks: { color: textColor },
-                                grid: { color: gridColor }
-                            }
+                            y: { ticks: { color: textColor }, grid: { color: gridColor } },
+                            x: { ticks: { color: textColor }, grid: { color: gridColor } }
                         }
                     }
                 });
@@ -1052,7 +1217,7 @@
                         datasets: [{
                             label: 'Agendamentos',
                             data: quantidades,
-                            backgroundColor: barColor,
+                            backgroundColor: '#10b981',
                             borderRadius: 6,
                             borderSkipped: false
                         }]
@@ -1061,21 +1226,11 @@
                         responsive: true, 
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { 
-                                display: true, 
-                                position: 'top',
-                                labels: { color: textColor }
-                            }
+                            legend: { display: true, position: 'top', labels: { color: textColor } }
                         },
                         scales: {
-                            y: {
-                                ticks: { color: textColor },
-                                grid: { color: gridColor }
-                            },
-                            x: {
-                                ticks: { color: textColor },
-                                grid: { color: gridColor }
-                            }
+                            y: { ticks: { color: textColor }, grid: { color: gridColor } },
+                            x: { ticks: { color: textColor }, grid: { color: gridColor } }
                         }
                     }
                 });
@@ -1085,7 +1240,7 @@
             }
         }
 
-        // ─── Próximos Agendamentos ─────────────────────────────────────
+        // ─── PRÓXIMOS AGENDAMENTOS ─────────────────────────
         async function loadUpcomingAppointments() {
             try {
                 const hoje = new Date().toISOString().split('T')[0];
@@ -1110,16 +1265,16 @@
                 }
 
                 const statusColors = {
-                    agendado: 'primary',
-                    confirmado: 'info',
-                    em_atendimento: 'warning',
-                    concluido: 'success',
-                    cancelado: 'error'
+                    agendado: 'pro-badge-primary',
+                    confirmado: 'pro-badge-primary',
+                    em_atendimento: 'pro-badge-warning',
+                    concluido: 'pro-badge-success',
+                    cancelado: 'pro-badge-error'
                 };
 
                 tbody.innerHTML = proximosAgendamentos.map(apt => {
                     const dataHora = apt.data && apt.hora ? `${apt.data} às ${apt.hora}` : '—';
-                    const statusColor = statusColors[apt.status] || 'primary';
+                    const statusColor = statusColors[apt.status] || 'pro-badge-primary';
                     
                     return `
                         <tr>
@@ -1128,7 +1283,7 @@
                             <td>${apt.profissional?.nome || '—'}</td>
                             <td>${dataHora}</td>
                             <td>
-                                <span class="pro-badge pro-badge-${statusColor}">
+                                <span class="pro-badge ${statusColor}">
                                     ${apt.status || '—'}
                                 </span>
                             </td>
@@ -1148,7 +1303,7 @@
             }
         }
 
-        // ─── Opções do Formulário ──────────────────────────────────────
+        // ─── OPÇÕES DO FORMULÁRIO ──────────────────────────
         async function loadFormOptions() {
             try {
                 const [clientes, servicos, profissionais] = await Promise.all([
@@ -1176,7 +1331,54 @@
             }
         }
 
-        // ─── Salvar Agendamento ────────────────────────────────────────
+        // ─── CALCULAR COMPARAÇÃO ───────────────────────────
+        async function calcularComparacao() {
+            try {
+                const hoje = new Date();
+                let dataInicio, dataFim, dataInicioAnterior, dataFimAnterior;
+
+                if (periodoAtual === '7d') {
+                    dataFim = hoje;
+                    dataInicio = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
+                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 7 * 24 * 60 * 60 * 1000);
+                } else if (periodoAtual === '30d') {
+                    dataFim = hoje;
+                    dataInicio = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
+                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 30 * 24 * 60 * 60 * 1000);
+                } else {
+                    return;
+                }
+
+                const filtrarPorData = (agendamentos, inicio, fim) => {
+                    return (agendamentos || []).filter(a => {
+                        const data = new Date(a.data);
+                        return data >= inicio && data <= fim;
+                    });
+                };
+
+                const agendamentosAtual = filtrarPorData(todosAgendamentos, dataInicio, dataFim);
+                const agendamentosAnterior = filtrarPorData(todosAgendamentos, dataInicioAnterior, dataFimAnterior);
+
+                const receitaAtual = agendamentosAtual.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+                const receitaAnterior = agendamentosAnterior.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+
+                const variacao = receitaAnterior > 0 ? ((receitaAtual - receitaAnterior) / receitaAnterior * 100) : 0;
+                const sinal = variacao >= 0 ? '↑' : '↓';
+                const cor = variacao >= 0 ? '#10b981' : '#ef4444';
+
+                const card = document.getElementById('comparisonCard');
+                card.style.display = 'flex';
+                document.getElementById('comparisonText').innerHTML = 
+                    `<strong>${sinal}</strong> Receita <strong style="color: ${cor}">${Math.abs(variacao).toFixed(1)}%</strong> comparado ao período anterior`;
+
+            } catch (error) {
+                console.error('Erro ao calcular comparação:', error);
+            }
+        }
+
+        // ─── SALVAR AGENDAMENTO ────────────────────────────
         async function saveAppointment(e) {
             e.preventDefault();
             try {
@@ -1197,7 +1399,7 @@
                 const resultado = await DB.agendamentos.criar(dados);
 
                 if (resultado.success || resultado.data) {
-                    adicionarNotificacao('✓ Sucesso', 'Agendamento criado com sucesso!', 'sucesso');
+                    alert('✅ Agendamento criado com sucesso!');
                     fecharModalAgendamento();
                     document.getElementById('appointmentForm').reset();
                     await loadDashboard();
@@ -1210,13 +1412,13 @@
             }
         }
 
-        // ─── Editar Agendamento ────────────────────────────────────────
+        // ─── EDITAR AGENDAMENTO ────────────────────────────
         function editarAgendamento(id) {
             console.log('✏️ [Dashboard] Editando agendamento:', id);
             // TODO: Implementar edição
         }
 
-        // ─── Logout ────────────────────────────────────────────────────
+        // ─── LOGOUT ────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 console.log('🚪 [Dashboard] Saindo...');
@@ -1224,7 +1426,28 @@
             }
         }
 
-        // ─── Inicializar ───────────────────────────────────────────────
+        // ─── Sidebar Footer ────────────────────────────────
+        const sidebarFooter = document.querySelector('.pro-sidebar-footer');
+        if (!sidebarFooter) {
+            const sidebar = document.querySelector('.pro-sidebar');
+            const footer = document.createElement('div');
+            footer.className = 'pro-sidebar-footer';
+            footer.innerHTML = `
+                <div class="pro-user-profile">
+                    <div class="pro-user-avatar" id="userAvatar">A</div>
+                    <div class="pro-user-info">
+                        <div class="pro-user-name" id="userName">Carregando...</div>
+                        <div class="pro-user-role" id="userRole">...</div>
+                    </div>
+                    <button class="pro-user-logout" onclick="logout()" title="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            `;
+            sidebar.appendChild(footer);
+        }
+
+        // ─── Inicializar ───────────────────────────────────
         initDarkMode();
         console.log('🚀 [Dashboard] Página carregada');
     </script>
