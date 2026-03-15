@@ -260,6 +260,12 @@
         .schedule-slot.booked {
             color: white;
             font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .schedule-slot.booked:hover {
+            transform: scale(1.05);
         }
 
         .slot-content {
@@ -291,7 +297,7 @@
         .slot-prof-2 { background-color: #818cf8; }
         .slot-prof-3 { background-color: #a855f7; }
 
-        /* MODAL */
+        /* MODAL - NOVO AGENDAMENTO */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -392,11 +398,90 @@
             box-shadow: 0 0 0 3px var(--primary-light);
         }
 
+        .form-field input:disabled {
+            background: var(--bg-main);
+            cursor: not-allowed;
+        }
+
         .form-actions {
             display: flex;
             gap: 1rem;
             justify-content: flex-end;
             margin-top: 2rem;
+        }
+
+        /* MODAL - VISUALIZAR AGENDAMENTO */
+        .modal-info-group {
+            background: var(--bg-main);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+        }
+
+        .modal-info-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .modal-info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .modal-info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .modal-info-value {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .modal-status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .modal-status-badge.confirmado {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .modal-status-badge.cancelado {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .modal-status-badge.finalizado {
+            background: #dbeafe;
+            color: #0c4a6e;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .modal-actions.full {
+            grid-template-columns: 1fr;
         }
 
         .empty-state {
@@ -412,6 +497,58 @@
         .empty-state i {
             font-size: 3rem;
             opacity: 0.4;
+        }
+
+        /* MODAL - FINALIZAR AGENDAMENTO */
+        .payment-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .payment-option {
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--transition-fast);
+        }
+
+        .payment-option:hover {
+            border-color: var(--primary);
+            background: var(--bg-main);
+        }
+
+        .payment-option input[type="radio"] {
+            display: none;
+        }
+
+        .payment-option input[type="radio"]:checked + label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .payment-option input[type="radio"]:checked ~ .payment-option {
+            border-color: var(--primary);
+        }
+
+        .payment-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .payment-option i {
+            font-size: 1.5rem;
+        }
+
+        .form-field.full {
+            grid-column: 1 / -1;
         }
     </style>
 </head>
@@ -512,7 +649,7 @@
         </main>
     </div>
 
-    <!-- MODAL -->
+    <!-- MODAL - NOVO AGENDAMENTO -->
     <div class="modal-overlay" id="appointmentModal">
         <div class="modal-box">
             <div class="modal-header">
@@ -562,6 +699,186 @@
         </div>
     </div>
 
+    <!-- MODAL - VISUALIZAR AGENDAMENTO -->
+    <div class="modal-overlay" id="viewAppointmentModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Detalhes do Agendamento</h2>
+                <button class="modal-close" onclick="closeViewModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 0 2rem;">
+                <div class="modal-info-group">
+                    <div class="modal-info-row">
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Profissional</span>
+                            <span class="modal-info-value" id="viewProfName">-</span>
+                        </div>
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Cliente</span>
+                            <span class="modal-info-value" id="viewClientName">-</span>
+                        </div>
+                    </div>
+                    <div class="modal-info-row">
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Data</span>
+                            <span class="modal-info-value" id="viewDate">-</span>
+                        </div>
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Horário</span>
+                            <span class="modal-info-value" id="viewTime">-</span>
+                        </div>
+                    </div>
+                    <div class="modal-info-row">
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Serviço</span>
+                            <span class="modal-info-value" id="viewService">-</span>
+                        </div>
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Valor</span>
+                            <span class="modal-info-value" id="viewValue">-</span>
+                        </div>
+                    </div>
+                    <div class="modal-info-row">
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Status</span>
+                            <span class="modal-info-value" id="viewStatus">-</span>
+                        </div>
+                        <div class="modal-info-item">
+                            <span class="modal-info-label">Observações</span>
+                            <span class="modal-info-value" id="viewNotes">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions" id="viewActions">
+                    <button type="button" class="pro-btn pro-btn-primary" onclick="openEditModal()">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button type="button" class="pro-btn pro-btn-danger" onclick="cancelAppointment()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="pro-btn pro-btn-success" onclick="openFinalizeModal()">
+                        <i class="fas fa-check"></i> Finalizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL - EDITAR AGENDAMENTO -->
+    <div class="modal-overlay" id="editAppointmentModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Editar Agendamento</h2>
+                <button class="modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 0 2rem;">
+                <form id="editAppointmentForm" onsubmit="updateAppointment(event)">
+                    <div class="form-field">
+                        <label>Profissional</label>
+                        <input type="text" id="editProfName" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Data</label>
+                        <input type="text" id="editDate" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Horário</label>
+                        <input type="text" id="editTime" disabled>
+                    </div>
+                    <div class="form-field">
+                        <label>Cliente</label>
+                        <select id="editClientSelect" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Serviço</label>
+                        <select id="editServiceSelect" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Valor (R$)</label>
+                        <input type="number" id="editValueField" min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>Observações</label>
+                        <textarea id="editNotesField" rows="3" placeholder="Digite observações..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="pro-btn pro-btn-secondary" onclick="closeEditModal()">Cancelar</button>
+                        <button type="submit" class="pro-btn pro-btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL - FINALIZAR AGENDAMENTO -->
+    <div class="modal-overlay" id="finalizeAppointmentModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Finalizar Agendamento</h2>
+                <button class="modal-close" onclick="closeFinalizeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 0 2rem;">
+                <form id="finalizeForm" onsubmit="finalizeAppointment(event)">
+                    <div class="form-field">
+                        <label>Como foi o pagamento? *</label>
+                        <div class="payment-options">
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="dinheiro" required>
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>Dinheiro</span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="debito" required>
+                                <i class="fas fa-credit-card"></i>
+                                <span>Débito</span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="credito" required>
+                                <i class="fas fa-credit-card"></i>
+                                <span>Crédito</span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="paymentMethod" value="pix" required>
+                                <i class="fas fa-qrcode"></i>
+                                <span>PIX</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="modal-info-group">
+                        <div class="modal-info-row">
+                            <div class="modal-info-item">
+                                <span class="modal-info-label">Valor do Serviço</span>
+                                <span class="modal-info-value" id="finalizeServiceValue">R$ 0,00</span>
+                            </div>
+                            <div class="modal-info-item">
+                                <span class="modal-info-label">Comissão do Profissional</span>
+                                <span class="modal-info-value" id="finalizeProfCommission">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>Observações Finais</label>
+                        <textarea id="finalizeNotesField" rows="3" placeholder="Adicione observações sobre o atendimento..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="pro-btn pro-btn-secondary" onclick="closeFinalizeModal()">Cancelar</button>
+                        <button type="submit" class="pro-btn pro-btn-success">
+                            <i class="fas fa-check"></i> Confirmar Finalização
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
@@ -578,6 +895,7 @@
         let allClients = [];
         let allServices = [];
         let modalState = { profId: null, profName: null, date: null, time: null };
+        let viewingAppointment = null;
 
         const COLORS = {
             0: { bg: 'bg-prof-1', badge: 'badge-prof-1', slot: 'slot-prof-1' },
@@ -610,6 +928,7 @@
                 });
 
                 populateSelects();
+                populateEditSelects();
                 renderCalendar();
                 renderSchedule();
             } catch (error) {
@@ -648,6 +967,34 @@
             }
 
             console.log('✅ Selects populados');
+        }
+
+        function populateEditSelects() {
+            const clientSelect = document.getElementById('editClientSelect');
+            const serviceSelect = document.getElementById('editServiceSelect');
+
+            if (!clientSelect || !serviceSelect) return;
+
+            clientSelect.innerHTML = '<option value="">Selecione...</option>';
+            serviceSelect.innerHTML = '<option value="">Selecione...</option>';
+
+            if (allClients && allClients.length > 0) {
+                allClients.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.nome;
+                    clientSelect.appendChild(opt);
+                });
+            }
+
+            if (allServices && allServices.length > 0) {
+                allServices.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.nome;
+                    serviceSelect.appendChild(opt);
+                });
+            }
         }
 
         function renderCalendar() {
@@ -707,7 +1054,6 @@
                 allAppointments = await DB.agendamentos.listarPorData(dateStr);
 
                 console.log('✅ Agendamentos carregados:', allAppointments.length);
-                console.log('Agendamentos:', allAppointments);
 
                 const container = document.getElementById('scheduleContainer');
                 const dateLabel = selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
@@ -737,7 +1083,6 @@
                     
                     allProfessionals.forEach((prof, idx) => {
                         const color = COLORS[idx % 3];
-                        // Comparar apenas os 5 primeiros caracteres (HH:MM)
                         const apt = allAppointments.find(a => 
                             a.profissional_id === prof.id && 
                             a.hora.substring(0, 5) === time
@@ -746,7 +1091,7 @@
                         if (apt) {
                             const clientName = apt.cliente?.nome || 'Cliente';
                             const serviceName = apt.servico?.nome || 'Serviço';
-                            html += `<div class="schedule-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></div>`;
+                            html += `<div class="schedule-slot booked ${color.slot}" onclick="viewAppointment('${apt.id}')"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></div>`;
                         } else {
                             html += `<div class="schedule-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')">Disponível</div>`;
                         }
@@ -812,7 +1157,7 @@
                     cliente_id: clientId,
                     servico_id: serviceId,
                     data: modalState.date,
-                    hora: modalState.time,
+                    hora: modalState.time + ':00',
                     valor: value,
                     observacoes: notes,
                     status: 'confirmado'
@@ -831,8 +1176,197 @@
             }
         }
 
-        function editAppointment(id) {
-            alert('Funcionalidade em desenvolvimento');
+        async function viewAppointment(aptId) {
+            try {
+                viewingAppointment = allAppointments.find(a => a.id === aptId);
+                
+                if (!viewingAppointment) {
+                    console.error('❌ Agendamento não encontrado');
+                    return;
+                }
+
+                console.log('👁️ Visualizando agendamento:', viewingAppointment);
+
+                // Preencher informações
+                document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
+                document.getElementById('viewClientName').textContent = viewingAppointment.cliente?.nome || '-';
+                document.getElementById('viewDate').textContent = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
+                document.getElementById('viewTime').textContent = viewingAppointment.hora.substring(0, 5);
+                document.getElementById('viewService').textContent = viewingAppointment.servico?.nome || '-';
+                document.getElementById('viewValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
+                document.getElementById('viewNotes').textContent = viewingAppointment.observacoes || '-';
+
+                const statusBadge = document.getElementById('viewStatus');
+                statusBadge.innerHTML = `<span class="modal-status-badge ${viewingAppointment.status}">${viewingAppointment.status.charAt(0).toUpperCase() + viewingAppointment.status.slice(1)}</span>`;
+
+                // Mostrar/ocultar ações conforme status
+                const actions = document.getElementById('viewActions');
+                if (viewingAppointment.status === 'finalizado') {
+                    actions.className = 'modal-actions full';
+                    actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
+                } else if (viewingAppointment.status === 'cancelado') {
+                    actions.className = 'modal-actions full';
+                    actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
+                } else {
+                    actions.className = 'modal-actions';
+                    actions.innerHTML = `
+                        <button type="button" class="pro-btn pro-btn-primary" onclick="openEditModal()">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button type="button" class="pro-btn pro-btn-danger" onclick="cancelAppointment()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="button" class="pro-btn pro-btn-success" onclick="openFinalizeModal()">
+                            <i class="fas fa-check"></i> Finalizar
+                        </button>
+                    `;
+                }
+
+                document.getElementById('viewAppointmentModal').classList.add('active');
+            } catch (error) {
+                console.error('❌ Erro ao visualizar agendamento:', error);
+            }
+        }
+
+        function closeViewModal() {
+            document.getElementById('viewAppointmentModal').classList.remove('active');
+            viewingAppointment = null;
+        }
+
+        function openEditModal() {
+            if (!viewingAppointment) return;
+
+            document.getElementById('editProfName').value = viewingAppointment.profissional?.nome || '';
+            document.getElementById('editDate').value = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
+            document.getElementById('editTime').value = viewingAppointment.hora.substring(0, 5);
+            document.getElementById('editClientSelect').value = viewingAppointment.cliente_id;
+            document.getElementById('editServiceSelect').value = viewingAppointment.servico_id;
+            document.getElementById('editValueField').value = viewingAppointment.valor;
+            document.getElementById('editNotesField').value = viewingAppointment.observacoes || '';
+
+            closeViewModal();
+            document.getElementById('editAppointmentModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editAppointmentModal').classList.remove('active');
+            document.getElementById('editAppointmentForm').reset();
+        }
+
+        async function updateAppointment(e) {
+            e.preventDefault();
+
+            if (!viewingAppointment) return;
+
+            const clientId = document.getElementById('editClientSelect').value;
+            const serviceId = document.getElementById('editServiceSelect').value;
+            const value = parseFloat(document.getElementById('editValueField').value) || 0;
+            const notes = document.getElementById('editNotesField').value;
+
+            try {
+                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
+                    cliente_id: clientId,
+                    servico_id: serviceId,
+                    valor: value,
+                    observacoes: notes
+                });
+
+                if (result.success || result.data) {
+                    closeEditModal();
+                    renderSchedule();
+                    console.log('✅ Agendamento atualizado!');
+                } else {
+                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('❌ Erro ao atualizar:', error);
+                alert('Erro ao atualizar agendamento');
+            }
+        }
+
+        async function cancelAppointment() {
+            if (!viewingAppointment) return;
+
+            if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+
+            try {
+                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
+                    status: 'cancelado'
+                });
+
+                if (result.success || result.data) {
+                    closeViewModal();
+                    renderSchedule();
+                    console.log('✅ Agendamento cancelado!');
+                } else {
+                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('❌ Erro ao cancelar:', error);
+                alert('Erro ao cancelar agendamento');
+            }
+        }
+
+        function openFinalizeModal() {
+            if (!viewingAppointment) return;
+
+            // Calcular comissão
+            const serviceValue = parseFloat(viewingAppointment.valor) || 0;
+            const commissionPercent = viewingAppointment.profissional?.comissao_percentual || 0;
+            const commission = (serviceValue * commissionPercent) / 100;
+
+            document.getElementById('finalizeServiceValue').textContent = `R$ ${serviceValue.toFixed(2).replace('.', ',')}`;
+            document.getElementById('finalizeProfCommission').textContent = `R$ ${commission.toFixed(2).replace('.', ',')}`;
+            document.getElementById('finalizeNotesField').value = '';
+            document.getElementById('finalizeForm').reset();
+
+            closeViewModal();
+            document.getElementById('finalizeAppointmentModal').classList.add('active');
+        }
+
+        function closeFinalizeModal() {
+            document.getElementById('finalizeAppointmentModal').classList.remove('active');
+            document.getElementById('finalizeForm').reset();
+        }
+
+        async function finalizeAppointment(e) {
+            e.preventDefault();
+
+            if (!viewingAppointment) return;
+
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+            const notes = document.getElementById('finalizeNotesField').value;
+
+            if (!paymentMethod) {
+                alert('Selecione uma forma de pagamento');
+                return;
+            }
+
+            try {
+                // Calcular comissão
+                const serviceValue = parseFloat(viewingAppointment.valor) || 0;
+                const commissionPercent = viewingAppointment.profissional?.comissao_percentual || 0;
+                const commission = (serviceValue * commissionPercent) / 100;
+
+                // Atualizar agendamento
+                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
+                    status: 'finalizado',
+                    observacoes: notes,
+                    forma_pagamento: paymentMethod,
+                    comissao_profissional: commission
+                });
+
+                if (result.success || result.data) {
+                    closeFinalizeModal();
+                    renderSchedule();
+                    console.log('✅ Agendamento finalizado!');
+                } else {
+                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('❌ Erro ao finalizar:', error);
+                alert('Erro ao finalizar agendamento');
+            }
         }
 
         async function logout() {
