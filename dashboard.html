@@ -357,12 +357,12 @@
         }
 
         body.dark-mode {
-            --bg-primary: #1f2937;
-            --bg-secondary: #111827;
+            --bg-primary: #2d3748;
+            --bg-secondary: #1a202c;
             --bg-tertiary: #374151;
             --text-primary: #f9fafb;
-            --text-secondary: #d1d5db;
-            --border-color: #4b5563;
+            --text-secondary: #e2e8f0;
+            --border-color: #4a5568;
         }
 
         .badge {
@@ -407,15 +407,22 @@
         .pro-card {
             background: var(--bg-primary) !important;
             border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
         }
 
         .pro-metric-card {
             background: var(--bg-primary) !important;
             border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
         }
 
         .pro-card-header {
             border-bottom-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .pro-card-title {
+            color: var(--text-primary) !important;
         }
 
         .pro-table thead {
@@ -430,6 +437,10 @@
 
         .pro-table tbody tr:hover {
             background: var(--bg-tertiary) !important;
+        }
+
+        .pro-table th {
+            color: var(--text-primary) !important;
         }
 
         .pro-comparison-card {
@@ -628,6 +639,14 @@
 
         .change-negative {
             color: #ef4444;
+        }
+
+        .pro-metric-label {
+            color: var(--text-secondary) !important;
+        }
+
+        .pro-metric-value {
+            color: var(--text-primary) !important;
         }
 
         @media (max-width: 768px) {
@@ -975,7 +994,7 @@
                 const backgroundColor = isDarkMode ? 'rgba(129, 140, 248, 0.1)' : 'rgba(99, 102, 241, 0.1)';
                 const barColor = isDarkMode ? '#34d399' : '#10B981';
                 const textColor = isDarkMode ? '#f9fafb' : '#1f2937';
-                const gridColor = isDarkMode ? '#4b5563' : '#e5e7eb';
+                const gridColor = isDarkMode ? '#4a5568' : '#e5e7eb';
 
                 if (!temDados) {
                     document.getElementById('revenueChartContainer').innerHTML = 
@@ -1075,7 +1094,7 @@
                 const proximosAgendamentos = (agendamentos || [])
                     .filter(ag => ag.data && ag.data >= hoje)
                     .sort((a, b) => `${a.data}${a.hora || ''}`.localeCompare(`${b.data}${b.hora || ''}`))
-                    .slice(0, 10); // FEATURE #8: Mostra mais que 5
+                    .slice(0, 10);
 
                 const tbody = document.getElementById('upcomingAppointments');
 
