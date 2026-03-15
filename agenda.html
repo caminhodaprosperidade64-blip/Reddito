@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
 
-    <!-- ✅ QRCode.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- ✅ QRCode - VERSÃO CORRIGIDA (qrcode@1.5.3) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
     <style>
         .agenda-wrapper {
@@ -1396,7 +1396,6 @@
         function handleFinalize() {
             if (!viewingAppointment) return;
 
-            // ✅ VERIFICAÇÃO: Se não tiver valor, pede para preencher
             if (!viewingAppointment.valor || parseFloat(viewingAppointment.valor) <= 0) {
                 alert('⚠️ Este agendamento não tem valor configurado.\n\nClique em "Editar" para adicionar o valor antes de finalizar.');
                 return;
@@ -1557,18 +1556,19 @@
                 // Aguardar um pouco para o DOM atualizar
                 await new Promise(resolve => setTimeout(resolve, 150));
 
-                // Gerar QR Code com QRCode.js
+                // ✅ USAR QRCode.toCanvas() - GERA CANVAS EM VEZ DE TABLE
                 try {
-                    currentQRCode = new QRCode(container, {
-                        text: brcodeForQr,
+                    await QRCode.toCanvas(container, brcodeForQr, {
                         width: 280,
-                        height: 280,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.M
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        },
+                        errorCorrectionLevel: 'H'  // ✅ NÍVEL MÁXIMO DE CORREÇÃO
                     });
 
-                    console.log('✅ QR Code renderizado com sucesso!');
+                    console.log('✅ QR Code renderizado com sucesso (CANVAS)!');
                 } catch (qrError) {
                     console.error('❌ Erro ao criar QR Code:', qrError);
                     container.innerHTML = '<div style="color: red; text-align: center; padding: 20px;">Erro ao gerar QR Code</div>';
