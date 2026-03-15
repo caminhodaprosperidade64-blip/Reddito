@@ -427,33 +427,53 @@ const DB = {
         },
 
         async atualizar(id, dados) {
-            try {
-                const tenantId = await Auth.getTenantId();
-                const supabase = window.getSupabase();
-                const updateData = {};
-                if (dados.cliente_id) updateData.cliente_id = dados.cliente_id;
-                if (dados.servico_id) updateData.servico_id = dados.servico_id;
-                if (dados.profissional_id) updateData.profissional_id = dados.profissional_id;
-                if (dados.data) updateData.data = dados.data;
-                if (dados.hora) updateData.hora = dados.hora;
-                if (dados.valor) updateData.valor = parseFloat(dados.valor);
-                if (dados.status) updateData.status = dados.status;
-                const { data, error } = await supabase
-                    .from('agendamentos')
-                    .update(updateData)
-                    .eq('id', id)
-                    .eq('tenant_id', tenantId)
-                    .select()
-                    .single();
-                if (error) throw error;
-                console.log('✅ Agendamento atualizado:', data);
-                return { success: true, data };
-            } catch (error) {
-                console.error('❌ Erro ao atualizar agendamento:', error);
-                return { success: false, error: error.message };
-            }
-        },
+    try {
+        const tenantId = await Auth.getTenantId();
+        const supabase = window.getSupabase();
 
+        const updateData = {};
+
+        // NÃO usar "if (dados.campo)" porque isso ignora valores como 0.
+        if (dados.cliente_id !== undefined) updateData.cliente_id = dados.cliente_id;
+        if (dados.servico_id !== undefined) updateData.servico_id = dados.servico_id;
+        if (dados.profissional_id !== undefined) updateData.profissional_id = dados.profissional_id;
+        if (dados.data !== undefined) updateData.data = dados.data;
+        if (dados.hora !== undefined) updateData.hora = dados.hora;
+
+        if (dados.valor !== undefined) {
+            // Permite 0 e evita NaN quando vier string vazia
+            updateData.valor = (dados.valor === null || dados.valor === '' ? null : parseFloat(dados.valor));
+        }
+
+        if (dados.status !== undefined) updateData.status = dados.status;
+
+        // Já existe no seu banco (você confirmou):
+        if (dados.observacoes !== undefined) updateData.observacoes = dados.observacoes;
+
+        // Novos campos (após rodar o SQL no Supabase):
+        if (dados.forma_pagamento !== undefined) updateData.forma_pagamento = dados.forma_pagamento;
+        if (dados.status_pagamento !== undefined) updateData.status_pagamento = dados.status_pagamento;
+        if (dados.nsu !== undefined) updateData.nsu = dados.nsu;
+        if (dados.autorizacao !== undefined) updateData.autorizacao = dados.autorizacao;
+        if (dados.pago_em !== undefined) updateData.pago_em = dados.pago_em;
+
+        const { data, error } = await supabase
+            .from('agendamentos')
+            .update(updateData)
+            .eq('id', id)
+            .eq('tenant_id', tenantId)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        console.log('✅ Agendamento atualizado:', data);
+        return { success: true, data };
+    } catch (error) {
+        console.error('❌ Erro ao atualizar agendamento:', error);
+        return { success: false, error: error.message };
+    }
+}
         async excluir(id) {
             try {
                 const tenantId = await Auth.getTenantId();
