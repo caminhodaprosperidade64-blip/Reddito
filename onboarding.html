@@ -768,12 +768,19 @@
         const endereco = document.getElementById('endereco').value.trim();
         if (endereco) {
           try {
+            // Primeiro tenta deletar endereço anterior
+            await supabase
+              .from('enderecos')
+              .delete()
+              .eq('tenant_id', tenantId);
+
+            // Depois insere o novo
             const { error: enderecoError } = await supabase
               .from('enderecos')
-              .upsert({
+              .insert({
                 tenant_id: tenantId,
                 endereco_completo: endereco
-              }, { onConflict: 'tenant_id' });
+              });
 
             if (enderecoError) {
               console.warn('⚠️ [Onboarding] Erro ao salvar endereço:', enderecoError);
