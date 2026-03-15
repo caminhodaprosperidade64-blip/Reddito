@@ -1100,9 +1100,9 @@
                         const color = COLORS[idx % 3];
                         const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora.substring(0, 5) === time);
                         if (apt) {
-                            html += `<div class="schedule-slot booked ${color.slot}" onclick="viewAppointment('${apt.id}')"><div class="slot-content"><div class="slot-client">${apt.cliente?.nome}</div><div class="slot-service">${apt.servico?.nome}</div></div></div>`;
+                            html += `<div class="schedule-slot booked ${color.slot}" data-apt-id="${apt.id}"><div class="slot-content"><div class="slot-client">${apt.cliente?.nome}</div><div class="slot-service">${apt.servico?.nome}</div></div></div>`;
                         } else {
-                            html += `<div class="schedule-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')">Disponível</div>`;
+                            html += `<div class="schedule-slot empty ${color.bg}" data-prof-id="${prof.id}" data-prof-name="${prof.nome}" data-date="${dateStr}" data-time="${time}">Disponível</div>`;
                         }
                     });
                     html += '</div>';
@@ -1110,6 +1110,27 @@
 
                 html += '</div>';
                 container.innerHTML = html;
+
+                // Adicionar event listeners após renderizar
+                container.querySelectorAll('.schedule-slot.booked').forEach(slot => {
+                    slot.addEventListener('click', function() {
+                        const aptId = this.getAttribute('data-apt-id');
+                        console.log('Clicou em agendamento:', aptId);
+                        viewAppointment(aptId);
+                    });
+                });
+
+                container.querySelectorAll('.schedule-slot.empty').forEach(slot => {
+                    slot.addEventListener('click', function() {
+                        const profId = this.getAttribute('data-prof-id');
+                        const profName = this.getAttribute('data-prof-name');
+                        const dateStr = this.getAttribute('data-date');
+                        const time = this.getAttribute('data-time');
+                        console.log('Clicou em slot vazio:', profName, dateStr, time);
+                        openModal(profId, profName, dateStr, time);
+                    });
+                });
+
             } catch (error) {
                 console.error('Erro:', error);
             }
@@ -1197,6 +1218,19 @@
             if (viewingAppointment.status === 'finalizado' || viewingAppointment.status === 'cancelado') {
                 actions.className = 'modal-actions full';
                 actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
+            } else {
+                actions.className = 'modal-actions';
+                actions.innerHTML = `
+                    <button type="button" class="pro-btn pro-btn-primary" onclick="handleEdit()">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button type="button" class="pro-btn pro-btn-danger" onclick="handleCancel()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="pro-btn pro-btn-success" onclick="handleFinalize()">
+                        <i class="fas fa-check"></i> Finalizar
+                    </button>
+                `;
             }
 
             document.getElementById('viewAppointmentModal').classList.add('active');
