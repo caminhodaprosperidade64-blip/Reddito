@@ -1040,7 +1040,7 @@
         let modalState = { profId: null, profName: null, date: null, time: null };
         let viewingAppointment = null;
 
-        // ✅ NOVO: snapshot do agendamento que está sendo finalizado
+        // ✅ snapshot do agendamento que está sendo finalizado (evita null no change)
         let finalizingAppointment = null;
 
         // Configuração Pix (carregada do Supabase)
@@ -1435,20 +1435,18 @@
         function handleFinalize() {
             if (!viewingAppointment) return;
 
-            // ✅ salva snapshot do agendamento que está sendo finalizado
+            // ✅ snapshot do agendamento em finalização
             finalizingAppointment = viewingAppointment;
 
             document.getElementById('finalizeValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
             document.getElementById('finalizeNotesField').value = '';
             document.getElementById('finalizeForm').reset();
 
-            // limpa extras
             document.getElementById('pixExtra').classList.remove('active');
             document.getElementById('cardExtra').classList.remove('active');
             document.getElementById('pixCopiaCola').value = '';
             clearPixQr();
 
-            // limpar NSU/AUT
             document.getElementById('nsuField').value = '';
             document.getElementById('autField').value = '';
 
@@ -1467,7 +1465,6 @@
             document.getElementById('nsuField').value = '';
             document.getElementById('autField').value = '';
 
-            // ✅ limpa snapshot
             finalizingAppointment = null;
         }
 
@@ -1504,7 +1501,6 @@
 
         async function generatePixQrForCurrentAppointment() {
             try {
-                // ✅ usa o agendamento "snapshot"
                 const apt = finalizingAppointment;
                 if (!apt) return;
 
@@ -1516,25 +1512,25 @@
                 }
 
                 const valor = parseFloat(apt.valor || 0).toFixed(2);
-                const descricao = `Agendamento ${String(apt.id).slice(0, 8)}`;
+
+                // ✅ txid alfanumérico (até 25) mais compatível que "***"
+                const txid = normalizeTxid(`AGEND${String(apt.id).replace(/[^0-9A-Za-z]/g, '').slice(0, 12)}`);
 
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
                     nome: paymentConfig.pix_nome,
                     cidade: paymentConfig.pix_cidade,
                     valor: valor,
-                    descricao: descricao
+                    descricao: 'AGENDAMENTO',
+                    txid: txid
                 });
 
-                // ✅ agora o textarea sempre deve aparecer preenchido
                 document.getElementById('pixCopiaCola').value = brcode;
 
                 const container = document.getElementById('pixQr');
                 if (!container) return;
 
                 clearPixQr();
-
-                // espera um tico pro layout do modal estabilizar
                 await new Promise(r => setTimeout(r, 50));
 
                 new QRCode(container, {
@@ -1565,12 +1561,8 @@
         }
 
         // ==========================
-        // PIX EMV (copia e cola)
+        // PIX EMV (copia e cola) - ✅ CORRIGIDO para leitores de banco
         // ==========================
-        function onlyNumbers(value) {
-            return String(value || '').replace(/\D/g, '');
-        }
-
         function emv(id, value) {
             const v = String(value);
             return `${id}${String(v.length).padStart(2, '0')}${v}`;
@@ -1591,7 +1583,6 @@
         }
 
         function normalizeNomeCidade(str, maxLen) {
-            // remove acentos básicos e limita tamanho
             return String(str || '')
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                 .toUpperCase()
@@ -1600,24 +1591,38 @@
                 .slice(0, maxLen);
         }
 
-        function buildPixPayload({ chave, nome, cidade, valor, descricao }) {
+        function normalizeTxid(str, maxLen = 25) {
+            return String(str || '')
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, '')
+                .slice(0, maxLen);
+        }
+
+        // ✅ payload compatível com PIX ESTÁTICO (01=11)
+        function buildPixPayload({ chave, nome, cidade, valor, descricao, txid }) {
             const merchantName = normalizeNomeCidade(nome, 25);
             const merchantCity = normalizeNomeCidade(cidade, 15);
 
-            // GUI obrigatório
             const gui = emv('00', 'BR.GOV.BCB.PIX');
-
-            // Chave Pix
             const key = emv('01', String(chave).trim());
 
-            // Descrição (opcional)
             let desc = '';
-            if (descricao) desc = emv('02', String(descricao).trim().slice(0, 50));
+            if (descricao) {
+                const cleanDesc = String(descricao)
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^\w \-\.]/g, '')
+                    .trim()
+                    .slice(0, 50);
+                if (cleanDesc) desc = emv('02', cleanDesc);
+            }
 
             const merchantAccountInfo = emv('26', gui + key + desc);
 
             const payloadFormatIndicator = emv('00', '01');
-            const pointOfInitiationMethod = emv('01', '12');
+
+            // ✅ 11 = estático (mais aceito por bancos)
+            const pointOfInitiationMethod = emv('01', '11');
+
             const merchantCategoryCode = emv('52', '0000');
             const transactionCurrency = emv('53', '986');
             const transactionAmount = emv('54', String(valor));
@@ -1625,8 +1630,10 @@
             const mName = emv('59', merchantName);
             const mCity = emv('60', merchantCity);
 
-            const txid = emv('05', '***');
-            const additionalData = emv('62', txid);
+            // ✅ TXID alfanumérico
+            const txidValue = normalizeTxid(txid || 'AGENDAMENTO');
+            const txidField = emv('05', txidValue);
+            const additionalData = emv('62', txidField);
 
             const withoutCrc =
                 payloadFormatIndicator +
@@ -1647,8 +1654,6 @@
 
         async function finalizeAppointment(e) {
             e.preventDefault();
-
-            // ✅ usa snapshot aqui também (não depende de viewingAppointment)
             const apt = finalizingAppointment;
             if (!apt) return;
 
