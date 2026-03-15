@@ -411,11 +411,6 @@
         </div>
 
         <div class="form-group">
-          <label>Endereço Completo</label>
-          <input type="text" id="endereco" placeholder="Rua, número, bairro, cidade, estado" />
-        </div>
-
-        <div class="form-group">
           <label>Logotipo da Empresa (opcional)</label>
           <div class="logo-upload" id="logoUploadArea">
             <input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp" onchange="previewLogo(this)" />
@@ -726,6 +721,7 @@
         const nomeEmpresa = document.getElementById('nomeEmpresa').value.trim();
         const segmento = document.getElementById('segmento').value;
         const telefone = document.getElementById('telefone').value.trim();
+        const dataInicio = new Date().toISOString();
 
         const { error: tenantError } = await supabase
           .from('tenants')
@@ -735,10 +731,10 @@
             email_proprietario: userEmail,
             telefone,
             logo_url: logoUrl,
-            segmento,
+            segmento: segmento,
             plano: 'basico',
             status: 'ativo',
-            data_inicio: new Date().toISOString(),
+            data_inicio: dataInicio,
             dias_trial: 7
           }, { onConflict: 'id' });
 
@@ -754,8 +750,7 @@
             role: 'dono',
             nome: nomeEmpresa,
             email: userEmail,
-            nome_empresa: nomeEmpresa,
-            segmento,
+            segmento: segmento,
             telefone,
             logo_url: logoUrl,
             onboarding_completo: true
@@ -764,35 +759,7 @@
         if (perfilError) throw perfilError;
         console.log('✅ [Onboarding] Perfil atualizado');
 
-        // 4. Salvar endereço na tabela enderecos
-        const endereco = document.getElementById('endereco').value.trim();
-        if (endereco) {
-          try {
-            // Primeiro tenta deletar endereço anterior
-            await supabase
-              .from('enderecos')
-              .delete()
-              .eq('tenant_id', tenantId);
-
-            // Depois insere o novo
-            const { error: enderecoError } = await supabase
-              .from('enderecos')
-              .insert({
-                tenant_id: tenantId,
-                endereco_completo: endereco
-              });
-
-            if (enderecoError) {
-              console.warn('⚠️ [Onboarding] Erro ao salvar endereço:', enderecoError);
-            } else {
-              console.log('✅ [Onboarding] Endereço salvo');
-            }
-          } catch (enderecoErr) {
-            console.warn('⚠️ [Onboarding] Erro no bloco de endereço:', enderecoErr);
-          }
-        }
-
-        // 5. Salvar horários
+        // 4. Salvar horários
         try {
           const horarios = DIAS.map((_, i) => ({
             tenant_id: tenantId,
@@ -802,23 +769,21 @@
             hora_fim: document.getElementById(`fim-${i}`).value || '18:00'
           }));
 
-          // Deletar horários antigos
           const { error: deleteError } = await supabase
             .from('horarios_atendimento')
             .delete()
             .eq('tenant_id', tenantId);
 
           if (deleteError) {
-            console.warn('⚠️ [Onboarding] Erro ao deletar horários antigos (pode ser normal):', deleteError);
+            console.warn('⚠️ [Onboarding] Erro ao deletar horários antigos:', deleteError);
           }
 
-          // Inserir novos horários
           const { error: horariosError } = await supabase
             .from('horarios_atendimento')
             .insert(horarios);
 
           if (horariosError) {
-            console.warn('⚠️ [Onboarding] Erro ao salvar horários (continuando mesmo assim):', horariosError);
+            console.warn('⚠️ [Onboarding] Erro ao salvar horários:', horariosError);
           } else {
             console.log('✅ [Onboarding] Horários salvos');
           }
@@ -829,7 +794,6 @@
         mostrarSucesso('✨ Empresa configurada com sucesso!');
         console.log('✅ [Onboarding] Concluído com sucesso!');
         
-        // Redirecionar para dashboard após 2 segundos
         setTimeout(() => {
           window.location.href = 'dashboard.html';
         }, 2000);
