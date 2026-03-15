@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RedditoApp - IA que traz clientes de volta</title>
+    <title>RedditoApp - Sistema de Agendamento Inteligente</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -265,6 +265,21 @@
             font-weight: 800;
             text-align: center;
             margin-bottom: 60px;
+        }
+
+        .pricing-note {
+            text-align: center;
+            color: var(--color-text-light);
+            margin-bottom: 40px;
+            font-size: 16px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .pricing-note strong {
+            color: var(--color-primary);
         }
 
         .pricing-grid {
@@ -587,7 +602,7 @@
                 RedditoApp
             </a>
             <nav class="nav-links">
-                <a href="#features">Benefícios</a>
+                <a href="#features">Funcionalidades</a>
                 <a href="#planos">Planos</a>
                 <a href="#faq">FAQ</a>
                 <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
@@ -601,12 +616,12 @@
     <!-- HERO SECTION -->
     <section class="hero">
         <div class="hero-container">
-            <div class="hero-logo">📱</div>
-            <h1>IA que traz clientes de volta</h1>
-            <p>RedditoApp é a plataforma de IA que transforma agendamentos em relacionamento duradouro. Seu cliente agenda uma vez e nossos bots cuidam do resto: confirmação automática, follow-up inteligente, reativação proativa. Aumente suas receitas em até 40% – mais agendamentos = mais dinheiro. Você só gerencia o negócio, a IA gerencia o cliente.</p>
+            <div class="hero-logo">📊</div>
+            <h1>Seu negócio organizado e crescendo</h1>
+            <p>Reddito transforma o caos em organização. Seus clientes agendando sozinhos pelo WhatsApp. Dashboard mostrando tudo que importa em tempo real. Cada profissional vendo sua comissão calculada automaticamente. Relatórios que não dão dor de cabeça. É o jeito simples, automático e transparente de crescer seu negócio – barbearia, salão ou clínica.</p>
             <div class="hero-buttons">
                 <button class="btn-primary" onclick="window.location.href='onboarding.html'">
-                    <i class="fas fa-rocket"></i> Começar Teste Grátis (30 dias)
+                    <i class="fas fa-rocket"></i> Começar Teste Grátis
                 </button>
                 <button class="btn-secondary" onclick="document.getElementById('planos').scrollIntoView({behavior:'smooth'})">
                     <i class="fas fa-list"></i> Ver Planos
@@ -619,26 +634,66 @@
     <section id="features" class="features">
         <div class="feature">
             <div class="feature-icon">
-                <i class="fas fa-robot"></i>
+                <i class="fas fa-chart-line"></i>
             </div>
-            <h3>IA Inteligente</h3>
-            <p>Bots inteligentes conversam com seus clientes, confirmam agendamentos e resolvem dúvidas 24/7.</p>
+            <h3>Dashboard em Tempo Real</h3>
+            <p>Veja tudo que importa num só lugar. Agendamentos de hoje, faturamento do dia, desempenho dos profissionais – tudo atualizado em tempo real.</p>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <h3>Calendário Visual</h3>
+            <p>Calendário semanal com visualização por profissional. Agendamentos rápidos direto do calendário. Status atualizado (Pendente, Confirmado, Concluído, Cancelado).</p>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3>Gestão Completa de Clientes</h3>
+            <p>Histórico de atendimentos, quanto cada cliente gastou, último atendimento rastreado. Comunicação integrada pelo WhatsApp.</p>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">
+                <i class="fas fa-scissors"></i>
+            </div>
+            <h3>Catálogo de Serviços</h3>
+            <p>Crie seus serviços com preço, duração e descrição. Ative e desative conforme necessário. Seus clientes veem tudo no agendamento.</p>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <h3>Gestão de Profissionais</h3>
+            <p>Cadastre barbeiros, cabeleireiros, esteticistas. Configure comissão por profissional. Cada um vê seu desempenho em tempo real.</p>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <h3>Financeiro Automático</h3>
+            <p>Faturamento por período, fechamento diário, comissões calculadas automaticamente. Relatórios que você entende em 2 minutos.</p>
+        </div>
+
+        <div class="feature">
+            <div class="feature-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <h3>WhatsApp Integrado</h3>
+            <p>Clientes agendam direto pelo WhatsApp. Fluxo conversacional completo. Confirmação automática de agendamentos.</p>
         </div>
 
         <div class="feature">
             <div class="feature-icon">
                 <i class="fas fa-bell"></i>
             </div>
-            <h3>Lembretes Automáticos</h3>
-            <p>Confirmação no dia anterior, mensagem de agradecimento após atendimento, reativação proativa depois de 15 e 45 dias.</p>
-        </div>
-
-        <div class="feature">
-            <div class="feature-icon">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <h3>Aumente sua Receita</h3>
-            <p>Até 40% mais agendamentos com lembretes inteligentes e reativação automática de clientes inativos.</p>
+            <h3>Notificações Automáticas</h3>
+            <p>Seus clientes recebem confirmação, lembretes e agradecimentos automaticamente. Você não precisa fazer nada.</p>
         </div>
 
         <div class="feature">
@@ -646,86 +701,79 @@
                 <i class="fas fa-lock"></i>
             </div>
             <h3>100% Seguro</h3>
-            <p>Seus dados e dos seus clientes protegidos com criptografia de nível empresarial e conformidade LGPD.</p>
-        </div>
-
-        <div class="feature">
-            <div class="feature-icon">
-                <i class="fas fa-mobile-alt"></i>
-            </div>
-            <h3>Clientes Agendam Sozinhos</h3>
-            <p>Integração com WhatsApp, SMS e link de agendamento. Seu cliente não precisa ligar mais.</p>
-        </div>
-
-        <div class="feature">
-            <div class="feature-icon">
-                <i class="fas fa-headset"></i>
-            </div>
-            <h3>Suporte 24/7</h3>
-            <p>Equipe dedicada pronta para ajudar via WhatsApp, email ou chat. Sempre que você precisar.</p>
+            <p>Seus dados e dos seus clientes protegidos com criptografia de nível empresarial. Conformidade LGPD garantida.</p>
         </div>
     </section>
 
     <!-- PLANOS -->
     <section id="planos" class="pricing">
         <div class="pricing-container">
-            <h2 class="section-title">Escolha seu plano</h2>
+            <h2 class="section-title">Planos que crescem com seu negócio</h2>
+            <div class="pricing-note">
+                🎁 <strong>Teste grátis de 7 dias</strong> (sem cartão) + Estenda para 30 dias com cartão de crédito. Sem compromisso, cancele quando quiser.
+            </div>
             <div class="pricing-grid">
-                <!-- TESTE GRÁTIS -->
+                <!-- BÁSICO -->
                 <div class="plan-card featured">
-                    <div class="plan-badge">Popular</div>
-                    <h3 class="plan-name">Teste Grátis</h3>
-                    <p class="plan-description">Teste tudo sem compromisso</p>
-                    <div class="plan-price">Grátis</div>
-                    <p class="plan-billing">30 dias completos</p>
+                    <div class="plan-badge">Mais Popular</div>
+                    <h3 class="plan-name">Básico</h3>
+                    <p class="plan-description">Perfeito para começar</p>
+                    <div class="plan-price">R$ 79,90</div>
+                    <p class="plan-billing">/mês (sem taxas adicionais)</p>
                     <button class="plan-button" onclick="window.location.href='onboarding.html'">
-                        Começar Agora
+                        Começar Teste Grátis
                     </button>
                     <ul class="plan-features">
-                        <li><i class="fas fa-check"></i> IA de agendamento</li>
-                        <li><i class="fas fa-check"></i> Confirmações automáticas</li>
-                        <li><i class="fas fa-check"></i> Lembretes inteligentes</li>
-                        <li><i class="fas fa-check"></i> Até 100 agendamentos</li>
-                        <li><i class="fas fa-check"></i> Dashboard básico</li>
+                        <li><i class="fas fa-check"></i> Dashboard completo</li>
+                        <li><i class="fas fa-check"></i> Calendário de agendamentos</li>
+                        <li><i class="fas fa-check"></i> Gestão de clientes</li>
+                        <li><i class="fas fa-check"></i> 1 profissional</li>
+                        <li><i class="fas fa-check"></i> Catálogo de serviços</li>
+                        <li><i class="fas fa-check"></i> Relatórios básicos</li>
+                        <li><i class="fas fa-check"></i> WhatsApp integrado</li>
                         <li><i class="fas fa-check"></i> Suporte por email</li>
                     </ul>
                 </div>
 
-                <!-- PRO -->
+                <!-- PROFISSIONAL -->
                 <div class="plan-card">
-                    <h3 class="plan-name">Pro</h3>
-                    <p class="plan-description">Para pequenos negócios</p>
-                    <div class="plan-price">R$ 297</div>
-                    <p class="plan-billing">Setup único + R$ 197/mês</p>
+                    <h3 class="plan-name">Profissional</h3>
+                    <p class="plan-description">Para crescer sem limites</p>
+                    <div class="plan-price">R$ 149,90</div>
+                    <p class="plan-billing">/mês (sem taxas adicionais)</p>
                     <button class="plan-button" onclick="window.location.href='onboarding.html'">
-                        Escolher Plano
+                        Começar Teste Grátis
                     </button>
                     <ul class="plan-features">
-                        <li><i class="fas fa-check"></i> Tudo do Teste Grátis</li>
+                        <li><i class="fas fa-check"></i> Tudo do Básico</li>
+                        <li><i class="fas fa-check"></i> Até 5 profissionais</li>
+                        <li><i class="fas fa-check"></i> Sistema de comissões</li>
+                        <li><i class="fas fa-check"></i> Relatórios avançados</li>
                         <li><i class="fas fa-check"></i> Agendamentos ilimitados</li>
-                        <li><i class="fas fa-check"></i> Reativação de clientes</li>
-                        <li><i class="fas fa-check"></i> Relatórios detalhados</li>
-                        <li><i class="fas fa-check"></i> Até 3 profissionais</li>
+                        <li><i class="fas fa-check"></i> Análise de desempenho</li>
                         <li><i class="fas fa-check"></i> Suporte via WhatsApp</li>
+                        <li><i class="fas fa-check"></i> Prioridade garantida</li>
                     </ul>
                 </div>
 
-                <!-- PREMIUM -->
+                <!-- MULTI-UNIDADE (Futuro) -->
                 <div class="plan-card">
-                    <h3 class="plan-name">Premium</h3>
-                    <p class="plan-description">Para grandes operações</p>
-                    <div class="plan-price">R$ 597</div>
-                    <p class="plan-billing">Setup único + R$ 397/mês</p>
-                    <button class="plan-button" onclick="window.location.href='onboarding.html'">
-                        Escolher Plano
+                    <h3 class="plan-name">Multi-Unidade</h3>
+                    <p class="plan-description">Lançamento em breve</p>
+                    <div class="plan-price">R$ 299,90</div>
+                    <p class="plan-billing">/mês + por unidade</p>
+                    <button class="plan-button" style="opacity: 0.6; cursor: not-allowed;" disabled>
+                        Em Breve
                     </button>
                     <ul class="plan-features">
-                        <li><i class="fas fa-check"></i> Tudo do Pro</li>
+                        <li><i class="fas fa-check"></i> Tudo do Profissional</li>
                         <li><i class="fas fa-check"></i> Profissionais ilimitados</li>
-                        <li><i class="fas fa-check"></i> IA avançada</li>
+                        <li><i class="fas fa-check"></i> Múltiplas unidades</li>
+                        <li><i class="fas fa-check"></i> Gerenciamento centralizado</li>
+                        <li><i class="fas fa-check"></i> Relatórios consolidados</li>
                         <li><i class="fas fa-check"></i> Integração com APIs</li>
-                        <li><i class="fas fa-check"></i> Analytics em tempo real</li>
-                        <li><i class="fas fa-check"></i> Suporte prioritário 24/7</li>
+                        <li><i class="fas fa-check"></i> Suporte 24/7 prioritário</li>
+                        <li><i class="fas fa-check"></i> Consultoria dedicada</li>
                     </ul>
                 </div>
             </div>
@@ -739,41 +787,63 @@
             
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>Como funciona o teste grátis de 30 dias?</span>
+                    <span>Como funciona o teste grátis?</span>
                     <i class="fas fa-chevron-down faq-icon"></i>
                 </div>
                 <div class="faq-answer">
-                    Você se cadastra, cria sua conta e tem acesso total ao RedditoApp por 30 dias. Sem cartão de crédito necessário nos primeiros 7 dias. Após 30 dias, você precisa escolher um plano pago ou sua conta é pausada (dados preservados).
+                    <strong>Primeiros 7 dias:</strong> Acesso total ao Reddito sem necessidade de cartão de crédito. Teste tudo que o sistema oferece.<br><br>
+                    <strong>Depois de 7 dias:</strong> Para estender para mais 23 dias (total de 30), é necessário adicionar um cartão de crédito. Assim você tem um mês completo para testar com clientes reais.<br><br>
+                    <strong>Sem compromisso:</strong> Depois dos 30 dias, escolha um plano pago ou cancele. Sem multa, sem taxa.
                 </div>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>Posso cancelar a qualquer momento?</span>
+                    <span>Por que pedir cartão no dia 7?</span>
                     <i class="fas fa-chevron-down faq-icon"></i>
                 </div>
                 <div class="faq-answer">
-                    Sim! Você pode cancelar sua assinatura a qualquer momento. Não há taxa de cancelamento ou multa. Sua conta será pausada ao fim do mês.
+                    É para garantir que você realmente está testando o Reddito. Em 7 dias você já entendeu como funciona. Com mais 23 dias (total 30), você consegue testar com clientes reais, ver o impacto nos agendamentos e relatórios. Só então você decide se quer pagar ou não.
                 </div>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>Como a IA sabe quando mandar mensagens?</span>
+                    <span>Qual é a diferença entre Básico e Profissional?</span>
                     <i class="fas fa-chevron-down faq-icon"></i>
                 </div>
                 <div class="faq-answer">
-                    A IA envia mensagens automaticamente em horários pré-configurados: confirmação no dia anterior, agradecimento no dia seguinte, lembretes após 15 e 45 dias. Tudo customizável no painel de controle.
+                    O plano Básico é perfeito para quem está começando (1 profissional, relatórios simples). O Profissional é para quem já tem mais demanda (até 5 profissionais, sistema de comissões, relatórios avançados e suporte prioritário). Escolha conforme seu crescimento.
                 </div>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>Quais são os canais de contato disponíveis?</span>
+                    <span>Posso mudar de plano a qualquer momento?</span>
                     <i class="fas fa-chevron-down faq-icon"></i>
                 </div>
                 <div class="faq-answer">
-                    RedditoApp funciona com WhatsApp, SMS e email. Seus clientes podem agendar pelo canal que preferirem, tudo integrado em um único painel.
+                    Sim! Você pode fazer upgrade de Básico para Profissional, ou downgrade, a qualquer momento. A mudança entra em vigor no próximo ciclo de cobrança. Sem multa ou taxa adicional.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Como os clientes agendam pelo WhatsApp?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Você compartilha um link do Reddito com seus clientes. Eles clicam, escolhem o serviço, o profissional, data e horário. Tudo pelo WhatsApp, de forma conversacional e simples. Nada de formulários chatos.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Como as comissões são calculadas?</span>
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </div>
+                <div class="faq-answer">
+                    Você configura a comissão por profissional (em porcentagem ou valor fixo). O Reddito calcula automaticamente com base nos agendamentos confirmados. Seu barbeiro vê sua comissão atualizada em tempo real no dashboard.
                 </div>
             </div>
 
@@ -783,17 +853,17 @@
                     <i class="fas fa-chevron-down faq-icon"></i>
                 </div>
                 <div class="faq-answer">
-                    Sim! Usamos criptografia de nível empresarial (TLS/SSL), conformidade LGPD, backups automáticos diários e armazenamento em servidores seguros. Seus dados são prioridade.
+                    Sim! Usamos criptografia de nível empresarial (TLS/SSL), conformidade LGPD, backups automáticos diários e armazenamento em servidores seguros. Seus dados são nossa prioridade.
                 </div>
             </div>
 
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)">
-                    <span>Preciso de conhecimento técnico para usar?</span>
+                    <span>Posso cancelar a qualquer momento?</span>
                     <i class="fas fa-chevron-down faq-icon"></i>
                 </div>
                 <div class="faq-answer">
-                    Não! RedditoApp foi desenhado para qualquer pessoa usar. Interface intuitiva, onboarding guiado e suporte dedicado. Se tiver dúvida, estamos aqui.
+                    Sim! Você pode cancelar sua assinatura a qualquer momento, sem taxa de cancelamento ou multa. Sua conta será pausada ao fim do mês, mas todos os seus dados são preservados.
                 </div>
             </div>
         </div>
@@ -801,8 +871,8 @@
 
     <!-- CTA SECTION -->
     <section class="cta-section">
-        <h2>Pronto para trazer clientes de volta?</h2>
-        <p>Comece seu teste grátis agora e veja a diferença em 30 dias. Sem cartão de crédito.</p>
+        <h2>Pronto para organizar seu negócio?</h2>
+        <p>Teste grátis por 7 dias. Sem cartão de crédito. Sem compromisso. Veja a diferença.</p>
         <button class="cta-button-white" onclick="window.location.href='onboarding.html'">
             Começar Teste Grátis
         </button>
@@ -813,7 +883,7 @@
         <div class="footer-container">
             <div class="footer-section">
                 <h4>RedditoApp</h4>
-                <p style="color: var(--color-text-light); font-size: 14px; margin-bottom: 16px;">IA que traz clientes de volta.</p>
+                <p style="color: var(--color-text-light); font-size: 14px; margin-bottom: 16px;">Seu negócio organizado e crescendo.</p>
                 <div class="footer-contact">
                     <i class="fas fa-envelope"></i>
                     <a href="mailto:contato@redditoapp.com">contato@redditoapp.com</a>
@@ -823,7 +893,7 @@
             <div class="footer-section">
                 <h4>Produto</h4>
                 <ul>
-                    <li><a href="#features">Benefícios</a></li>
+                    <li><a href="#features">Funcionalidades</a></li>
                     <li><a href="#planos">Planos</a></li>
                     <li><a href="#faq">FAQ</a></li>
                     <li><a href="onboarding.html">Começar Teste</a></li>
