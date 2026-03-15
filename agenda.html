@@ -632,6 +632,27 @@
             resize: none;
             min-height: 70px;
         }
+
+        /* ✅ GARANTE ÁREA VISÍVEL DO QR */
+        #pixQr {
+            width: 220px;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* ✅ garante que o elemento gerado (img/canvas) fique do tamanho correto */
+        #pixQr img,
+        #pixQr canvas {
+            width: 220px !important;
+            height: 220px !important;
+            display: block !important;
+        }
     </style>
 </head>
 <body>
@@ -1475,7 +1496,7 @@
             container.innerHTML = '';
         }
 
-        // ✅ ALTERADO: agora gera QR com qrcodejs (new QRCode) e usa a div #pixQr
+        // ✅ ALTERADO: agora gera QR com qrcodejs (new QRCode) e garante layout antes
         async function generatePixQrForCurrentAppointment() {
             try {
                 if (!viewingAppointment) return;
@@ -1504,6 +1525,9 @@
                 if (!container) return;
 
                 clearPixQr();
+
+                // força o browser a calcular o layout do modal antes de desenhar o QR
+                await new Promise(r => requestAnimationFrame(r));
 
                 new QRCode(container, {
                     text: brcode,
