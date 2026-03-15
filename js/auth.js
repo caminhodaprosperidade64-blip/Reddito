@@ -129,7 +129,7 @@ const Auth = {
       await supabase.auth.signOut();
       window._perfilCache = null;
       console.log('✅ [Auth] Logout realizado');
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
       return { success: true };
     } catch (error) {
       console.error('❌ [Auth] Erro no logout:', error);
@@ -149,62 +149,4 @@ const Auth = {
 
 window.Auth = Auth;
 console.log('✅ [Auth] Módulo exportado');
-
-// ============================================
-// PROTEÇÃO DE ROTAS
-// ============================================
-function configurarProtecaoRotas() {
-  if (window.__protecaoRotasRodou) return;
-  window.__protecaoRotasRodou = true;
-
-  const paginasPublicas = [
-    '/', '/index.html', '/login.html',
-    '/aguardando-confirmacao.html', '/agendar.html',
-    '/onboarding.html', '/teste-auth.html',
-    'index.html', 'login.html',
-    'aguardando-confirmacao.html', 'agendar.html',
-    'onboarding.html'
-  ];
-
-  const paginaAtual = window.location.pathname;
-  const ehPublica = paginasPublicas.some(p =>
-    paginaAtual === p || paginaAtual.endsWith(p)
-  );
-
-  if (ehPublica) return;
-
-  Auth.isAuthenticated().then(async autenticado => {
-    if (!autenticado) {
-      console.warn('⚠️ [Auth] Não autenticado, redirecionando para login...');
-      window.location.href = 'login.html';
-      return;
-    }
-
-    const perfil = await Auth.getPerfil();
-
-    // Sem perfil = primeiro acesso → onboarding
-    if (!perfil) {
-      console.warn('⚠️ [Auth] Perfil não encontrado → onboarding');
-      window.location.href = 'onboarding.html';
-      return;
-    }
-
-    // Perfil existe mas onboarding não foi concluído → onboarding
-    if (!perfil.onboarding_completo) {
-      console.warn('⚠️ [Auth] Onboarding incompleto → redirecionando...');
-      window.location.href = 'onboarding.html';
-      return;
-    }
-
-    // Tudo OK — expõe dados globais e dispara evento
-    window.TENANT_ID = perfil.tenant_id;
-    window.USER_ROLE = perfil.role;
-    window.USER_NOME = perfil.nome;
-
-    console.log(`✅ [Auth] Autenticado: ${perfil.role} | Tenant: ${perfil.tenant_id}`);
-    window.dispatchEvent(new CustomEvent('perfilCarregado', { detail: perfil }));
-  });
-}
-
-aguardarSupabase(configurarProtecaoRotas);
 console.log('✅ [Auth] Módulo carregado completamente');
