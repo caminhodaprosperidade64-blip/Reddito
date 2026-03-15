@@ -467,7 +467,10 @@
         return;
       }
 
-      renderHorarios();
+      // Renderizar horários com delay para garantir que o DOM está pronto
+      setTimeout(() => {
+        renderHorarios();
+      }, 100);
     }
 
     if (document.readyState === 'loading') {
@@ -575,6 +578,15 @@
 
     function renderHorarios() {
       const container = document.getElementById('horariosContainer');
+      
+      if (!container) {
+        console.warn('⚠️ [Onboarding] Container não encontrado!');
+        setTimeout(renderHorarios, 100);
+        return;
+      }
+
+      console.log('🕐 [Onboarding] Renderizando horários...');
+      
       container.innerHTML = DIAS.map((dia, i) => `
         <div class="horario-row">
           <input type="checkbox" id="ativo-${i}" ${HORARIOS_PADRAO[i].ativo ? 'checked' : ''}
@@ -586,6 +598,8 @@
             ${!HORARIOS_PADRAO[i].ativo ? 'disabled' : ''}>
         </div>
       `).join('');
+      
+      console.log('✅ [Onboarding] Horários renderizados!');
     }
 
     function toggleHorario(i) {
@@ -647,7 +661,7 @@
             logo_url: logoUrl,
             segmento,
             endereco,
-            plano: 'basico', // Começa com plano básico
+            plano: 'basico',
             status: 'ativo',
             data_inicio: new Date().toISOString(),
             dias_trial: 7
@@ -708,7 +722,7 @@
         console.error('❌ [Onboarding] Erro:', error);
         mostrarErro('❌ Erro ao salvar: ' + (error.message || error));
         btn.disabled = false;
-        btn.innerHTML = 'Concluir <i class="fas fa-check"></i>';
+        btn.innerHTML = '<span id="btnFinalizarText">Concluir <i class="fas fa-check"></i></span>';
       }
     }
   </script>
