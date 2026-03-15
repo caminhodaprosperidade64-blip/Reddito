@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema de Agendamento</title>
+    <title>RedditoApp - Login</title>
 
     <!-- Supabase - ORDEM CRÍTICA -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -41,17 +41,14 @@
             margin-bottom: 40px;
         }
 
-        .logo-icon {
+        .logo-image {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 36px;
+            border-radius: 16px;
+            display: inline-block;
             margin-bottom: 15px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         h1 {
@@ -190,14 +187,30 @@
         #cadastroForm {
             display: none;
         }
+
+        .back-to-home {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-to-home a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .back-to-home a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
-            <div class="logo-icon">📅</div>
-            <h1>Sistema de Agendamento</h1>
-            <p class="subtitle">Gestão profissional para seu negócio</p>
+            <img src="https://ldnbivvqzpaqcdhxkywl.supabase.co/storage/v1/object/public/logos/7000a574-d4ad-4363-ae35-472e8cb26d3a/logo.jpeg" alt="RedditoApp" class="logo-image">
+            <h1>RedditoApp</h1>
+            <p class="subtitle">Seu negócio organizado e crescendo</p>
         </div>
 
         <div id="errorMessage" class="error-message"></div>
@@ -219,7 +232,7 @@
 
             <div class="divider">ou</div>
 
-            <button type="button" class="link-button" onclick="mostrarCadastro()">
+            <button type="button" class="link-button" onclick="irParaOnboarding()">
                 Criar nova conta
             </button>
         </form>
@@ -247,9 +260,21 @@
                 Já tenho conta
             </button>
         </form>
+
+        <div class="back-to-home">
+            <a href="index.html">← Voltar para página inicial</a>
+        </div>
     </div>
 
     <script>
+        // ============================================
+        // NAVEGAÇÃO
+        // ============================================
+
+        function irParaOnboarding() {
+            window.location.href = 'onboarding.html';
+        }
+
         // ============================================
         // SISTEMA DE INICIALIZAÇÃO
         // ============================================
