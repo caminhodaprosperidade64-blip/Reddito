@@ -633,23 +633,31 @@
             min-height: 70px;
         }
 
-        /* ✅ GARANTE ÁREA VISÍVEL DO QR */
+        /* ✅ GARANTE ÁREA VISÍVEL DO QR (AJUSTADO PARA LER MELHOR) */
         #pixQr {
-            width: 220px;
-            height: 220px;
+            width: 400px;
+            height: 400px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #fff;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: 10px;
+            padding: 10px; /* quiet zone */
+            box-sizing: border-box;
             overflow: hidden;
         }
         #pixQr img,
         #pixQr canvas {
-            width: 220px !important;
-            height: 220px !important;
+            width: 380px !important;
+            height: 380px !important;
             display: block !important;
+            image-rendering: pixelated;
+        }
+
+        @media (max-width: 520px) {
+            #pixQr { width: 320px; height: 320px; padding: 10px; }
+            #pixQr img, #pixQr canvas { width: 300px !important; height: 300px !important; }
         }
     </style>
 </head>
@@ -1499,6 +1507,11 @@
             container.innerHTML = '';
         }
 
+        // ✅ NOVO: sanitiza o BR Code antes de copiar/gerar QR
+        function sanitizeBrcode(str) {
+            return String(str || '').replace(/[\r\n\s]+/g, '').trim();
+        }
+
         async function generatePixQrForCurrentAppointment() {
             try {
                 const apt = finalizingAppointment;
@@ -1513,9 +1526,9 @@
 
                 const valor = parseFloat(apt.valor || 0).toFixed(2);
 
-                // ✅ txid alfanumérico (até 25) mais compatível que "***"
                 const txid = normalizeTxid(`AGEND${String(apt.id).replace(/[^0-9A-Za-z]/g, '').slice(0, 12)}`);
 
+                // 1) Gera o copia-e-cola (você já tinha isso)
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
                     nome: paymentConfig.pix_nome,
@@ -1525,21 +1538,28 @@
                     txid: txid
                 });
 
-                document.getElementById('pixCopiaCola').value = brcode;
+                const textarea = document.getElementById('pixCopiaCola');
+                textarea.value = brcode;
+
+                // 2) ✅ QRCode é gerado A PARTIR DO TEXTO do textarea, sanitizado
+                const brcodeForQr = sanitizeBrcode(textarea.value);
 
                 const container = document.getElementById('pixQr');
                 if (!container) return;
 
                 clearPixQr();
-                await new Promise(r => setTimeout(r, 50));
+
+                // tempo pro modal terminar de renderizar
+                await new Promise(r => setTimeout(r, 80));
 
                 new QRCode(container, {
-                    text: brcode,
-                    width: 220,
-                    height: 220,
+                    text: brcodeForQr,
+                    width: 380,
+                    height: 380,
                     colorDark: "#000000",
                     colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
+                    // ✅ correção baixa melhora leitura em QR muito denso
+                    correctLevel: QRCode.CorrectLevel.L
                 });
 
             } catch (err) {
@@ -1549,7 +1569,9 @@
         }
 
         function copyPixCode() {
-            const text = document.getElementById('pixCopiaCola').value;
+            const textarea = document.getElementById('pixCopiaCola');
+            const text = sanitizeBrcode(textarea.value);
+
             if (!text) {
                 alert('Nenhum código Pix para copiar.');
                 return;
@@ -1561,14 +1583,13 @@
         }
 
         // ==========================
-        // PIX EMV (copia e cola) - ✅ CORRIGIDO para leitores de banco
+        // PIX EMV (copia e cola)
         // ==========================
         function emv(id, value) {
             const v = String(value);
             return `${id}${String(v.length).padStart(2, '0')}${v}`;
         }
 
-        // CRC16-CCITT (0x1021) - padrão EMV
         function crc16(payload) {
             let crc = 0xFFFF;
             for (let i = 0; i < payload.length; i++) {
@@ -1598,7 +1619,6 @@
                 .slice(0, maxLen);
         }
 
-        // ✅ payload compatível com PIX ESTÁTICO (01=11)
         function buildPixPayload({ chave, nome, cidade, valor, descricao, txid }) {
             const merchantName = normalizeNomeCidade(nome, 25);
             const merchantCity = normalizeNomeCidade(cidade, 15);
@@ -1619,10 +1639,7 @@
             const merchantAccountInfo = emv('26', gui + key + desc);
 
             const payloadFormatIndicator = emv('00', '01');
-
-            // ✅ 11 = estático (mais aceito por bancos)
             const pointOfInitiationMethod = emv('01', '11');
-
             const merchantCategoryCode = emv('52', '0000');
             const transactionCurrency = emv('53', '986');
             const transactionAmount = emv('54', String(valor));
@@ -1630,7 +1647,6 @@
             const mName = emv('59', merchantName);
             const mCity = emv('60', merchantCity);
 
-            // ✅ TXID alfanumérico
             const txidValue = normalizeTxid(txid || 'AGENDAMENTO');
             const txidField = emv('05', txidValue);
             const additionalData = emv('62', txidField);
@@ -1679,7 +1695,7 @@
             }
 
             if (paymentMethod === 'pix') {
-                const brcode = document.getElementById('pixCopiaCola').value;
+                const brcode = sanitizeBrcode(document.getElementById('pixCopiaCola').value);
                 if (!brcode) {
                     alert('Não foi possível gerar o Pix. Cadastre chave/nome/cidade no Supabase.');
                     return;
