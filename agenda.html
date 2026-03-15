@@ -468,7 +468,7 @@
                 <div class="user-profile">
                     <img src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" class="user-avatar">
                     <div class="user-info">
-                        <div class="user-name" id="userName">Carregando...</div>
+                        <div class="user-name" id="userName">Usuário</div>
                         <div class="user-role" id="userRole">-</div>
                     </div>
                 </div>
@@ -579,9 +579,10 @@
             5: { bg: 'bg-prof-5', badge: 'badge-prof-5', slot: 'slot-prof-5' }
         };
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Iniciando agenda...');
             initDarkMode();
-            loadAll();
+            await loadAll();
         });
 
         window.addEventListener('storage', e => {
@@ -590,10 +591,18 @@
 
         async function loadAll() {
             try {
-                const user = await getPerfilAtual();
-                if (user) {
-                    document.getElementById('userName').textContent = user.nome || 'Usuário';
-                    document.getElementById('userRole').textContent = user.role || 'Cliente';
+                console.log('📂 Carregando dados...');
+                
+                // Tentar carregar informações do usuário
+                try {
+                    const user = await getPerfilAtual();
+                    if (user) {
+                        document.getElementById('userName').textContent = user.nome || 'Usuário';
+                        document.getElementById('userRole').textContent = user.role || '-';
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Não conseguiu carregar perfil:', e);
+                    document.getElementById('userName').textContent = 'Usuário';
                 }
 
                 allProfessionals = await DB.profissionais.listar();
@@ -608,7 +617,7 @@
 
                 populateSelects();
                 renderCalendar();
-                renderSchedule();
+                await renderSchedule();
             } catch (error) {
                 console.error('❌ Erro ao carregar dados:', error);
             }
@@ -644,7 +653,7 @@
                 });
             }
 
-            console.log('✅ Selects populados. Clientes:', allClients.length, 'Serviços:', allServices.length);
+            console.log('✅ Selects populados - Clientes:', allClients.length, '| Serviços:', allServices.length);
         }
 
         function renderCalendar() {
@@ -699,51 +708,56 @@
         }
 
         async function renderSchedule() {
-            const dateStr = selectedDay.toISOString().split('T')[0];
-            allAppointments = await DB.agendamentos.listarPorData(dateStr);
+            try {
+                const dateStr = selectedDay.toISOString().split('T')[0];
+                allAppointments = await DB.agendamentos.listarPorData(dateStr);
 
-            const container = document.getElementById('scheduleContainer');
-            const dateLabel = selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-            document.getElementById('dateLabel').textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
+                const container = document.getElementById('scheduleContainer');
+                const dateLabel = selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+                document.getElementById('dateLabel').textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
 
-            if (!allProfessionals.length) {
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional cadastrado</span></div>';
-                return;
-            }
+                if (!allProfessionals.length) {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional cadastrado</span></div>';
+                    return;
+                }
 
-            const times = generateTimes('08:00', '18:00', 30);
-            let html = '<table class="schedule-table"><tbody>';
+                const times = generateTimes('08:00', '18:00', 30);
+                let html = '<table class="schedule-table"><tbody>';
 
-            // Cabeçalho com profissionais
-            html += '<tr class="prof-header-row"><td class="time-col"></td>';
-            allProfessionals.forEach((prof, idx) => {
-                const colorIdx = (idx % 5) + 1;
-                const color = COLORS[colorIdx];
-                html += `<td class="prof-header-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</td>`;
-            });
-            html += '</tr>';
-
-            // Linhas de horários
-            times.forEach(time => {
-                html += `<tr><td class="time-col">${time}</td>`;
+                // Cabeçalho com profissionais
+                html += '<tr class="prof-header-row"><td class="time-col"></td>';
                 allProfessionals.forEach((prof, idx) => {
                     const colorIdx = (idx % 5) + 1;
                     const color = COLORS[colorIdx];
-                    const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora === time);
-
-                    if (apt) {
-                        const clientName = apt.cliente?.nome || 'Cliente';
-                        const serviceName = apt.servico?.nome || 'Serviço';
-                        html += `<td class="time-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></td>`;
-                    } else {
-                        html += `<td class="time-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')"><span>Disponível</span></td>`;
-                    }
+                    html += `<td class="prof-header-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</td>`;
                 });
                 html += '</tr>';
-            });
 
-            html += '</tbody></table>';
-            container.innerHTML = html;
+                // Linhas de horários
+                times.forEach(time => {
+                    html += `<tr><td class="time-col">${time}</td>`;
+                    allProfessionals.forEach((prof, idx) => {
+                        const colorIdx = (idx % 5) + 1;
+                        const color = COLORS[colorIdx];
+                        const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora === time);
+
+                        if (apt) {
+                            const clientName = apt.cliente?.nome || 'Cliente';
+                            const serviceName = apt.servico?.nome || 'Serviço';
+                            html += `<td class="time-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></td>`;
+                        } else {
+                            html += `<td class="time-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')"><span>Disponível</span></td>`;
+                        }
+                    });
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                console.log('✅ Agenda renderizada -', times.length, 'horários -', allAppointments.length, 'agendamentos');
+            } catch (error) {
+                console.error('❌ Erro ao renderizar agenda:', error);
+            }
         }
 
         function generateTimes(start, end, interval) {
@@ -804,6 +818,7 @@
                     closeModal();
                     await renderSchedule();
                     console.log('✅ Agendamento criado com sucesso!');
+                    alert('Agendamento criado!');
                 } else {
                     alert('Erro: ' + result.error);
                     console.error('❌ Erro ao criar agendamento:', result.error);
