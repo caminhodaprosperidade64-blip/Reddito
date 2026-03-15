@@ -3,7 +3,14 @@
  */
 (function() {
     // Configuração de páginas
-    const PAGINAS_PUBLICAS = ['index.html', 'login.html', 'cadastro.html', 'primeiro-acesso.html', 'cadastro-profissional.html'];
+    const PAGINAS_PUBLICAS = [
+        'index.html', 
+        'login.html', 
+        'cadastro.html', 
+        'primeiro-acesso.html', 
+        'cadastro-profissional.html',
+        'onboarding.html'  // ← ADICIONADO
+    ];
     const PAGINAS_RESTRITAS_DONO = ['dashboard.html', 'clientes.html', 'profissionais.html', 'servicos.html', 'configuracoes.html', 'financeiro.html'];
 
     async function checkAuth() {
@@ -48,7 +55,7 @@
                 // Se não for admin, buscar do banco de dados
                 const { data: perfilBD, error } = await supabase
                     .from('perfis')
-                    .select('')
+                    .select('*')
                     .eq('id', session.user.id)
                     .single();
 
@@ -65,13 +72,23 @@
 
             // --- LÓGICA DE REDIRECIONAMENTO POR ROLE ---
             
-            // 1. Se está em página de login/cadastro mas já está logado
+            // 1. Se está em página de login/cadastro/onboarding mas já está logado
             if (isPublic) {
                 if (role === 'profissional') {
                     window.location.href = 'dashboard-profissional.html';
                 } else if (role === 'admin') {
                     window.location.href = 'dashboard-admin.html';
                 } else {
+                    // Se estiver em onboarding e já tem perfil completo, vai para dashboard
+                    if (path === 'onboarding.html' && perfil.onboarding_completo) {
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+                    // Se estiver em onboarding e NÃO tem perfil completo, deixa ficar em onboarding
+                    if (path === 'onboarding.html' && !perfil.onboarding_completo) {
+                        return;
+                    }
+                    // Se estiver em login/index e já autenticado, vai para dashboard
                     window.location.href = 'dashboard.html';
                 }
                 return;
