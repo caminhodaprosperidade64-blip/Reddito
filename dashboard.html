@@ -350,6 +350,7 @@
         :root {
             --bg-primary: #ffffff;
             --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
             --text-primary: #1f2937;
             --text-secondary: #6b7280;
             --border-color: #e5e7eb;
@@ -358,9 +359,10 @@
         body.dark-mode {
             --bg-primary: #1f2937;
             --bg-secondary: #111827;
+            --bg-tertiary: #374151;
             --text-primary: #f9fafb;
             --text-secondary: #d1d5db;
-            --border-color: #374151;
+            --border-color: #4b5563;
         }
 
         .badge {
@@ -401,7 +403,43 @@
             opacity: 0.5;
         }
 
-        /* FEATURE #5: Busca Global */
+        /* ─── DARK MODE FIXES ─── */
+        .pro-card {
+            background: var(--bg-primary) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        .pro-metric-card {
+            background: var(--bg-primary) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        .pro-card-header {
+            border-bottom-color: var(--border-color) !important;
+        }
+
+        .pro-table thead {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .pro-table tbody tr {
+            border-bottom-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .pro-table tbody tr:hover {
+            background: var(--bg-tertiary) !important;
+        }
+
+        .pro-comparison-card {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%) !important;
+        }
+
+        body.dark-mode .pro-comparison-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%) !important;
+        }
+
         .search-results-dropdown {
             position: absolute;
             top: 100%;
@@ -422,10 +460,11 @@
             border-bottom: 1px solid var(--border-color);
             cursor: pointer;
             transition: background 0.2s;
+            color: var(--text-primary);
         }
 
         .search-result-item:hover {
-            background: var(--bg-secondary);
+            background: var(--bg-tertiary);
         }
 
         .search-result-title {
@@ -466,6 +505,7 @@
             font-size: 14px;
             font-weight: 600;
             margin: 0;
+            color: var(--text-primary);
         }
 
         .close-btn {
@@ -485,10 +525,11 @@
             border-bottom: 1px solid var(--border-color);
             transition: background 0.2s;
             cursor: pointer;
+            color: var(--text-primary);
         }
 
         .notification-item:hover {
-            background: var(--bg-secondary);
+            background: var(--bg-tertiary);
         }
 
         .notification-item:last-child {
@@ -527,20 +568,6 @@
         }
 
         /* FEATURE #7: Comparação com período anterior */
-        .pro-comparison-card {
-            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        body.dark-mode .pro-comparison-card {
-            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
-        }
-
         .comparison-content {
             display: flex;
             align-items: center;
@@ -635,6 +662,11 @@
             localStorage.setItem('darkMode', isDark ? 'true' : 'false');
             const btn = document.getElementById('themeToogle');
             btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            
+            // Atualizar gráficos com cores do novo tema
+            if (revenueChart) revenueChart.destroy();
+            if (appointmentsChart) appointmentsChart.destroy();
+            loadCharts();
         }
 
         function initDarkMode() {
@@ -896,6 +928,7 @@
                 const hoje = new Date();
                 let dias = [];
                 let diasLabel = '';
+                const isDarkMode = document.body.classList.contains('dark-mode');
 
                 if (periodoAtual === '7d') {
                     for (let i = 6; i >= 0; i--) {
@@ -937,6 +970,13 @@
 
                 const temDados = valores.some(v => v > 0) || quantidades.some(q => q > 0);
 
+                // Cores dinâmicas baseadas no tema
+                const lineColor = isDarkMode ? '#818cf8' : '#6366F1';
+                const backgroundColor = isDarkMode ? 'rgba(129, 140, 248, 0.1)' : 'rgba(99, 102, 241, 0.1)';
+                const barColor = isDarkMode ? '#34d399' : '#10B981';
+                const textColor = isDarkMode ? '#f9fafb' : '#1f2937';
+                const gridColor = isDarkMode ? '#4b5563' : '#e5e7eb';
+
                 if (!temDados) {
                     document.getElementById('revenueChartContainer').innerHTML = 
                         '<div class="pro-empty-chart"><i class="fas fa-chart-line"></i><p>Nenhum dado disponível</p></div>';
@@ -953,19 +993,34 @@
                         datasets: [{
                             label: 'Faturamento (R$)',
                             data: valores,
-                            borderColor: '#6366F1',
-                            backgroundColor: 'rgba(99,102,241,0.1)',
+                            borderColor: lineColor,
+                            backgroundColor: backgroundColor,
                             tension: 0.4,
                             fill: true,
                             pointRadius: 4,
-                            pointHoverRadius: 6
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: lineColor
                         }]
                     },
                     options: { 
                         responsive: true, 
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: true, position: 'top' }
+                            legend: { 
+                                display: true, 
+                                position: 'top',
+                                labels: { color: textColor }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: textColor },
+                                grid: { color: gridColor }
+                            },
+                            x: {
+                                ticks: { color: textColor },
+                                grid: { color: gridColor }
+                            }
                         }
                     }
                 });
@@ -978,7 +1033,7 @@
                         datasets: [{
                             label: 'Agendamentos',
                             data: quantidades,
-                            backgroundColor: '#10B981',
+                            backgroundColor: barColor,
                             borderRadius: 6,
                             borderSkipped: false
                         }]
@@ -987,7 +1042,21 @@
                         responsive: true, 
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: true, position: 'top' }
+                            legend: { 
+                                display: true, 
+                                position: 'top',
+                                labels: { color: textColor }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                ticks: { color: textColor },
+                                grid: { color: gridColor }
+                            },
+                            x: {
+                                ticks: { color: textColor },
+                                grid: { color: gridColor }
+                            }
                         }
                     }
                 });
