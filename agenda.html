@@ -793,13 +793,13 @@
                 </div>
 
                 <div class="modal-actions" id="viewActions">
-                    <button type="button" class="pro-btn pro-btn-primary" onclick="openEditModal()">
+                    <button type="button" class="pro-btn pro-btn-primary" onclick="handleEdit()">
                         <i class="fas fa-edit"></i> Editar
                     </button>
-                    <button type="button" class="pro-btn pro-btn-danger" onclick="confirmCancel()">
+                    <button type="button" class="pro-btn pro-btn-danger" onclick="handleCancel()">
                         <i class="fas fa-times"></i> Cancelar
                     </button>
-                    <button type="button" class="pro-btn pro-btn-success" onclick="openFinalizeModal()">
+                    <button type="button" class="pro-btn pro-btn-success" onclick="handleFinalize()">
                         <i class="fas fa-check"></i> Finalizar
                     </button>
                 </div>
@@ -866,6 +866,15 @@
             </div>
             <div style="padding: 0 2rem;">
                 <form id="finalizeForm" onsubmit="finalizeAppointment(event)">
+                    <div class="modal-info-group">
+                        <div class="modal-info-row">
+                            <div class="modal-info-item">
+                                <span class="modal-info-label">Valor do Serviço</span>
+                                <span class="modal-info-value" id="finalizeValue" style="color: var(--primary); font-size: 1.2rem;">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-field" style="margin-bottom: 1.5rem;">
                         <label style="margin-bottom: 1rem;">Como foi o pagamento? *</label>
                         <div class="payment-methods">
@@ -962,15 +971,13 @@
                 renderCalendar();
                 renderSchedule();
             } catch (error) {
-                console.error('Erro:', error);
+                console.error('Erro ao carregar:', error);
             }
         }
 
         function populateSelects() {
             const clientSelect = document.getElementById('clientSelect');
             const serviceSelect = document.getElementById('serviceSelect');
-
-            if (!clientSelect || !serviceSelect) return;
 
             clientSelect.innerHTML = '<option value="">Selecione...</option>';
             serviceSelect.innerHTML = '<option value="">Selecione...</option>';
@@ -993,8 +1000,6 @@
         function populateEditSelects() {
             const clientSelect = document.getElementById('editClientSelect');
             const serviceSelect = document.getElementById('editServiceSelect');
-
-            if (!clientSelect || !serviceSelect) return;
 
             clientSelect.innerHTML = '<option value="">Selecione...</option>';
             serviceSelect.innerHTML = '<option value="">Selecione...</option>';
@@ -1167,44 +1172,34 @@
                     alert('✅ Agendamento criado!');
                 }
             } catch (error) {
+                console.error('Erro ao criar:', error);
                 alert('Erro ao agendar');
             }
         }
 
         async function viewAppointment(aptId) {
-            try {
-                viewingAppointment = allAppointments.find(a => a.id === aptId);
-                
-                if (!viewingAppointment) return;
+            viewingAppointment = allAppointments.find(a => a.id === aptId);
+            
+            if (!viewingAppointment) return;
 
-                document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
-                document.getElementById('viewClientName').textContent = viewingAppointment.cliente?.nome || '-';
-                document.getElementById('viewDate').textContent = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
-                document.getElementById('viewTime').textContent = viewingAppointment.hora.substring(0, 5);
-                document.getElementById('viewService').textContent = viewingAppointment.servico?.nome || '-';
-                document.getElementById('viewValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
-                document.getElementById('viewNotes').textContent = viewingAppointment.observacoes || '-';
+            document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
+            document.getElementById('viewClientName').textContent = viewingAppointment.cliente?.nome || '-';
+            document.getElementById('viewDate').textContent = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
+            document.getElementById('viewTime').textContent = viewingAppointment.hora.substring(0, 5);
+            document.getElementById('viewService').textContent = viewingAppointment.servico?.nome || '-';
+            document.getElementById('viewValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
+            document.getElementById('viewNotes').textContent = viewingAppointment.observacoes || '-';
 
-                const statusBadge = document.getElementById('viewStatus');
-                statusBadge.innerHTML = `<span class="modal-status-badge ${viewingAppointment.status}">${viewingAppointment.status.charAt(0).toUpperCase() + viewingAppointment.status.slice(1)}</span>`;
+            const statusBadge = document.getElementById('viewStatus');
+            statusBadge.innerHTML = `<span class="modal-status-badge ${viewingAppointment.status}">${viewingAppointment.status.charAt(0).toUpperCase() + viewingAppointment.status.slice(1)}</span>`;
 
-                const actions = document.getElementById('viewActions');
-                if (viewingAppointment.status === 'finalizado' || viewingAppointment.status === 'cancelado') {
-                    actions.className = 'modal-actions full';
-                    actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
-                } else {
-                    actions.className = 'modal-actions';
-                    actions.innerHTML = `
-                        <button type="button" class="pro-btn pro-btn-primary" onclick="openEditModal()"><i class="fas fa-edit"></i> Editar</button>
-                        <button type="button" class="pro-btn pro-btn-danger" onclick="confirmCancel()"><i class="fas fa-times"></i> Cancelar</button>
-                        <button type="button" class="pro-btn pro-btn-success" onclick="openFinalizeModal()"><i class="fas fa-check"></i> Finalizar</button>
-                    `;
-                }
-
-                document.getElementById('viewAppointmentModal').classList.add('active');
-            } catch (error) {
-                console.error('Erro:', error);
+            const actions = document.getElementById('viewActions');
+            if (viewingAppointment.status === 'finalizado' || viewingAppointment.status === 'cancelado') {
+                actions.className = 'modal-actions full';
+                actions.innerHTML = '<button type="button" class="pro-btn pro-btn-secondary" onclick="closeViewModal()">Fechar</button>';
             }
+
+            document.getElementById('viewAppointmentModal').classList.add('active');
         }
 
         function closeViewModal() {
@@ -1212,7 +1207,7 @@
             viewingAppointment = null;
         }
 
-        function openEditModal() {
+        function handleEdit() {
             if (!viewingAppointment) return;
 
             document.getElementById('editProfName').value = viewingAppointment.profissional?.nome || '';
@@ -1242,6 +1237,7 @@
             const notes = document.getElementById('editNotesField').value;
 
             try {
+                console.log('Atualizando agendamento:', viewingAppointment.id);
                 await DB.agendamentos.atualizar(viewingAppointment.id, {
                     cliente_id: clientId,
                     servico_id: serviceId,
@@ -1253,11 +1249,12 @@
                 await renderSchedule();
                 alert('✅ Atualizado!');
             } catch (error) {
+                console.error('Erro ao atualizar:', error);
                 alert('Erro ao atualizar');
             }
         }
 
-        function confirmCancel() {
+        function handleCancel() {
             if (!confirm('Cancelar agendamento?')) return;
             cancelAppointmentNow();
         }
@@ -1266,18 +1263,21 @@
             if (!viewingAppointment) return;
 
             try {
+                console.log('Cancelando agendamento:', viewingAppointment.id);
                 await DB.agendamentos.atualizar(viewingAppointment.id, { status: 'cancelado' });
                 closeViewModal();
-                renderSchedule();
+                await renderSchedule();
                 alert('✅ Cancelado!');
             } catch (error) {
+                console.error('Erro ao cancelar:', error);
                 alert('Erro ao cancelar');
             }
         }
 
-        function openFinalizeModal() {
+        function handleFinalize() {
             if (!viewingAppointment) return;
 
+            document.getElementById('finalizeValue').textContent = `R$ ${parseFloat(viewingAppointment.valor).toFixed(2).replace('.', ',')}`;
             document.getElementById('finalizeNotesField').value = '';
             document.getElementById('finalizeForm').reset();
 
@@ -1304,6 +1304,7 @@
             }
 
             try {
+                console.log('Finalizando agendamento:', viewingAppointment.id);
                 await DB.agendamentos.atualizar(viewingAppointment.id, {
                     status: 'finalizado',
                     forma_pagamento: paymentMethod,
@@ -1314,6 +1315,7 @@
                 await renderSchedule();
                 alert('✅ Finalizado!');
             } catch (error) {
+                console.error('Erro ao finalizar:', error);
                 alert('Erro ao finalizar');
             }
         }
@@ -1323,7 +1325,7 @@
                 await supabase.auth.signOut();
                 window.location.href = 'login.html';
             } catch (error) {
-                console.error('Erro:', error);
+                console.error('Erro ao fazer logout:', error);
             }
         }
     </script>
