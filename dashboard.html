@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Sistema Profissional</title>
+    <title>Dashboard - RedditoApp</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,11 +24,11 @@
         <!-- Sidebar -->
         <aside class="pro-sidebar">
             <div class="pro-sidebar-logo">
-                <a href="dashboard.html" class="pro-logo">
-                    <div class="pro-logo-icon">
+                <a href="dashboard.html" class="pro-logo" id="sidebarLogo">
+                    <div class="pro-logo-icon" id="logoIcon">
                         <i class="fas fa-calendar-check"></i>
                     </div>
-                    <span class="pro-logo-text">Sistema Pro</span>
+                    <span class="pro-logo-text">RedditoApp</span>
                 </a>
             </div>
 
@@ -95,7 +95,7 @@
                         <div class="pro-user-name" id="userName">Carregando...</div>
                         <div class="pro-user-role" id="userRole">...</div>
                     </div>
-                    <button class="pro-user-logout" onclick="logout()">
+                    <button class="pro-user-logout" onclick="logout()" title="Sair">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
@@ -113,12 +113,26 @@
                         placeholder="Buscar clientes, agendamentos..."
                         id="globalSearch"
                     >
+                    <div id="searchResults" class="search-results-dropdown" style="display: none;"></div>
                 </div>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn" onclick="alert('Sem notificações no momento.')">
+                    <button class="pro-header-btn notifications-btn" id="notificacoesBtn" title="Notificações" onclick="toggleNotificacoes()">
                         <i class="fas fa-bell"></i>
+                        <span id="notificacoesBadge" style="display: none;" class="badge">0</span>
                     </button>
+                    <div id="notificacoesDropdown" class="notifications-dropdown" style="display: none;">
+                        <div class="notifications-header">
+                            <h3>Notificações</h3>
+                            <button class="close-btn" onclick="toggleNotificacoes()"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div id="notificacoesList" class="notifications-list">
+                            <p style="text-align: center; color: #999; padding: 20px;">Nenhuma notificação</p>
+                        </div>
+                    </div>
                     <div class="pro-header-divider"></div>
+                    <button class="pro-header-btn" id="themeToogle" title="Alternar Tema" onclick="toggleDarkMode()">
+                        <i class="fas fa-moon"></i>
+                    </button>
                     <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
                 </div>
             </header>
@@ -130,10 +144,26 @@
                             <h1 class="pro-page-title">Dashboard</h1>
                             <p class="pro-page-subtitle">Visão geral do seu negócio</p>
                         </div>
-                        <button class="pro-btn pro-btn-primary" onclick="abrirModalAgendamento()">
-                            <i class="fas fa-plus"></i>
-                            Novo Agendamento
-                        </button>
+                        <div class="header-controls">
+                            <select id="periodoFiltro" onchange="atualizarPeriodo()" class="pro-select period-select">
+                                <option value="7d">Últimos 7 dias</option>
+                                <option value="14d">Últimas 2 semanas</option>
+                                <option value="30d">Últimos 30 dias</option>
+                                <option value="mes">Este mês</option>
+                            </select>
+                            <button class="pro-btn pro-btn-primary" onclick="abrirModalAgendamento()">
+                                <i class="fas fa-plus"></i>
+                                Novo Agendamento
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparação com período anterior -->
+                <div class="pro-comparison-card" id="comparisonCard" style="display: none;">
+                    <div class="comparison-content">
+                        <i class="fas fa-arrow-trending-up"></i>
+                        <span id="comparisonText"></span>
                     </div>
                 </div>
 
@@ -147,6 +177,7 @@
                             </div>
                         </div>
                         <div class="pro-metric-value" id="appointmentsToday">0</div>
+                        <div class="pro-metric-change" id="appointmentsTodayChange"></div>
                     </div>
 
                     <div class="pro-metric-card">
@@ -157,6 +188,7 @@
                             </div>
                         </div>
                         <div class="pro-metric-value" id="appointmentsTomorrow">0</div>
+                        <div class="pro-metric-change" id="appointmentsTomorrowChange"></div>
                     </div>
 
                     <div class="pro-metric-card">
@@ -167,16 +199,18 @@
                             </div>
                         </div>
                         <div class="pro-metric-value" id="revenueToday">R$ 0</div>
+                        <div class="pro-metric-change" id="revenueTodayChange"></div>
                     </div>
 
                     <div class="pro-metric-card">
                         <div class="pro-metric-header">
-                            <span class="pro-metric-label">Faturamento Mês</span>
+                            <span class="pro-metric-label">Faturamento Período</span>
                             <div class="pro-metric-icon success">
                                 <i class="fas fa-chart-line"></i>
                             </div>
                         </div>
-                        <div class="pro-metric-value" id="revenueMonth">R$ 0</div>
+                        <div class="pro-metric-value" id="revenuePeriod">R$ 0</div>
+                        <div class="pro-metric-change" id="revenuePeriodChange"></div>
                     </div>
                 </div>
 
@@ -184,10 +218,11 @@
                 <div class="pro-grid-2">
                     <div class="pro-card">
                         <div class="pro-card-header">
-                            <h3 class="pro-card-title">Faturamento (Últimos 7 Dias)</h3>
+                            <h3 class="pro-card-title">Faturamento</h3>
+                            <span class="chart-period" id="revenuePeriodLabel">Últimos 7 dias</span>
                         </div>
                         <div class="pro-card-body">
-                            <div style="height: 300px;">
+                            <div style="height: 300px;" id="revenueChartContainer">
                                 <canvas id="revenueChart"></canvas>
                             </div>
                         </div>
@@ -196,9 +231,10 @@
                     <div class="pro-card">
                         <div class="pro-card-header">
                             <h3 class="pro-card-title">Agendamentos por Dia</h3>
+                            <span class="chart-period" id="appointmentsPeriodLabel">Últimos 7 dias</span>
                         </div>
                         <div class="pro-card-body">
-                            <div style="height: 300px;">
+                            <div style="height: 300px;" id="appointmentsChartContainer">
                                 <canvas id="appointmentsChart"></canvas>
                             </div>
                         </div>
@@ -255,36 +291,46 @@
             <div class="pro-modal-body">
                 <form id="appointmentForm" onsubmit="saveAppointment(event)">
                     <div class="pro-form-group">
-                        <label class="pro-label">Cliente</label>
+                        <label class="pro-label">Cliente *</label>
                         <select class="pro-select" id="appointmentClient" required>
                             <option value="">Selecione um cliente</option>
                         </select>
                     </div>
                     <div class="pro-form-group">
-                        <label class="pro-label">Serviço</label>
+                        <label class="pro-label">Serviço *</label>
                         <select class="pro-select" id="appointmentService" required>
                             <option value="">Selecione um serviço</option>
                         </select>
                     </div>
                     <div class="pro-form-group">
-                        <label class="pro-label">Profissional</label>
+                        <label class="pro-label">Profissional *</label>
                         <select class="pro-select" id="appointmentProfessional" required>
                             <option value="">Selecione um profissional</option>
                         </select>
                     </div>
                     <div class="pro-form-row">
                         <div class="pro-form-group">
-                            <label class="pro-label">Data</label>
+                            <label class="pro-label">Data *</label>
                             <input type="date" class="pro-input" id="appointmentDate" required>
                         </div>
                         <div class="pro-form-group">
-                            <label class="pro-label">Horário</label>
+                            <label class="pro-label">Horário *</label>
                             <input type="time" class="pro-input" id="appointmentTime" required>
                         </div>
                     </div>
                     <div class="pro-form-group">
+                        <label class="pro-label">Status *</label>
+                        <select class="pro-select" id="appointmentStatus" required>
+                            <option value="agendado">Agendado</option>
+                            <option value="confirmado">Confirmado</option>
+                            <option value="em_atendimento">Em Atendimento</option>
+                            <option value="concluido">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="pro-form-group">
                         <label class="pro-label">Observações</label>
-                        <textarea class="pro-textarea" id="appointmentNotes" rows="3"></textarea>
+                        <textarea class="pro-textarea" id="appointmentNotes" rows="3" placeholder="Anotações adicionais..."></textarea>
                     </div>
                 </form>
             </div>
@@ -300,35 +346,514 @@
         </div>
     </div>
 
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: #374151;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 20px;
+            position: absolute;
+            top: -8px;
+            right: -8px;
+        }
+        
+        .pro-logo img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .pro-empty-chart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            flex-direction: column;
+        }
+
+        .pro-empty-chart i {
+            font-size: 36px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* FEATURE #5: Busca Global */
+        .search-results-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-result-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .search-result-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .search-result-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* FEATURE #6: Notificações */
+        .notifications-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            width: 320px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .notifications-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notifications-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .notifications-list {
+            padding: 8px 0;
+        }
+
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-icon {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: #ede9fe;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            vertical-align: middle;
+            color: #667eea;
+        }
+
+        .notification-content {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .notification-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* FEATURE #7: Comparação com período anterior */
+        .pro-comparison-card {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        body.dark-mode .pro-comparison-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+        }
+
+        .comparison-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        body.dark-mode .comparison-content {
+            color: #93c5fd;
+        }
+
+        .comparison-content i {
+            font-size: 18px;
+        }
+
+        /* FEATURE #8: Filtro por período */
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .period-select {
+            padding: 10px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .period-select:hover,
+        .period-select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .chart-period {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .pro-metric-change {
+            font-size: 12px;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .change-positive {
+            color: #10b981;
+        }
+
+        .change-negative {
+            color: #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            .header-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .period-select {
+                width: 100%;
+            }
+
+            .notifications-dropdown {
+                width: 90vw;
+                right: auto;
+                left: 5vw;
+            }
+        }
+    </style>
+
     <script>
-        // ─── Modal helpers (sem depender de ProUI) ─────────────────────
+        // ─── Variáveis globais ─────────────────────────────────────────
+        let revenueChart = null;
+        let appointmentsChart = null;
+        let perfilCarregado = null;
+        let periodoAtual = '7d';
+        let todosAgendamentos = [];
+
+        // ─── FEATURE #6: Dark Mode ─────────────────────────────────────
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+            const btn = document.getElementById('themeToogle');
+            btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        }
+
+        function initDarkMode() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('themeToogle').innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+
+        // ─── FEATURE #5: Busca Global ──────────────────────────────────
+        document.getElementById('globalSearch').addEventListener('input', async (e) => {
+            const termo = e.target.value.toLowerCase().trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (termo.length < 2) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            try {
+                const [clientes, agendamentos] = await Promise.all([
+                    DB.clientes.listar(),
+                    DB.agendamentos.listar()
+                ]);
+
+                const clientesEncontrados = (clientes || [])
+                    .filter(c => c.nome.toLowerCase().includes(termo))
+                    .slice(0, 5);
+
+                const agendamentosEncontrados = (agendamentos || [])
+                    .filter(a => a.cliente?.nome.toLowerCase().includes(termo))
+                    .slice(0, 5);
+
+                const todosResultados = [
+                    ...clientesEncontrados.map(c => ({
+                        tipo: 'cliente',
+                        id: c.id,
+                        titulo: c.nome,
+                        subtitulo: `${c.telefone || '—'} | ${c.email || '—'}`
+                    })),
+                    ...agendamentosEncontrados.map(a => ({
+                        tipo: 'agendamento',
+                        id: a.id,
+                        titulo: `${a.cliente?.nome || '—'} - ${a.servico?.nome || '—'}`,
+                        subtitulo: `${a.data} às ${a.hora}`
+                    }))
+                ];
+
+                if (todosResultados.length === 0) {
+                    resultsDiv.innerHTML = '<div class="search-result-item" style="text-align: center; color: #999;">Nenhum resultado encontrado</div>';
+                } else {
+                    resultsDiv.innerHTML = todosResultados.map(r => `
+                        <div class="search-result-item" onclick="selecionarResultado('${r.tipo}', '${r.id}')">
+                            <div class="search-result-title">${r.titulo}</div>
+                            <div class="search-result-subtitle">${r.subtitulo}</div>
+                        </div>
+                    `).join('');
+                }
+
+                resultsDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Erro na busca:', error);
+            }
+        });
+
+        function selecionarResultado(tipo, id) {
+            console.log(`Selecionado: ${tipo} - ${id}`);
+            document.getElementById('globalSearch').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+            // TODO: Navegar para página de detalhes ou abrir modal de edição
+        }
+
+        // ─── FEATURE #6: Notificações ──────────────────────────────────
+        function toggleNotificacoes() {
+            const dropdown = document.getElementById('notificacoesDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function adicionarNotificacao(titulo, descricao, tipo = 'info') {
+            const notificacoesList = document.getElementById('notificacoesList');
+            const badge = document.getElementById('notificacoesBadge');
+
+            const item = document.createElement('div');
+            item.className = 'notification-item';
+            item.innerHTML = `
+                <span class="notification-icon"><i class="fas fa-${tipo === 'sucesso' ? 'check' : 'info'}-circle"></i></span>
+                <div class="notification-content">
+                    <div class="notification-title">${titulo}</div>
+                    <div class="notification-time">${descricao}</div>
+                </div>
+            `;
+
+            if (notificacoesList.querySelector('p')) {
+                notificacoesList.innerHTML = '';
+            }
+
+            notificacoesList.insertBefore(item, notificacoesList.firstChild);
+            badge.style.display = 'block';
+            badge.textContent = Math.min(parseInt(badge.textContent || 0) + 1, 99);
+        }
+
+        // ─── FEATURE #8: Filtro por período ────────────────────────────
+        async function atualizarPeriodo() {
+            periodoAtual = document.getElementById('periodoFiltro').value;
+            const labels = {
+                '7d': 'Últimos 7 dias',
+                '14d': 'Últimas 2 semanas',
+                '30d': 'Últimos 30 dias',
+                'mes': 'Este mês'
+            };
+            
+            document.getElementById('revenuePeriodLabel').textContent = labels[periodoAtual];
+            document.getElementById('appointmentsPeriodLabel').textContent = labels[periodoAtual];
+            
+            await loadCharts();
+            await calcularComparacao();
+        }
+
+        // ─── Calcular Comparação ───────────────────────────────────────
+        async function calcularComparacao() {
+            try {
+                const hoje = new Date();
+                let dataInicio, dataFim, dataInicioAnterior, dataFimAnterior;
+
+                if (periodoAtual === '7d') {
+                    dataFim = hoje;
+                    dataInicio = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
+                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 7 * 24 * 60 * 60 * 1000);
+                } else if (periodoAtual === '30d') {
+                    dataFim = hoje;
+                    dataInicio = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    dataFimAnterior = new Date(dataInicio.getTime() - 1);
+                    dataInicioAnterior = new Date(dataFimAnterior.getTime() - 30 * 24 * 60 * 60 * 1000);
+                } else {
+                    return; // Simplificar para outros períodos
+                }
+
+                // Filtrar agendamentos por período
+                const filtrarPorData = (agendamentos, inicio, fim) => {
+                    return (agendamentos || []).filter(a => {
+                        const data = new Date(a.data);
+                        return data >= inicio && data <= fim;
+                    });
+                };
+
+                const agendamentosAtual = filtrarPorData(todosAgendamentos, dataInicio, dataFim);
+                const agendamentosAnterior = filtrarPorData(todosAgendamentos, dataInicioAnterior, dataFimAnterior);
+
+                const receitaAtual = agendamentosAtual.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+                const receitaAnterior = agendamentosAnterior.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
+
+                const variacao = receitaAnterior > 0 ? ((receitaAtual - receitaAnterior) / receitaAnterior * 100) : 0;
+                const sinal = variacao >= 0 ? '↑' : '↓';
+                const cor = variacao >= 0 ? '#10b981' : '#ef4444';
+
+                const card = document.getElementById('comparisonCard');
+                card.style.display = 'flex';
+                document.getElementById('comparisonText').innerHTML = 
+                    `<strong>${sinal}</strong> Receita <strong style="color: ${cor}">${Math.abs(variacao).toFixed(1)}%</strong> comparado ao período anterior`;
+
+            } catch (error) {
+                console.error('Erro ao calcular comparação:', error);
+            }
+        }
+
+        // ─── Modal helpers ─────────────────────────────────────────────
         function abrirModalAgendamento() {
             document.getElementById('newAppointmentModal').style.display = 'flex';
         }
+        
         function fecharModalAgendamento() {
             document.getElementById('newAppointmentModal').style.display = 'none';
         }
 
-        // ─── Carregar info do usuário na sidebar ───────────────────────
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.pro-search') && document.getElementById('searchResults').style.display !== 'none') {
+                document.getElementById('searchResults').style.display = 'none';
+            }
+            if (!e.target.closest('.notifications-btn') && !e.target.closest('.notifications-dropdown')) {
+                document.getElementById('notificacoesDropdown').style.display = 'none';
+            }
+        });
+
+        // ─── Carregar info do usuário na sidebar ────────────────────────
         window.addEventListener('perfilCarregado', async (e) => {
             const perfil = e.detail;
             if (!perfil) return;
+
+            console.log('✅ [Dashboard] Perfil carregado:', perfil.nome_empresa || perfil.nome);
+
+            if (perfil.role !== 'dono') {
+                console.log('❌ [Dashboard] Acesso negado');
+                window.location.href = 'dashboard-profissional.html';
+                return;
+            }
+
+            perfilCarregado = perfil;
+
+            if (perfil.logo_url) {
+                const logoIcon = document.getElementById('logoIcon');
+                logoIcon.innerHTML = `<img src="${perfil.logo_url}" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+            }
 
             const primeiraLetra = (perfil.nome_empresa || perfil.nome || perfil.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = primeiraLetra;
             document.getElementById('userName').textContent = perfil.nome_empresa || perfil.nome || perfil.email;
             document.getElementById('userRole').textContent = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
-
-            // Nome do estabelecimento no header
             document.getElementById('tenantName').textContent = perfil.nome_empresa || perfil.nome || 'Meu Estabelecimento';
 
-            // ✅ Só carrega o dashboard DEPOIS que o perfil (e DB) estão prontos
             await loadDashboard();
         });
 
         // ─── Carregar Dashboard ────────────────────────────────────────
         async function loadDashboard() {
             try {
+                console.log('📊 [Dashboard] Carregando dados...');
+                
                 const hoje = new Date().toISOString().split('T')[0];
                 const agora = new Date();
 
@@ -336,40 +861,63 @@
                 amanha.setDate(amanha.getDate() + 1);
                 const amanhaStr = amanha.toISOString().split('T')[0];
 
-                const [agendamentosHoje, agendamentosAmanha, financeiroHoje, financeiroMes] = await Promise.all([
+                const [agendamentosHoje, agendamentosAmanha, financeiroHoje, financeiroMes, todosAgs] = await Promise.all([
                     DB.agendamentos.listarPorData(hoje),
                     DB.agendamentos.listarPorData(amanhaStr),
                     DB.financeiro.faturamentoDia(hoje),
-                    DB.financeiro.faturamentoMes(agora.getFullYear(), agora.getMonth() + 1)
+                    DB.financeiro.faturamentoMes(agora.getFullYear(), agora.getMonth() + 1),
+                    DB.agendamentos.listar()
                 ]);
 
-                document.getElementById('appointmentsToday').textContent = agendamentosHoje.length;
-                document.getElementById('appointmentsTomorrow').textContent = agendamentosAmanha.length;
+                todosAgendamentos = todosAgs || [];
+
+                document.getElementById('appointmentsToday').textContent = agendamentosHoje?.length || 0;
+                document.getElementById('appointmentsTomorrow').textContent = agendamentosAmanha?.length || 0;
                 document.getElementById('revenueToday').textContent =
-                    'R$ ' + (financeiroHoje.faturamentoBruto || 0).toFixed(2).replace('.', ',');
-                document.getElementById('revenueMonth').textContent =
-                    'R$ ' + (financeiroMes.faturamentoBruto || 0).toFixed(2).replace('.', ',');
+                    'R$ ' + (financeiroHoje?.faturamentoBruto || 0).toFixed(2).replace('.', ',');
+                document.getElementById('revenuePeriod').textContent =
+                    'R$ ' + (financeiroMes?.faturamentoBruto || 0).toFixed(2).replace('.', ',');
+
+                console.log('✅ [Dashboard] Métricas carregadas');
 
                 await loadCharts();
                 await loadUpcomingAppointments();
                 await loadFormOptions();
+                await calcularComparacao();
 
             } catch (error) {
-                console.error('Erro ao carregar dashboard:', error);
+                console.error('❌ [Dashboard] Erro ao carregar:', error);
             }
         }
 
         // ─── Gráficos ──────────────────────────────────────────────────
-        let revenueChart = null;
-        let appointmentsChart = null;
-
         async function loadCharts() {
             try {
-                const dias = [];
-                for (let i = 6; i >= 0; i--) {
-                    const d = new Date();
-                    d.setDate(d.getDate() - i);
-                    dias.push(d.toISOString().split('T')[0]);
+                const hoje = new Date();
+                let dias = [];
+                let diasLabel = '';
+
+                if (periodoAtual === '7d') {
+                    for (let i = 6; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - i);
+                        dias.push(d.toISOString().split('T')[0]);
+                    }
+                    diasLabel = 'Últimos 7 dias';
+                } else if (periodoAtual === '14d') {
+                    for (let i = 13; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - i);
+                        dias.push(d.toISOString().split('T')[0]);
+                    }
+                    diasLabel = 'Últimas 2 semanas';
+                } else if (periodoAtual === '30d') {
+                    for (let i = 29; i >= 0; i--) {
+                        const d = new Date();
+                        d.setDate(d.getDate() - i);
+                        dias.push(d.toISOString().split('T')[0]);
+                    }
+                    diasLabel = 'Últimos 30 dias';
                 }
 
                 const resultados = await Promise.all(
@@ -382,10 +930,20 @@
                 });
 
                 const valores = resultados.map(lista =>
-                    lista.reduce((acc, ag) => acc + parseFloat(ag.valor || 0), 0)
+                    lista?.reduce((acc, ag) => acc + parseFloat(ag.valor || 0), 0) || 0
                 );
 
-                const quantidades = resultados.map(lista => lista.length);
+                const quantidades = resultados.map(lista => lista?.length || 0);
+
+                const temDados = valores.some(v => v > 0) || quantidades.some(q => q > 0);
+
+                if (!temDados) {
+                    document.getElementById('revenueChartContainer').innerHTML = 
+                        '<div class="pro-empty-chart"><i class="fas fa-chart-line"></i><p>Nenhum dado disponível</p></div>';
+                    document.getElementById('appointmentsChartContainer').innerHTML = 
+                        '<div class="pro-empty-chart"><i class="fas fa-calendar"></i><p>Nenhum dado disponível</p></div>';
+                    return;
+                }
 
                 if (revenueChart) revenueChart.destroy();
                 revenueChart = new Chart(document.getElementById('revenueChart'), {
@@ -398,10 +956,18 @@
                             borderColor: '#6366F1',
                             backgroundColor: 'rgba(99,102,241,0.1)',
                             tension: 0.4,
-                            fill: true
+                            fill: true,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' }
+                        }
+                    }
                 });
 
                 if (appointmentsChart) appointmentsChart.destroy();
@@ -412,14 +978,22 @@
                         datasets: [{
                             label: 'Agendamentos',
                             data: quantidades,
-                            backgroundColor: '#10B981'
+                            backgroundColor: '#10B981',
+                            borderRadius: 6,
+                            borderSkipped: false
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' }
+                        }
+                    }
                 });
 
             } catch (error) {
-                console.error('Erro ao carregar gráficos:', error);
+                console.error('❌ [Dashboard] Erro ao carregar gráficos:', error);
             }
         }
 
@@ -427,15 +1001,21 @@
         async function loadUpcomingAppointments() {
             try {
                 const hoje = new Date().toISOString().split('T')[0];
-                const agendamentos = await DB.agendamentos.listar({ data: hoje });
+                const agendamentos = await DB.agendamentos.listar();
+                
+                const proximosAgendamentos = (agendamentos || [])
+                    .filter(ag => ag.data && ag.data >= hoje)
+                    .sort((a, b) => `${a.data}${a.hora || ''}`.localeCompare(`${b.data}${b.hora || ''}`))
+                    .slice(0, 10); // FEATURE #8: Mostra mais que 5
+
                 const tbody = document.getElementById('upcomingAppointments');
 
-                if (!agendamentos || agendamentos.length === 0) {
+                if (!proximosAgendamentos || proximosAgendamentos.length === 0) {
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="6" class="pro-empty-state">
                                 <i class="fas fa-calendar-times pro-empty-state-icon"></i>
-                                <p>Nenhum agendamento hoje</p>
+                                <p>Nenhum agendamento próximo</p>
                             </td>
                         </tr>`;
                     return;
@@ -449,29 +1029,34 @@
                     cancelado: 'error'
                 };
 
-                tbody.innerHTML = agendamentos.slice(0, 5).map(apt => `
-                    <tr>
-                        <td>${apt.cliente?.nome || '—'}</td>
-                        <td>${apt.servico?.nome || '—'}</td>
-                        <td>${apt.profissional?.nome || '—'}</td>
-                        <td>${apt.data} ${apt.hora}</td>
-                        <td>
-                            <span class="pro-badge pro-badge-${statusColors[apt.status] || 'primary'}">
-                                ${apt.status}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="pro-table-actions">
-                                <button class="pro-action-btn" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `).join('');
+                tbody.innerHTML = proximosAgendamentos.map(apt => {
+                    const dataHora = apt.data && apt.hora ? `${apt.data} às ${apt.hora}` : '—';
+                    const statusColor = statusColors[apt.status] || 'primary';
+                    
+                    return `
+                        <tr>
+                            <td>${apt.cliente?.nome || '—'}</td>
+                            <td>${apt.servico?.nome || '—'}</td>
+                            <td>${apt.profissional?.nome || '—'}</td>
+                            <td>${dataHora}</td>
+                            <td>
+                                <span class="pro-badge pro-badge-${statusColor}">
+                                    ${apt.status || '—'}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="pro-table-actions">
+                                    <button class="pro-action-btn" title="Editar" onclick="editarAgendamento('${apt.id}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
 
             } catch (error) {
-                console.error('Erro ao carregar próximos agendamentos:', error);
+                console.error('❌ [Dashboard] Erro ao carregar agendamentos:', error);
             }
         }
 
@@ -486,20 +1071,20 @@
 
                 document.getElementById('appointmentClient').innerHTML =
                     '<option value="">Selecione um cliente</option>' +
-                    clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+                    (clientes || []).map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
 
                 document.getElementById('appointmentService').innerHTML =
                     '<option value="">Selecione um serviço</option>' +
-                    servicos.map(s => `<option value="${s.id}">${s.nome} - R$ ${parseFloat(s.preco).toFixed(2)}</option>`).join('');
+                    (servicos || []).map(s => `<option value="${s.id}">${s.nome} - R$ ${parseFloat(s.preco || 0).toFixed(2)}</option>`).join('');
 
                 document.getElementById('appointmentProfessional').innerHTML =
                     '<option value="">Selecione um profissional</option>' +
-                    profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+                    (profissionais || []).map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
 
                 document.getElementById('appointmentDate').value = new Date().toISOString().split('T')[0];
 
             } catch (error) {
-                console.error('Erro ao carregar opções do formulário:', error);
+                console.error('❌ [Dashboard] Erro ao carregar opções:', error);
             }
         }
 
@@ -516,32 +1101,44 @@
                     profissional_id: document.getElementById('appointmentProfessional').value,
                     data: document.getElementById('appointmentDate').value,
                     hora: document.getElementById('appointmentTime').value,
-                    status: 'confirmado',
+                    status: document.getElementById('appointmentStatus').value,
                     valor: servico ? servico.preco : 0,
                     observacoes: document.getElementById('appointmentNotes').value
                 };
 
                 const resultado = await DB.agendamentos.criar(dados);
 
-                if (resultado.success) {
-                    alert('✅ Agendamento criado com sucesso!');
+                if (resultado.success || resultado.data) {
+                    adicionarNotificacao('✓ Sucesso', 'Agendamento criado com sucesso!', 'sucesso');
                     fecharModalAgendamento();
+                    document.getElementById('appointmentForm').reset();
                     await loadDashboard();
                 } else {
-                    alert('❌ Erro: ' + resultado.error);
+                    throw new Error(resultado.error || 'Erro desconhecido');
                 }
             } catch (error) {
-                console.error('Erro ao salvar agendamento:', error);
-                alert('❌ Erro ao salvar agendamento');
+                console.error('❌ [Dashboard] Erro ao salvar:', error);
+                alert('❌ Erro ao salvar agendamento: ' + error.message);
             }
+        }
+
+        // ─── Editar Agendamento ────────────────────────────────────────
+        function editarAgendamento(id) {
+            console.log('✏️ [Dashboard] Editando agendamento:', id);
+            // TODO: Implementar edição
         }
 
         // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
+                console.log('🚪 [Dashboard] Saindo...');
                 await Auth.signOut();
             }
         }
+
+        // ─── Inicializar ───────────────────────────────────────────────
+        initDarkMode();
+        console.log('🚀 [Dashboard] Página carregada');
     </script>
 </body>
 </html>
