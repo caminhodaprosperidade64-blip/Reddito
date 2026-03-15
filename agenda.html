@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
     <style>
-        /* Apenas CSS específico da agenda */
         .agenda-wrapper {
             display: grid;
             grid-template-columns: 320px 1fr;
@@ -20,7 +19,6 @@
             padding: 2rem;
         }
 
-        /* CALENDÁRIO */
         .calendar-panel {
             display: flex;
             flex-direction: column;
@@ -137,7 +135,6 @@
             font-weight: 600;
         }
 
-        /* SCHEDULE AREA */
         .schedule-panel {
             display: flex;
             flex-direction: column;
@@ -284,7 +281,6 @@
             opacity: 0.9;
         }
 
-        /* CORES */
         .bg-prof-1 { background-color: #dbeafe; }
         .bg-prof-2 { background-color: #e0e7ff; }
         .bg-prof-3 { background-color: #f3e8ff; }
@@ -297,7 +293,6 @@
         .slot-prof-2 { background-color: #818cf8; }
         .slot-prof-3 { background-color: #a855f7; }
 
-        /* MODAL */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -411,7 +406,6 @@
             margin-top: 2rem;
         }
 
-        /* MODAL - VISUALIZAR */
         .modal-info-group {
             background: var(--bg-main);
             padding: 1rem;
@@ -500,45 +494,6 @@
             opacity: 0.4;
         }
 
-        /* MODAL - FINALIZAR */
-        .finalize-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary) 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: var(--border-radius-lg);
-            margin-bottom: 1.5rem;
-            text-align: center;
-        }
-
-        .finalize-header h3 {
-            margin: 0 0 1rem 0;
-            font-size: 0.95rem;
-            font-weight: 600;
-            opacity: 0.9;
-        }
-
-        .finalize-values {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .finalize-value-item {
-            text-align: center;
-        }
-
-        .finalize-value-label {
-            font-size: 0.8rem;
-            opacity: 0.85;
-            margin-bottom: 0.3rem;
-            display: block;
-        }
-
-        .finalize-value-amount {
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
         .payment-methods {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -610,8 +565,6 @@
 
         .pro-btn-primary:hover {
             background: #4f46e5;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .pro-btn-secondary {
@@ -631,8 +584,6 @@
 
         .pro-btn-success:hover {
             background: #059669;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .pro-btn-danger {
@@ -642,8 +593,6 @@
 
         .pro-btn-danger:hover {
             background: #dc2626;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
     </style>
 </head>
@@ -720,19 +669,17 @@
 
         <main class="pro-main">
             <div class="agenda-wrapper">
-                <!-- CALENDÁRIO -->
                 <div class="calendar-panel">
                     <div class="calendar-header">
                         <h3 id="monthYear">Março 2026</h3>
                         <div class="calendar-nav">
-                            <button onclick="prevMonth()" title="Mês anterior"><i class="fas fa-chevron-left"></i></button>
-                            <button onclick="nextMonth()" title="Próximo mês"><i class="fas fa-chevron-right"></i></button>
+                            <button onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
+                            <button onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                     <div id="miniCalendar"></div>
                 </div>
 
-                <!-- AGENDA -->
                 <div class="schedule-panel">
                     <div class="schedule-header">
                         <h2>Agenda</h2>
@@ -919,20 +866,6 @@
             </div>
             <div style="padding: 0 2rem;">
                 <form id="finalizeForm" onsubmit="finalizeAppointment(event)">
-                    <div class="finalize-header">
-                        <h3>Resumo Financeiro</h3>
-                        <div class="finalize-values">
-                            <div class="finalize-value-item">
-                                <span class="finalize-value-label">Valor do Serviço</span>
-                                <span class="finalize-value-amount" id="finalizeServiceValue">R$ 0,00</span>
-                            </div>
-                            <div class="finalize-value-item">
-                                <span class="finalize-value-label">Comissão Prof.</span>
-                                <span class="finalize-value-amount" id="finalizeProfCommission">R$ 0,00</span>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="form-field" style="margin-bottom: 1.5rem;">
                         <label style="margin-bottom: 1rem;">Como foi o pagamento? *</label>
                         <div class="payment-methods">
@@ -972,7 +905,7 @@
 
                     <div class="form-field">
                         <label>Observações Finais</label>
-                        <textarea id="finalizeNotesField" rows="3" placeholder="Adicione observações sobre o atendimento..."></textarea>
+                        <textarea id="finalizeNotesField" rows="3" placeholder="Adicione observações..."></textarea>
                     </div>
 
                     <div class="form-actions">
@@ -1011,7 +944,6 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Iniciando agenda...');
             initDarkMode();
             loadAll();
         });
@@ -1025,13 +957,12 @@
                 allProfessionals = await DB.profissionais.listar();
                 allClients = await DB.clientes.listar();
                 allServices = await DB.servicos.listar();
-
                 populateSelects();
                 populateEditSelects();
                 renderCalendar();
                 renderSchedule();
             } catch (error) {
-                console.error('❌ Erro:', error);
+                console.error('Erro:', error);
             }
         }
 
@@ -1175,7 +1106,7 @@
                 html += '</div>';
                 container.innerHTML = html;
             } catch (error) {
-                console.error('❌ Erro:', error);
+                console.error('Erro:', error);
             }
         }
 
@@ -1218,11 +1149,6 @@
             const value = parseFloat(document.getElementById('valueField').value) || 0;
             const notes = document.getElementById('notesField').value;
 
-            if (!clientId || !serviceId) {
-                alert('Preencha cliente e serviço');
-                return;
-            }
-
             try {
                 const result = await DB.agendamentos.criar({
                     profissional_id: modalState.profId,
@@ -1238,8 +1164,7 @@
                 if (result.success || result.data) {
                     closeModal();
                     renderSchedule();
-                } else {
-                    alert('Erro ao criar agendamento');
+                    alert('✅ Agendamento criado!');
                 }
             } catch (error) {
                 alert('Erro ao agendar');
@@ -1250,9 +1175,7 @@
             try {
                 viewingAppointment = allAppointments.find(a => a.id === aptId);
                 
-                if (!viewingAppointment) {
-                    return;
-                }
+                if (!viewingAppointment) return;
 
                 document.getElementById('viewProfName').textContent = viewingAppointment.profissional?.nome || '-';
                 document.getElementById('viewClientName').textContent = viewingAppointment.cliente?.nome || '-';
@@ -1311,10 +1234,7 @@
         async function updateAppointment(e) {
             e.preventDefault();
 
-            if (!viewingAppointment) {
-                alert('Erro ao atualizar');
-                return;
-            }
+            if (!viewingAppointment) return;
 
             const clientId = document.getElementById('editClientSelect').value;
             const serviceId = document.getElementById('editServiceSelect').value;
@@ -1322,28 +1242,23 @@
             const notes = document.getElementById('editNotesField').value;
 
             try {
-                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
+                await DB.agendamentos.atualizar(viewingAppointment.id, {
                     cliente_id: clientId,
                     servico_id: serviceId,
                     valor: value,
                     observacoes: notes
                 });
 
-                if (result.success || result.data) {
-                    closeEditModal();
-                    await renderSchedule();
-                    alert('✅ Atualizado com sucesso!');
-                } else {
-                    alert('❌ Erro na atualização');
-                }
+                closeEditModal();
+                await renderSchedule();
+                alert('✅ Atualizado!');
             } catch (error) {
-                console.error('Erro:', error);
-                alert('❌ Erro ao atualizar');
+                alert('Erro ao atualizar');
             }
         }
 
         function confirmCancel() {
-            if (!confirm('Deseja cancelar este agendamento?')) return;
+            if (!confirm('Cancelar agendamento?')) return;
             cancelAppointmentNow();
         }
 
@@ -1351,31 +1266,18 @@
             if (!viewingAppointment) return;
 
             try {
-                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
-                    status: 'cancelado'
-                });
-
-                if (result.success || result.data) {
-                    closeViewModal();
-                    renderSchedule();
-                    alert('✅ Cancelado!');
-                } else {
-                    alert('❌ Erro ao cancelar');
-                }
+                await DB.agendamentos.atualizar(viewingAppointment.id, { status: 'cancelado' });
+                closeViewModal();
+                renderSchedule();
+                alert('✅ Cancelado!');
             } catch (error) {
-                alert('❌ Erro ao cancelar');
+                alert('Erro ao cancelar');
             }
         }
 
         function openFinalizeModal() {
             if (!viewingAppointment) return;
 
-            const serviceValue = parseFloat(viewingAppointment.valor) || 0;
-            const commissionPercent = viewingAppointment.profissional?.comissao_percentual || 0;
-            const commission = (serviceValue * commissionPercent) / 100;
-
-            document.getElementById('finalizeServiceValue').textContent = `R$ ${serviceValue.toFixed(2).replace('.', ',')}`;
-            document.getElementById('finalizeProfCommission').textContent = `R$ ${commission.toFixed(2).replace('.', ',')}`;
             document.getElementById('finalizeNotesField').value = '';
             document.getElementById('finalizeForm').reset();
 
@@ -1391,10 +1293,7 @@
         async function finalizeAppointment(e) {
             e.preventDefault();
 
-            if (!viewingAppointment) {
-                alert('Erro ao finalizar');
-                return;
-            }
+            if (!viewingAppointment) return;
 
             const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
             const notes = document.getElementById('finalizeNotesField').value;
@@ -1405,26 +1304,17 @@
             }
 
             try {
-                const serviceValue = parseFloat(viewingAppointment.valor) || 0;
-                const commissionPercent = viewingAppointment.profissional?.comissao_percentual || 0;
-                const commission = (serviceValue * commissionPercent) / 100;
-
-                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
+                await DB.agendamentos.atualizar(viewingAppointment.id, {
                     status: 'finalizado',
-                    observacoes: notes,
                     forma_pagamento: paymentMethod,
-                    comissao_profissional: commission
+                    observacoes: notes
                 });
 
-                if (result.success || result.data) {
-                    closeFinalizeModal();
-                    await renderSchedule();
-                    alert('✅ Finalizado com sucesso!');
-                } else {
-                    alert('❌ Erro ao finalizar');
-                }
+                closeFinalizeModal();
+                await renderSchedule();
+                alert('✅ Finalizado!');
             } catch (error) {
-                alert('❌ Erro ao finalizar');
+                alert('Erro ao finalizar');
             }
         }
 
@@ -1433,7 +1323,7 @@
                 await supabase.auth.signOut();
                 window.location.href = 'login.html';
             } catch (error) {
-                console.error('Erro ao fazer logout:', error);
+                console.error('Erro:', error);
             }
         }
     </script>
