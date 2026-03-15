@@ -12,30 +12,29 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
     <style>
-        .agenda-container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
+        .agenda-wrapper {
+            display: flex;
             gap: 2rem;
-            height: calc(100vh - 120px);
             padding: 2rem;
+            height: calc(100vh - 100px);
         }
 
         /* CALENDÁRIO */
-        .calendar-section {
+        .calendar-panel {
+            width: 350px;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
         .calendar-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
         }
 
         .calendar-header h3 {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
             margin: 0;
         }
@@ -49,13 +48,14 @@
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.85rem;
             transition: all 0.2s;
         }
 
@@ -70,213 +70,233 @@
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 1.5rem;
+            flex: 1;
         }
 
-        .mini-calendar-month {
+        .calendar-month-title {
             text-align: center;
             font-weight: 600;
-            margin-bottom: 1rem;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
         }
 
-        .days-header {
+        .calendar-weekdays {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 0.5rem;
-            margin-bottom: 0.75rem;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
         }
 
-        .day-header {
+        .calendar-weekday {
             text-align: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             color: var(--text-secondary);
             text-transform: uppercase;
         }
 
-        .days-grid {
+        .calendar-days {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
-        .day-cell {
+        .calendar-day {
             aspect-ratio: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             background: var(--bg-primary);
             border: 1px solid transparent;
             transition: all 0.2s;
             color: var(--text-secondary);
         }
 
-        .day-cell:hover {
+        .calendar-day:hover:not(.other-month) {
             background: var(--bg-hover);
-            border-color: var(--border-color);
         }
 
-        .day-cell.other-month {
-            opacity: 0.4;
+        .calendar-day.other-month {
+            opacity: 0.3;
+            cursor: default;
         }
 
-        .day-cell.today {
+        .calendar-day.today {
             background: var(--primary);
             color: white;
             font-weight: 600;
         }
 
-        .day-cell.selected {
-            border: 2px solid var(--primary);
+        .calendar-day.selected {
             background: var(--primary);
             color: white;
+            font-weight: 600;
+            border-color: var(--primary);
         }
 
-        /* GRID DE HORÁRIOS */
-        .schedule-section {
+        /* SCHEDULE AREA */
+        .schedule-panel {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
-            overflow-y: auto;
+            gap: 1rem;
+            overflow: hidden;
         }
 
-        .schedule-header {
+        .schedule-title-area {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
         }
 
-        .schedule-header h2 {
+        .schedule-title-area h2 {
             margin: 0;
             font-size: 1.3rem;
         }
 
-        .schedule-date-info {
+        .schedule-date-label {
             font-size: 0.9rem;
             color: var(--text-secondary);
         }
 
-        .schedule-grid-wrapper {
+        .schedule-grid-container {
+            flex: 1;
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             overflow: auto;
-            flex: 1;
         }
 
         .schedule-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 600px;
+            min-width: 100%;
         }
 
-        .time-cell {
+        .time-col {
             width: 80px;
             padding: 1rem 0.5rem;
             text-align: center;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 500;
             color: var(--text-secondary);
-            border-right: 1px solid var(--border-color);
             background: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
             position: sticky;
             left: 0;
-            z-index: 2;
+            z-index: 5;
         }
 
-        .schedule-header-row {
+        .prof-header-row {
             background: var(--bg-primary);
-            border-bottom: 1px solid var(--border-color);
         }
 
-        .professional-header-cell {
-            padding: 1rem;
-            font-weight: 600;
-            font-size: 0.95rem;
+        .prof-header-cell {
+            padding: 1rem 0.5rem;
             text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
             border-right: 1px solid var(--border-color);
-            min-width: 200px;
+            min-width: 180px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
 
-        .professional-badge {
-            width: 12px;
-            height: 12px;
+        .prof-badge {
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
         }
 
-        .schedule-slot {
+        .time-slot {
             padding: 0.75rem;
             border-right: 1px solid var(--border-color);
             border-bottom: 1px solid var(--border-color);
-            min-width: 200px;
-            min-height: 80px;
+            min-width: 180px;
+            min-height: 75px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            font-size: 0.85rem;
-            position: relative;
+            font-size: 0.8rem;
         }
 
-        .schedule-slot:hover {
-            opacity: 0.8;
-        }
-
-        .schedule-slot.empty {
+        .time-slot.empty {
             color: var(--text-secondary);
             background: transparent;
         }
 
-        .schedule-slot-content {
+        .time-slot.empty:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .time-slot.booked {
+            color: white;
+            font-weight: 500;
+        }
+
+        .slot-content {
             display: flex;
             flex-direction: column;
-            align-items: center;
             gap: 0.25rem;
         }
 
-        .slot-client-name {
+        .slot-client {
             font-weight: 600;
-            font-size: 0.9rem;
         }
 
-        .slot-service-type {
+        .slot-service {
             font-size: 0.75rem;
-            opacity: 0.8;
+            opacity: 0.85;
         }
 
-        /* CORES DOS PROFISSIONAIS */
-        .prof-bg-1 { background-color: rgba(147, 197, 253, 0.15); }
-        .prof-bg-2 { background-color: rgba(199, 210, 254, 0.15); }
-        .prof-bg-3 { background-color: rgba(196, 181, 253, 0.15); }
-        .prof-bg-4 { background-color: rgba(230, 204, 255, 0.15); }
-        .prof-bg-5 { background-color: rgba(253, 204, 199, 0.15); }
+        /* CORES */
+        .bg-prof-1 { background-color: rgba(59, 130, 246, 0.12); }
+        .bg-prof-2 { background-color: rgba(129, 140, 248, 0.12); }
+        .bg-prof-3 { background-color: rgba(168, 85, 247, 0.12); }
+        .bg-prof-4 { background-color: rgba(236, 72, 153, 0.12); }
+        .bg-prof-5 { background-color: rgba(249, 115, 22, 0.12); }
 
-        .prof-badge-1 { background-color: #3b82f6; }
-        .prof-badge-2 { background-color: #818cf8; }
-        .prof-badge-3 { background-color: #a855f7; }
-        .prof-badge-4 { background-color: #ec4899; }
-        .prof-badge-5 { background-color: #f97316; }
+        .badge-prof-1 { background-color: #3b82f6; }
+        .badge-prof-2 { background-color: #818cf8; }
+        .badge-prof-3 { background-color: #a855f7; }
+        .badge-prof-4 { background-color: #ec4899; }
+        .badge-prof-5 { background-color: #f97316; }
 
-        .prof-slot-1 { background-color: #3b82f6; color: white; }
-        .prof-slot-2 { background-color: #818cf8; color: white; }
-        .prof-slot-3 { background-color: #a855f7; color: white; }
-        .prof-slot-4 { background-color: #ec4899; color: white; }
-        .prof-slot-5 { background-color: #f97316; color: white; }
+        .slot-prof-1 { background-color: #3b82f6; }
+        .slot-prof-2 { background-color: #818cf8; }
+        .slot-prof-3 { background-color: #a855f7; }
+        .slot-prof-4 { background-color: #ec4899; }
+        .slot-prof-5 { background-color: #f97316; }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            height: 100%;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.4;
+        }
 
         /* MODAL */
-        .modal-backdrop {
+        .modal-overlay {
             display: none;
             position: fixed;
             top: 0;
@@ -289,11 +309,11 @@
             justify-content: center;
         }
 
-        .modal-backdrop.active {
+        .modal-overlay.active {
             display: flex;
         }
 
-        .modal-content {
+        .modal-box {
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 12px;
@@ -302,7 +322,7 @@
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
         }
 
         .modal-header {
@@ -316,38 +336,37 @@
 
         .modal-header h2 {
             margin: 0;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
         }
 
-        .close-button {
+        .modal-close {
             background: none;
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
             color: var(--text-secondary);
-            transition: color 0.2s;
         }
 
-        .close-button:hover {
+        .modal-close:hover {
             color: var(--text-primary);
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
+        .form-field {
+            margin-bottom: 1.2rem;
         }
 
-        .form-group label {
+        .form-field label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             font-weight: 500;
             font-size: 0.9rem;
         }
 
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.6rem;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             background: var(--bg-primary);
@@ -356,22 +375,23 @@
             font-size: 0.9rem;
         }
 
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        .form-buttons {
+        .form-actions {
             display: flex;
             gap: 1rem;
             justify-content: flex-end;
+            margin-top: 2rem;
         }
 
         .btn {
-            padding: 0.75rem 1.5rem;
+            padding: 0.6rem 1.2rem;
             border: none;
             border-radius: 6px;
             font-size: 0.9rem;
@@ -399,20 +419,13 @@
             background: var(--bg-hover);
         }
 
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            padding: 2rem;
-            color: var(--text-secondary);
-            min-height: 400px;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            opacity: 0.5;
+        @media (max-width: 1200px) {
+            .agenda-wrapper {
+                flex-direction: column;
+            }
+            .calendar-panel {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -466,74 +479,74 @@
         </aside>
 
         <main class="pro-main">
-            <div class="agenda-container">
+            <div class="agenda-wrapper">
                 <!-- CALENDÁRIO -->
-                <div class="calendar-section">
+                <div class="calendar-panel">
                     <div class="calendar-header">
-                        <h3 id="calendarMonth">Março 2026</h3>
+                        <h3 id="monthYear">Março 2026</h3>
                         <div class="calendar-nav">
-                            <button onclick="previousMonth()" title="Mês anterior"><i class="fas fa-chevron-left"></i></button>
-                            <button onclick="nextMonth()" title="Próximo mês"><i class="fas fa-chevron-right"></i></button>
+                            <button onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
+                            <button onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                     <div class="mini-calendar" id="miniCalendar"></div>
                 </div>
 
-                <!-- GRADE DE HORÁRIOS -->
-                <div class="schedule-section">
-                    <div class="schedule-header">
+                <!-- AGENDA -->
+                <div class="schedule-panel">
+                    <div class="schedule-title-area">
                         <div>
                             <h2>Agenda</h2>
-                            <div class="schedule-date-info" id="selectedDateInfo">Selecione um dia</div>
+                            <div class="schedule-date-label" id="dateLabel">Selecione um dia</div>
                         </div>
                     </div>
-                    <div class="schedule-grid-wrapper" id="scheduleGridWrapper"></div>
+                    <div class="schedule-grid-container" id="scheduleContainer"></div>
                 </div>
             </div>
         </main>
     </div>
 
     <!-- MODAL -->
-    <div class="modal-backdrop" id="appointmentModal">
-        <div class="modal-content">
+    <div class="modal-overlay" id="appointmentModal">
+        <div class="modal-box">
             <div class="modal-header">
                 <h2>Novo Agendamento</h2>
-                <button class="close-button" onclick="closeModal()"><i class="fas fa-times"></i></button>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
             <form id="appointmentForm" onsubmit="saveAppointment(event)">
-                <div class="form-group">
+                <div class="form-field">
                     <label>Profissional</label>
-                    <input type="text" id="modalProfissional" disabled>
+                    <input type="text" id="profName" disabled>
                 </div>
-                <div class="form-group">
+                <div class="form-field">
                     <label>Data</label>
-                    <input type="text" id="modalData" disabled>
+                    <input type="text" id="dateField" disabled>
                 </div>
-                <div class="form-group">
+                <div class="form-field">
                     <label>Horário</label>
-                    <input type="text" id="modalHora" disabled>
+                    <input type="text" id="timeField" disabled>
                 </div>
-                <div class="form-group">
+                <div class="form-field">
                     <label>Cliente *</label>
-                    <select id="modalCliente" required>
-                        <option value="">Selecione um cliente</option>
+                    <select id="clientSelect" required>
+                        <option value="">Selecione...</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-field">
                     <label>Serviço *</label>
-                    <select id="modalServico" required>
-                        <option value="">Selecione um serviço</option>
+                    <select id="serviceSelect" required>
+                        <option value="">Selecione...</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Valor</label>
-                    <input type="number" id="modalValor" min="0" step="0.01" placeholder="0,00">
+                <div class="form-field">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="valueField" min="0" step="0.01">
                 </div>
-                <div class="form-group">
+                <div class="form-field">
                     <label>Observações</label>
-                    <textarea id="modalObservacoes" rows="3" placeholder="Digite observações..."></textarea>
+                    <textarea id="notesField" rows="3"></textarea>
                 </div>
-                <div class="form-buttons">
+                <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Agendar</button>
                 </div>
@@ -541,7 +554,6 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
@@ -551,261 +563,194 @@
     <script src="js/dark-mode.js"></script>
 
     <script>
-        let currentDate = new Date();
-        let selectedDate = new Date();
-        let perfilAtual = null;
-        let todosAgendamentos = [];
-        let todosProfissionais = [];
-        let todosClientes = [];
-        let todosServicos = [];
-        let modalData = { profissionalId: null, profissionalNome: null, data: null, hora: null };
+        let currentCalendar = new Date();
+        let selectedDay = new Date();
+        let allAppointments = [];
+        let allProfessionals = [];
+        let allClients = [];
+        let allServices = [];
+        let modalState = { profId: null, profName: null, date: null, time: null };
+
+        const COLORS = {
+            1: { bg: 'bg-prof-1', badge: 'badge-prof-1', slot: 'slot-prof-1' },
+            2: { bg: 'bg-prof-2', badge: 'badge-prof-2', slot: 'slot-prof-2' },
+            3: { bg: 'bg-prof-3', badge: 'badge-prof-3', slot: 'slot-prof-3' },
+            4: { bg: 'bg-prof-4', badge: 'badge-prof-4', slot: 'slot-prof-4' },
+            5: { bg: 'bg-prof-5', badge: 'badge-prof-5', slot: 'slot-prof-5' }
+        };
 
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
-            loadProfile();
-            loadProfissionais();
-            loadClientes();
-            loadServicos();
-            renderCalendar();
-            renderSchedule();
+            loadAll();
         });
 
-        // Sincronizar dark mode entre abas
         window.addEventListener('storage', e => {
             if (e.key === 'sispro_theme') location.reload();
         });
 
-        async function loadProfile() {
+        async function loadAll() {
             try {
-                perfilAtual = await getPerfilAtual();
-                if (perfilAtual) {
-                    document.getElementById('userName').textContent = perfilAtual.nome || 'Usuário';
-                    document.getElementById('userRole').textContent = perfilAtual.role || 'Cliente';
+                const user = await getPerfilAtual();
+                if (user) {
+                    document.getElementById('userName').textContent = user.nome || 'Usuário';
+                    document.getElementById('userRole').textContent = user.role || 'Cliente';
                 }
+
+                allProfessionals = await DB.profissionais.listar();
+                allClients = await DB.clientes.listar();
+                allServices = await DB.servicos.listar();
+
+                populateSelects();
+                renderCalendar();
+                renderSchedule();
             } catch (error) {
-                console.error('❌ Erro ao carregar perfil:', error);
+                console.error('Erro ao carregar dados:', error);
             }
         }
 
-        async function loadProfissionais() {
-            try {
-                todosProfissionais = await DB.profissionais.listar();
-                console.log('✅ Profissionais carregados:', todosProfissionais.length);
-            } catch (error) {
-                console.error('❌ Erro ao carregar profissionais:', error);
-            }
-        }
+        function populateSelects() {
+            const clientSelect = document.getElementById('clientSelect');
+            const serviceSelect = document.getElementById('serviceSelect');
 
-        async function loadClientes() {
-            try {
-                todosClientes = await DB.clientes.listar();
-                const clienteSelect = document.getElementById('modalCliente');
-                clienteSelect.innerHTML = '<option value="">Selecione um cliente</option>';
-                todosClientes.forEach(c => {
-                    const option = document.createElement('option');
-                    option.value = c.id;
-                    option.textContent = c.nome;
-                    clienteSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('❌ Erro ao carregar clientes:', error);
-            }
-        }
+            clientSelect.innerHTML = '<option value="">Selecione...</option>';
+            serviceSelect.innerHTML = '<option value="">Selecione...</option>';
 
-        async function loadServicos() {
-            try {
-                todosServicos = await DB.servicos.listar();
-                const servicoSelect = document.getElementById('modalServico');
-                servicoSelect.innerHTML = '<option value="">Selecione um serviço</option>';
-                todosServicos.forEach(s => {
-                    const option = document.createElement('option');
-                    option.value = s.id;
-                    option.textContent = s.nome;
-                    clienteSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('❌ Erro ao carregar serviços:', error);
-            }
-        }
+            allClients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.nome;
+                clientSelect.appendChild(opt);
+            });
 
-        async function loadAgendamentos() {
-            try {
-                const dataStr = selectedDate.toISOString().split('T')[0];
-                todosAgendamentos = await DB.agendamentos.listarPorData(dataStr);
-                console.log('✅ Agendamentos carregados:', todosAgendamentos.length);
-            } catch (error) {
-                console.error('❌ Erro ao carregar agendamentos:', error);
-                todosAgendamentos = [];
-            }
+            allServices.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = s.nome;
+                serviceSelect.appendChild(opt);
+            });
         }
 
         function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startingDayOfWeek = firstDay.getDay();
+            const year = currentCalendar.getFullYear();
+            const month = currentCalendar.getMonth();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            const monthName = currentDate.toLocaleDateString('pt-BR', {
-                month: 'long',
-                year: 'numeric'
+            const monthName = currentCalendar.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            document.getElementById('monthYear').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+            let html = `<div class="calendar-month-title">${monthName.toUpperCase()}</div>`;
+            html += '<div class="calendar-weekdays">';
+            ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'].forEach(d => {
+                html += `<div class="calendar-weekday">${d}</div>`;
             });
-            document.getElementById('calendarMonth').textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+            html += '</div><div class="calendar-days">';
 
-            let html = `
-                <div class="mini-calendar-month">${monthName.toUpperCase()}</div>
-                <div class="days-header">
-                    <div class="day-header">Dom</div>
-                    <div class="day-header">Seg</div>
-                    <div class="day-header">Ter</div>
-                    <div class="day-header">Qua</div>
-                    <div class="day-header">Qui</div>
-                    <div class="day-header">Sex</div>
-                    <div class="day-header">Sab</div>
-                </div>
-                <div class="days-grid">
-            `;
-
-            // Dias do mês anterior
-            for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-                const day = new Date(year, month, -i).getDate();
-                html += `<div class="day-cell other-month">${day}</div>`;
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div class="calendar-day other-month"></div>';
             }
 
-            // Dias do mês atual
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
                 const isToday = new Date().toDateString() === date.toDateString();
-                const isSelected = selectedDate.toDateString() === date.toDateString();
-                const classes = [];
+                const isSelected = selectedDay.toDateString() === date.toDateString();
+                const classes = ['calendar-day'];
                 if (isToday) classes.push('today');
                 if (isSelected) classes.push('selected');
-                
-                html += `<div class="day-cell ${classes.join(' ')}" onclick="selectDate(new Date(${year}, ${month}, ${day}))">${day}</div>`;
+
+                html += `<div class="${classes.join(' ')}" onclick="selectDay(new Date(${year}, ${month}, ${day}))">${day}</div>`;
             }
 
-            // Dias do próximo mês
-            const remainingDays = 42 - (startingDayOfWeek + daysInMonth);
-            for (let day = 1; day <= remainingDays; day++) {
-                html += `<div class="day-cell other-month">${day}</div>`;
-            }
-
-            html += `</div>`;
+            html += '</div>';
             document.getElementById('miniCalendar').innerHTML = html;
         }
 
-        function previousMonth() {
-            currentDate.setMonth(currentDate.getMonth() - 1);
+        function prevMonth() {
+            currentCalendar.setMonth(currentCalendar.getMonth() - 1);
             renderCalendar();
         }
 
         function nextMonth() {
-            currentDate.setMonth(currentDate.getMonth() + 1);
+            currentCalendar.setMonth(currentCalendar.getMonth() + 1);
             renderCalendar();
         }
 
-        function selectDate(date) {
-            selectedDate = date;
+        function selectDay(date) {
+            selectedDay = date;
             renderCalendar();
             renderSchedule();
         }
 
         async function renderSchedule() {
-            await loadAgendamentos();
+            const dateStr = selectedDay.toISOString().split('T')[0];
+            allAppointments = await DB.agendamentos.listarPorData(dateStr);
 
-            const wrapper = document.getElementById('scheduleGridWrapper');
-            const dateStr = selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            document.getElementById('selectedDateInfo').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+            const container = document.getElementById('scheduleContainer');
+            const dateLabel = selectedDay.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+            document.getElementById('dateLabel').textContent = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
 
-            if (!todosProfissionais || todosProfissionais.length === 0) {
-                wrapper.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-user-tie"></i>
-                        <span>Nenhum profissional cadastrado</span>
-                    </div>
-                `;
+            if (!allProfessionals.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-user-tie"></i><span>Nenhum profissional</span></div>';
                 return;
             }
 
-            const horarios = gerarHorarios('08:00', '18:00', 30);
+            const times = generateTimes('08:00', '18:00', 30);
             let html = '<table class="schedule-table"><tbody>';
 
-            // Header com profissionais
-            html += '<tr class="schedule-header-row"><td class="time-cell"></td>';
-            todosProfissionais.forEach((prof, idx) => {
-                const corIdx = (idx % 5) + 1;
-                html += `
-                    <td class="professional-header-cell prof-bg-${corIdx}">
-                        <span class="professional-badge prof-badge-${corIdx}"></span>
-                        ${prof.nome}
-                    </td>
-                `;
+            // Cabeçalho
+            html += '<tr class="prof-header-row"><td class="time-col"></td>';
+            allProfessionals.forEach((prof, idx) => {
+                const colorIdx = (idx % 5) + 1;
+                const color = COLORS[colorIdx];
+                html += `<td class="prof-header-cell ${color.bg}"><span class="prof-badge ${color.badge}"></span>${prof.nome}</td>`;
             });
             html += '</tr>';
 
-            // Slots de horários
-            horarios.forEach(hora => {
-                html += `<tr><td class="time-cell">${hora}</td>`;
-                todosProfissionais.forEach((prof, idx) => {
-                    const corIdx = (idx % 5) + 1;
-                    const agendamento = todosAgendamentos.find(a => 
-                        a.profissional_id === prof.id && 
-                        a.hora === hora
-                    );
+            // Horários
+            times.forEach(time => {
+                html += `<tr><td class="time-col">${time}</td>`;
+                allProfessionals.forEach((prof, idx) => {
+                    const colorIdx = (idx % 5) + 1;
+                    const color = COLORS[colorIdx];
+                    const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora === time);
 
-                    if (agendamento) {
-                        const clienteNome = agendamento.cliente?.nome || 'Cliente';
-                        const servicoNome = agendamento.servico?.nome || 'Serviço';
-                        html += `
-                            <td class="schedule-slot prof-slot-${corIdx}" onclick="editarAgendamento(${agendamento.id})">
-                                <div class="schedule-slot-content">
-                                    <div class="slot-client-name">${clienteNome}</div>
-                                    <div class="slot-service-type">${servicoNome}</div>
-                                </div>
-                            </td>
-                        `;
+                    if (apt) {
+                        const clientName = apt.cliente?.nome || 'Cliente';
+                        const serviceName = apt.servico?.nome || 'Serviço';
+                        html += `<td class="time-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></td>`;
                     } else {
-                        html += `
-                            <td class="schedule-slot empty prof-bg-${corIdx}" onclick="abrirModalAgendamento('${prof.id}', '${prof.nome}', '${selectedDate.toISOString().split('T')[0]}', '${hora}')">
-                                <span>Disponível</span>
-                            </td>
-                        `;
+                        html += `<td class="time-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')"><span>Disponível</span></td>`;
                     }
                 });
                 html += '</tr>';
             });
 
             html += '</tbody></table>';
-            wrapper.innerHTML = html;
+            container.innerHTML = html;
         }
 
-        function gerarHorarios(inicio, fim, intervalo) {
-            const [horaInicio, minInicio] = inicio.split(':').map(Number);
-            const [horaFim, minFim] = fim.split(':').map(Number);
-            const horarios = [];
+        function generateTimes(start, end, interval) {
+            const times = [];
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            let h = sh, m = sm;
 
-            let hora = horaInicio;
-            let minuto = minInicio;
-
-            while (hora < horaFim || (hora === horaFim && minuto < minFim)) {
-                horarios.push(`${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`);
-                minuto += intervalo;
-                if (minuto >= 60) {
-                    hora += Math.floor(minuto / 60);
-                    minuto = minuto % 60;
+            while (h < eh || (h === eh && m < em)) {
+                times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+                m += interval;
+                if (m >= 60) {
+                    h += Math.floor(m / 60);
+                    m = m % 60;
                 }
             }
-
-            return horarios;
+            return times;
         }
 
-        function abrirModalAgendamento(profId, profNome, data, hora) {
-            modalData = { profissionalId: profId, profissionalNome: profNome, data, hora };
-            document.getElementById('modalProfissional').value = profNome;
-            document.getElementById('modalData').value = new Date(data).toLocaleDateString('pt-BR');
-            document.getElementById('modalHora').value = hora;
-            document.getElementById('modalValor').value = '';
+        function openModal(profId, profName, date, time) {
+            modalState = { profId, profName, date, time };
+            document.getElementById('profName').value = profName;
+            document.getElementById('dateField').value = new Date(date).toLocaleDateString('pt-BR');
+            document.getElementById('timeField').value = time;
             document.getElementById('appointmentModal').classList.add('active');
         }
 
@@ -814,64 +759,48 @@
             document.getElementById('appointmentForm').reset();
         }
 
-        async function saveAppointment(event) {
-            event.preventDefault();
+        async function saveAppointment(e) {
+            e.preventDefault();
+            const clientId = document.getElementById('clientSelect').value;
+            const serviceId = document.getElementById('serviceSelect').value;
+            const value = parseFloat(document.getElementById('valueField').value) || 0;
 
-            const clienteId = document.getElementById('modalCliente').value;
-            const servicoId = document.getElementById('modalServico').value;
-            const valor = document.getElementById('modalValor').value;
-            const observacoes = document.getElementById('modalObservacoes').value;
-
-            if (!clienteId || !servicoId) {
-                alert('Preencha todos os campos obrigatórios');
+            if (!clientId || !serviceId) {
+                alert('Preencha cliente e serviço');
                 return;
             }
 
             try {
                 const result = await DB.agendamentos.criar({
-                    profissional_id: modalData.profissionalId,
-                    cliente_id: clienteId,
-                    servico_id: servicoId,
-                    data: modalData.data,
-                    hora: modalData.hora,
-                    valor: parseFloat(valor) || 0,
+                    profissional_id: modalState.profId,
+                    cliente_id: clientId,
+                    servico_id: serviceId,
+                    data: modalState.date,
+                    hora: modalState.time,
+                    valor: value,
                     status: 'confirmado'
                 });
 
                 if (result.success) {
-                    mostrarToast('Agendamento criado com sucesso!', 'success');
                     closeModal();
-                    await renderSchedule();
+                    renderSchedule();
+                    alert('Agendamento criado!');
                 } else {
-                    mostrarToast('Erro ao criar agendamento: ' + result.error, 'error');
+                    alert('Erro: ' + result.error);
                 }
             } catch (error) {
-                console.error('❌ Erro ao salvar agendamento:', error);
-                mostrarToast('Erro ao criar agendamento', 'error');
+                console.error('Erro:', error);
+                alert('Erro ao agendar');
             }
         }
 
-        function editarAgendamento(agendamentoId) {
-            // TODO: Implementar edição de agendamento
-            console.log('Editar agendamento:', agendamentoId);
-            mostrarToast('Funcionalidade em desenvolvimento', 'info');
+        function editAppointment(id) {
+            alert('Funcionalidade em desenvolvimento');
         }
 
         async function logout() {
-            try {
-                await supabase.auth.signOut();
-                window.location.href = 'login.html';
-            } catch (error) {
-                console.error('❌ Erro ao fazer logout:', error);
-            }
-        }
-
-        function mostrarToast(mensagem, tipo = 'info') {
-            if (typeof showToast === 'function') {
-                showToast(mensagem, tipo);
-            } else {
-                alert(mensagem);
-            }
+            await supabase.auth.signOut();
+            window.location.href = 'login.html';
         }
     </script>
 </body>
