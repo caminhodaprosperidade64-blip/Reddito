@@ -12,13 +12,12 @@
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
     <style>
-        /* Apenas CSS específico da agenda */
+        /* Apenas CSS específico da agenda - sem mexer no layout geral */
         .agenda-wrapper {
             display: grid;
             grid-template-columns: 320px 1fr;
             gap: 2rem;
             padding: 2rem;
-            height: 100%;
         }
 
         /* CALENDÁRIO */
@@ -172,7 +171,6 @@
         .schedule-grid {
             display: flex;
             flex-direction: column;
-            min-height: 100%;
         }
 
         .time-row {
@@ -187,6 +185,7 @@
             top: 0;
             z-index: 10;
             background: var(--bg-primary);
+            border-bottom: 2px solid var(--border-color);
         }
 
         .time-cell {
@@ -204,7 +203,6 @@
         .time-cell.header {
             font-weight: 600;
             color: var(--text-primary);
-            min-height: auto;
         }
 
         .time-cell.hour {
@@ -227,9 +225,10 @@
         }
 
         .prof-badge {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
+            flex-shrink: 0;
         }
 
         .schedule-slot {
@@ -245,17 +244,18 @@
         }
 
         .schedule-slot.empty {
-            color: var(--text-secondary);
+            color: var(--text-primary);
             background: transparent;
+            font-weight: 500;
         }
 
         .schedule-slot.empty:hover {
-            background: rgba(0, 0, 0, 0.03);
+            background: rgba(0, 0, 0, 0.05);
         }
 
         .schedule-slot.booked {
             color: white;
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .slot-content {
@@ -271,13 +271,13 @@
 
         .slot-service {
             font-size: 0.7rem;
-            opacity: 0.85;
+            opacity: 0.9;
         }
 
         /* CORES */
-        .bg-prof-1 { background-color: rgba(59, 130, 246, 0.1); }
-        .bg-prof-2 { background-color: rgba(129, 140, 248, 0.1); }
-        .bg-prof-3 { background-color: rgba(168, 85, 247, 0.1); }
+        .bg-prof-1 { background-color: #dbeafe; }
+        .bg-prof-2 { background-color: #e0e7ff; }
+        .bg-prof-3 { background-color: #f3e8ff; }
 
         .badge-prof-1 { background-color: #3b82f6; }
         .badge-prof-2 { background-color: #818cf8; }
@@ -728,7 +728,7 @@
                             const serviceName = apt.servico?.nome || 'Serviço';
                             html += `<div class="schedule-slot booked ${color.slot}" onclick="editAppointment(${apt.id})"><div class="slot-content"><div class="slot-client">${clientName}</div><div class="slot-service">${serviceName}</div></div></div>`;
                         } else {
-                            html += `<div class="schedule-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')"><span>Disponível</span></div>`;
+                            html += `<div class="schedule-slot empty ${color.bg}" onclick="openModal('${prof.id}', '${prof.nome}', '${dateStr}', '${time}')">Disponível</div>`;
                         }
                     });
                     html += '</div>';
