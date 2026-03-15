@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
+    <link rel="stylesheet" href="css/dark-mode.css">
     
     <!-- FullCalendar para o Calendário Interativo -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
@@ -17,6 +18,7 @@
     <script src="js/auth.js"></script>
     <script src="js/auth-guard.js"></script>
     <script src="js/database.js"></script>
+    <script src="js/dark-mode.js"></script>
     
     <style>
         .dash-container { padding: 24px; max-width: 1200px; margin: 0 auto; }
@@ -27,14 +29,29 @@
         .grid-dash { display: grid; grid-template-columns: 1fr 350px; gap: 24px; }
         @media (max-width: 992px) { .grid-dash { grid-template-columns: 1fr; } }
         
-        .card-financeiro { background: white; border-radius: 16px; padding: 24px; box-shadow: var(--pro-shadow); }
-        .faturamento-valor { font-size: 32px; font-weight: 700; color: var(--pro-primary); margin: 12px 0; }
+        .card-financeiro { background: var(--bg-primary); border-radius: 16px; padding: 24px; box-shadow: var(--pro-shadow); }
+        .faturamento-valor { font-size: 32px; font-weight: 700; color: var(--primary); margin: 12px 0; }
         
-        #calendar { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--pro-shadow); height: 500px; }
+        #calendar { background: var(--bg-primary); padding: 20px; border-radius: 16px; box-shadow: var(--pro-shadow); height: 500px; }
         .fc-event { cursor: pointer; }
 
         /* Sidebar small tweak for dynamic name */
         .pro-logo-text { font-weight: 600; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width:140px; display:inline-block; vertical-align:middle; }
+
+        /* Dark mode para FullCalendar */
+        body.dark-mode .fc { color: var(--text-primary); }
+        body.dark-mode .fc .fc-button-primary { background-color: var(--primary); border-color: var(--primary); }
+        body.dark-mode .fc .fc-button-primary:not(:disabled).fc-button-active { background-color: var(--primary-dark); }
+        body.dark-mode .fc .fc-col-header-cell { background-color: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-color); }
+        body.dark-mode .fc .fc-daygrid-day { background-color: var(--bg-primary); border-color: var(--border-color); }
+        body.dark-mode .fc .fc-daygrid-day-frame { background-color: var(--bg-primary); }
+        body.dark-mode .fc .fc-daygrid-day.fc-day-other { background-color: var(--bg-secondary); }
+        body.dark-mode .fc .fc-daygrid-day-number { color: var(--text-primary); }
+        body.dark-mode .fc .fc-daygrid-body { border-color: var(--border-color); }
+        body.dark-mode .fc .fc-popover { background-color: var(--bg-secondary); border-color: var(--border-color); }
+        body.dark-mode .fc .fc-popover-header { background-color: var(--bg-main); border-color: var(--border-color); }
+        body.dark-mode .fc .fc-toolbar { color: var(--text-primary); }
+        body.dark-mode .fc .fc-timegrid-slot { border-color: var(--border-color); }
     </style>
 </head>
 <body>
@@ -53,6 +70,9 @@
                 <a href="perfil.html" class="pro-nav-item"><i class="fas fa-user"></i><span>Meu Perfil</span></a>
             </nav>
             <div class="pro-sidebar-footer">
+                <button class="theme-toggle" onclick="toggleDarkMode()" title="Alternar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
                 <button class="pro-btn pro-btn-secondary w-full" onclick="Auth.signOut()">Sair</button>
             </div>
         </aside>
@@ -92,7 +112,7 @@
                         <div class="faturamento-valor" id="valorFaturamento">R$ 0,00</div>
                         <p class="pro-label" id="labelPeriodo">Total acumulado hoje</p>
                         
-                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                        <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
                         
                         <div class="pro-nav-section-title">Próximos Clientes</div>
                         <div id="listaProximos" style="margin-top:15px;">
@@ -107,6 +127,11 @@
     <script>
         let calendar;
         let perfilLogado = null;
+
+        // ─── Inicializar dark mode ────────────────────────────────────
+        window.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+        });
 
         window.addEventListener('perfilCarregado', async (e) => {
             perfilLogado = e.detail;
@@ -191,7 +216,7 @@
                         const events = (data || []).map(a => ({
                             title: a.clientes?.nome || 'Agendamento',
                             start: `${a.data}T${a.hora}`,
-                            color: 'var(--pro-primary)'
+                            color: 'var(--primary)'
                         }));
                         successCallback(events);
                     } catch (err) {
@@ -273,9 +298,9 @@
 
                 if (data && data.length > 0) {
                     document.getElementById('listaProximos').innerHTML = data.map(a => `
-                        <div style="padding:10px; border-bottom:1px solid #eee;">
+                        <div style="padding:10px; border-bottom:1px solid var(--border-color);">
                             <strong>${(a.hora || '').substring(0,5)}</strong> - ${a.clientes?.nome || 'Cliente'}
-                            <br><small style="color:gray">${a.servicos?.nome || ''}</small>
+                            <br><small style="color:var(--text-secondary);">${a.servicos?.nome || ''}</small>
                         </div>
                     `).join('');
                 } else {
