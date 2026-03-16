@@ -648,22 +648,19 @@
             margin: 1rem 0;
         }
 
-        /* ✅ AJUSTE 2 e 3: CSS para QR Code com margem branca de 15px */
-        #qrcode-container img {
-            margin: 0 auto;
-            display: block;
-            image-rendering: pixelated; /* Mantém os quadrados nítidos */
-            border: 15px solid #fff;    /* Cria a margem de segurança branca */
+        /* ✅ AJUSTE 2: CSS para evitar fantasmas (canvas escondido) */
+        #pixQr canvas {
+            display: none; /* Esconde o canvas, deixa apenas a imagem */
         }
 
-        #pixQr img,
-        #pixQr canvas {
-            width: 100% !important;
-            height: 100% !important;
-            display: block !important;
-            image-rendering: pixelated;
+        /* ✅ AJUSTE 3: CSS para a imagem do QR Code */
+        #pixQr img {
+            display: block;
             margin: 0 auto;
-            border: 15px solid #fff;
+            max-width: 100%; /* Garante que ele não estique */
+            height: auto;
+            image-rendering: pixelated; /* Mantém os quadrados nítidos */
+            border: 15px solid #fff;    /* Cria a margem de segurança branca */
         }
 
         @media (max-width: 520px) {
@@ -1550,18 +1547,20 @@
 
                 document.getElementById('pixCopiaCola').value = brcodeForQr;
 
+                // ✅ AJUSTE 1: Obter o container
                 const container = document.getElementById('pixQr');
                 if (!container) {
                     console.error('❌ Container #pixQr não encontrado');
                     return;
                 }
 
+                // ✅ AJUSTE 1: LIMPAR o container ANTES de gerar um novo QR Code
                 container.innerHTML = '';
 
                 await new Promise(resolve => setTimeout(resolve, 150));
 
                 try {
-                    // ✅ AJUSTE 3: correctLevel: L, quietZone, width/height 300px
+                    // Gerar o novo QR Code limpo
                     currentQRCode = new QRCode(container, {
                         text: brcodeForQr,
                         width: 300,
