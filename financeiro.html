@@ -23,8 +23,14 @@
             display: flex;
         }
 
-        .filtro-periodo-custom input[type="date"] {
+        .filtro-periodo-custom > div {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filtro-periodo-custom input[type="date"] {
             padding: 8px 12px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
@@ -41,12 +47,9 @@
         }
 
         .filtro-periodo-custom label {
-            display: flex;
-            align-items: center;
             font-size: 12px;
             font-weight: 600;
             color: var(--text-secondary);
-            white-space: nowrap;
         }
     </style>
 </head>
@@ -179,11 +182,11 @@
                                     <option value="personalizado">Personalizado</option>
                                 </select>
                                 <div id="containerFiltroCustom" class="filtro-periodo-custom">
-                                    <div style="flex:1;">
+                                    <div>
                                         <label>De:</label>
                                         <input type="date" id="dataInicio" onchange="filtrarLocalmente()">
                                     </div>
-                                    <div style="flex:1;">
+                                    <div>
                                         <label>Até:</label>
                                         <input type="date" id="dataFim" onchange="filtrarLocalmente()">
                                     </div>
@@ -191,13 +194,13 @@
                             </div>
                             <div style="flex:1;min-width:200px;" id="containerFiltroProf">
                                 <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Profissional</label>
-                                <select class="pro-select" id="filterProfissional" onchange="loadFinanceiro()" style="width:100%;">
+                                <select class="pro-select" id="filterProfissional" onchange="filtrarLocalmente()" style="width:100%;">
                                     <option value="">Todos Profissionais</option>
                                 </select>
                             </div>
                             <div style="flex:1;min-width:200px;">
                                 <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Forma de Pagamento</label>
-                                <select class="pro-select" id="filterPagamento" onchange="loadFinanceiro()" style="width:100%;">
+                                <select class="pro-select" id="filterPagamento" onchange="filtrarLocalmente()" style="width:100%;">
                                     <option value="">Todas</option>
                                     <option value="pix">Pix</option>
                                     <option value="cartao">Cartão</option>
@@ -460,14 +463,19 @@
                 const trinta = new Date(hoje);
                 trinta.setDate(trinta.getDate() - 30);
                 
-                document.getElementById('dataInicio').value = obterDataLocal(trinta.toISOString().split('T')[0]);
-                document.getElementById('dataFim').value = obterDataLocal(hoje.toISOString().split('T')[0]);
+                const dataInicioFormatada = obterDataLocal(trinta.toISOString());
+                const dataFimFormatada = obterDataLocal(hoje.toISOString());
                 
-                // Carrega dados com o novo período
-                loadFinanceiro();
+                document.getElementById('dataInicio').value = dataInicioFormatada;
+                document.getElementById('dataFim').value = dataFimFormatada;
+                
+                console.log('🔄 Período alterado para: PERSONALIZADO');
+                console.log('📅 Datas padrão - De:', dataInicioFormatada, 'Até:', dataFimFormatada);
+                filtrarLocalmente();
             } else {
                 container.classList.remove('ativo');
-                loadFinanceiro();
+                console.log('🔄 Período alterado para:', periodo);
+                filtrarLocalmente();
             }
         }
 
@@ -483,6 +491,7 @@
             console.log('📌 Período selecionado:', periodo);
 
             if (periodo === 'hoje') {
+                console.log('✅ Filtro "Hoje" - intervalo:', dataHoje, 'até', dataHoje);
                 return { inicio: dataHoje, fim: dataHoje };
             } else if (periodo === 'semana') {
                 const ini = new Date(agora);
@@ -491,19 +500,22 @@
                 const mesIni = String(ini.getMonth() + 1).padStart(2, '0');
                 const diaIni = String(ini.getDate()).padStart(2, '0');
                 const dataIni = `${anoIni}-${mesIni}-${diaIni}`;
-                console.log('📌 Semana: de', dataIni, 'até', dataHoje);
+                console.log('✅ Filtro "Semana" - intervalo:', dataIni, 'até', dataHoje);
                 return { inicio: dataIni, fim: dataHoje };
             } else if (periodo === 'mes') {
                 const dataIni = `${ano}-${mes}-01`;
-                console.log('📌 Mês: de', dataIni, 'até', dataHoje);
+                console.log('✅ Filtro "Mês" - intervalo:', dataIni, 'até', dataHoje);
                 return { inicio: dataIni, fim: dataHoje };
             } else if (periodo === 'personalizado') {
                 const inicio = document.getElementById('dataInicio').value;
                 const fim = document.getElementById('dataFim').value;
-                console.log('📌 Período personalizado: de', inicio, 'até', fim);
-                return { inicio, fim };
+                console.log('✅ Filtro "Personalizado" - intervalo:', inicio, 'até', fim);
+                if (inicio && fim) {
+                    return { inicio, fim };
+                }
+                return { inicio: null, fim: null };
             } else {
-                console.log('📌 Todos os períodos (sem filtro)');
+                console.log('✅ Filtro "Todos os períodos" - sem intervalo');
                 return { inicio: null, fim: null };
             }
         }
@@ -551,47 +563,53 @@
             document.getElementById('lucroLiquido').textContent      = formatCurrency(totalMes - comissoesMes);
         }
 
-        // ─── Filtrar localmente com tipo de busca personalizado ────
+        // ─── Filtrar localmente com ordem correta de filtros ────
         function filtrarLocalmente() {
-            const search        = (document.getElementById('searchInput').value || '').toLowerCase();
-            const searchType    = document.getElementById('searchType').value;
-            const filterProf    = document.getElementById('filterProfissional').value;
-            const filterPagto   = document.getElementById('filterPagamento').value;
-            const periodo       = document.getElementById('filterPeriodo').value;
+            const search = (document.getElementById('searchInput').value || '').toLowerCase();
+            const searchType = document.getElementById('searchType').value;
+            const filterProf = document.getElementById('filterProfissional').value;
+            const filterPagto = document.getElementById('filterPagamento').value;
+            const periodo = document.getElementById('filterPeriodo').value;
             const { inicio, fim } = calcularPeriodo(periodo);
 
             let lista = [...todosAgendamentos];
 
-            console.log('🔍 Filtrando com período:', periodo, 'de', inicio, 'até', fim);
+            console.log('🔍 ====== INICIANDO FILTRO ======');
             console.log('📊 Total de agendamentos antes dos filtros:', lista.length);
 
-            // Filtro de período
+            // 1º FILTRO: PERÍODO (PRINCIPAL)
             if (inicio && fim) {
                 lista = lista.filter(a => {
                     const dataApt = obterDataLocal(a.data);
                     return dataApt >= inicio && dataApt <= fim;
                 });
-                console.log('📊 Após filtro de período:', lista.length);
+                console.log('✅ 1º Após PERÍODO (' + periodo + '):', lista.length, '| Intervalo:', inicio, 'até', fim);
+            } else {
+                console.log('✅ 1º Período: Todos os períodos');
             }
 
+            // 2º FILTRO: PROFISSIONAL
             if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
                 lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
-                console.log('📊 Após filtro de profissional (acesso restrito):', lista.length);
-            }
-
-            if (filterProf) {
+                console.log('✅ 2º Após PROFISSIONAL (acesso restrito):', lista.length);
+            } else if (filterProf) {
                 lista = lista.filter(a => a.profissional_id === filterProf);
-                console.log('📊 Após filtro de profissional (selecionado):', lista.length);
+                console.log('✅ 2º Após PROFISSIONAL (selecionado):', lista.length);
+            } else {
+                console.log('✅ 2º Profissional: Todos');
             }
 
+            // 3º FILTRO: FORMA DE PAGAMENTO
             if (filterPagto) {
                 lista = lista.filter(a => 
                     (a.forma_pagamento || '').toLowerCase() === filterPagto.toLowerCase()
                 );
-                console.log('📊 Após filtro de pagamento:', lista.length);
+                console.log('✅ 3º Após FORMA PAGAMENTO:', lista.length);
+            } else {
+                console.log('✅ 3º Forma de Pagamento: Todas');
             }
 
-            // Filtro de busca personalizado
+            // 4º FILTRO: BUSCA PERSONALIZADA
             if (search) {
                 lista = lista.filter(a => {
                     if (searchType === 'cliente') {
@@ -610,10 +628,12 @@
                                (a.data || '').toLowerCase().includes(search);
                     }
                 });
-                console.log('📊 Após filtro de busca:', lista.length);
+                console.log('✅ 4º Após BUSCA:', lista.length);
+            } else {
+                console.log('✅ 4º Busca: Nenhuma');
             }
 
-            console.log('✅ Total final:', lista.length);
+            console.log('✅ ====== RESULTADO FINAL: ' + lista.length + ' registros ======\n');
 
             renderTable(lista);
             renderTotalizadores(lista);
@@ -658,7 +678,7 @@
                 const servicoNome  = apt.servico?.nome      || '—';
                 const profNome     = apt.profissional?.nome || '—';
                 const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
-                const formaPagto   = mapaPagamento[apt.forma_pagamento?.toLowerCase()] || apt.forma_pagamento || '—';
+                const formaPagto   = mapaPagamento[(apt.forma_pagamento || '').toLowerCase()] || apt.forma_pagamento || '—';
 
                 return `<tr>
                     <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
@@ -680,7 +700,7 @@
                 const clienteNome  = apt.cliente?.nome || '—';
                 const servicoNome  = apt.servico?.nome || '—';
                 const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
-                const formaPagto   = mapaPagamento[apt.forma_pagamento?.toLowerCase()] || apt.forma_pagamento || '—';
+                const formaPagto   = mapaPagamento[(apt.forma_pagamento || '').toLowerCase()] || apt.forma_pagamento || '—';
 
                 return `<tr>
                     <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
