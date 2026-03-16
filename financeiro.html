@@ -373,14 +373,26 @@
             return d.toLocaleDateString('pt-BR');
         }
 
-        // ─── Função auxiliar para obter data local sem timezone ────
+        // ─── Função auxiliar para obter data local SEM timezone ────
         function obterDataLocal(data) {
             if (!data) return null;
+            
+            // Se for uma string ISO com 'T', extrai apenas a parte da data
+            if (typeof data === 'string') {
+                const partes = data.split('T');
+                const dataParte = partes[0]; // Retorna "YYYY-MM-DD"
+                console.log('📅 obterDataLocal("' + data + '") => "' + dataParte + '"');
+                return dataParte;
+            }
+            
+            // Se for objeto Date, converte para string YYYY-MM-DD
             const d = new Date(data);
             const ano = d.getFullYear();
             const mes = String(d.getMonth() + 1).padStart(2, '0');
             const dia = String(d.getDate()).padStart(2, '0');
-            return `${ano}-${mes}-${dia}`;
+            const resultado = `${ano}-${mes}-${dia}`;
+            console.log('📅 obterDataLocal(Date) => "' + resultado + '"');
+            return resultado;
         }
 
         // ─── Perfil na sidebar + controle de acesso ────
@@ -463,8 +475,16 @@
                 const trinta = new Date(hoje);
                 trinta.setDate(trinta.getDate() - 30);
                 
-                const dataInicioFormatada = obterDataLocal(trinta.toISOString());
-                const dataFimFormatada = obterDataLocal(hoje.toISOString());
+                // Função auxiliar para formatar data SEM timezone
+                const formatarData = (d) => {
+                    const ano = d.getFullYear();
+                    const mes = String(d.getMonth() + 1).padStart(2, '0');
+                    const dia = String(d.getDate()).padStart(2, '0');
+                    return `${ano}-${mes}-${dia}`;
+                };
+                
+                const dataInicioFormatada = formatarData(trinta);
+                const dataFimFormatada = formatarData(hoje);
                 
                 document.getElementById('dataInicio').value = dataInicioFormatada;
                 document.getElementById('dataFim').value = dataFimFormatada;
@@ -581,7 +601,11 @@
             if (inicio && fim) {
                 lista = lista.filter(a => {
                     const dataApt = obterDataLocal(a.data);
-                    return dataApt >= inicio && dataApt <= fim;
+                    const resultado = dataApt >= inicio && dataApt <= fim;
+                    if (todosAgendamentos.length <= 5) { // Mostra logs apenas se tiver poucos registros
+                        console.log(`   [${a.cliente?.nome}] data=${dataApt} comparando com [${inicio} a ${fim}] => ${resultado}`);
+                    }
+                    return resultado;
                 });
                 console.log('✅ 1º Após PERÍODO (' + periodo + '):', lista.length, '| Intervalo:', inicio, 'até', fim);
             } else {
