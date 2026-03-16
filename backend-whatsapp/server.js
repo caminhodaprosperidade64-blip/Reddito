@@ -3,6 +3,8 @@ const express = require('express');
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
+const QRCode = require('qrcode');
+const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
 const app = express();
@@ -14,43 +16,125 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-// Configuração WhatsApp
-const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
+// Configuração Evolution API
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:3001';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY;
 
 // Configuração Claude
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 
 // ============================================
-// 1. WEBHOOK - RECEBER MENSAGENS
+// 1. GERAR QR CODE PARA CLIENTE ESCANEAR
 // ============================================
 
-app.post('/webhook/whatsapp', async (req, res) => {
-  console.log('📨 Webhook recebido:', JSON.stringify(req.body, null, 2));
-
+app.get('/qrcode/:tenantId', async (req, res) => {
   try {
-    const { entry } = req.body;
+    const { tenantId } = req.params;
+
+    // Iniciar instância do WhatsApp
+    const response = await axios.post(
+      `${EVOLUTION_API_URL}/instance/create`,
+      {
+        instanceName: `reddito-${tenantId}`,
+        qrcode: true
+      },
+      {
+        headers: {
+          'apikey': EVOLUTION_API_KEY,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const { qrcode } = response.data;
+
+    // Gerar imagem QR Code
+    const qrcodeImage = await QRCode.toDataURL(qrcode);
+
+    res.json({
+      success: true,
+      qrcode: qrcodeImage,
+      instanceName: `reddito-${tenantId}`,
+      mensagem: 'Escaneie o QR Code com seu WhatsApp para conectar'
+    });
+
+    console.log(`✅ QR Code gerado para tenant ${tenantId}`);
+  } catch (error) {
+    console.error('❌ Erro ao gerar QR Code:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// 2. VERIFICAR STATUS DA CONEXÃO
+// ============================================
+
+app.get('/status/:tenantId', async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+    const instanceName = `reddito-${tenantId}`;
+
+    const response = await axios.get(
+      `${EVOLUTION_API_URL}/instance/connectionState/${instanceName}`,
+      {
+        headers: {
+          'apikey': EVOLUTION_API_KEY
+        }
+      }
+    );
+
+    const { state } = response.data;
+
+    // Se conectado, salvar no banco
+    if (state === 'open') {
+      await supabase.from('tenants').update({
+        whatsapp_conectado: true,
+        whatsapp_instancia: instanceName
+      }).eq('id', tenantId);
+
+      console.log(`✅ WhatsApp conectado para tenant ${tenantId}`);
+    }
+
+    res.json({
+      status: state,
+      conectado: state === 'open',
+      instanceName
+    });
+  } catch (error) {
+    console.error('❌ Erro ao verificar status:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// 3. WEBHOOK - RECEBER MENSAGENS
+// ============================================
+
+app.post('/webhook/message', async (req, res) => {
+  try {
+    const { data } = req.body;
     
-    if (!entry || !entry[0].changes[0].value.messages) {
+    if (!data || !data.message) {
       return res.sendStatus(200);
     }
 
-    const msg = entry[0].changes[0].value.messages[0];
-    const phoneNumber = msg.from;
-    const conteudo = msg.text.body;
-    const timestamp = msg.timestamp;
+    const { instanceName, message } = data;
+    const phoneNumber = message.from?.split('@')[0]; // Remove @s.whatsapp.net
+    const conteudo = message.body;
+
+    console.log(`📨 Mensagem de ${phoneNumber}: ${conteudo}`);
+
+    // Extrair tenant_id do instanceName
+    const tenantId = instanceName.replace('reddito-', '');
 
     // Buscar ou criar cliente
-    let cliente = await buscarOuCriarCliente(phoneNumber);
-    const tenant_id = cliente.tenant_id;
+    let cliente = await buscarOuCriarCliente(phoneNumber, tenantId);
 
-    console.log(`📱 Mensagem de ${cliente.nome || 'Novo cliente'}: ${conteudo}`);
-
-    // Verificar se é primeiro contato
+    // Processar mensagem
     if (cliente.primeiro_atendimento) {
-      await procesarPrimeiroAtendimento(phoneNumber, conteudo, cliente);
+      await procesarPrimeiroAtendimento(instanceName, phoneNumber, conteudo, cliente);
     } else if (cliente.cadastro_completo) {
-      await processarConversa(phoneNumber, conteudo, cliente);
+      await processarConversa(instanceName, phoneNumber, conteudo, cliente);
     }
 
     res.sendStatus(200);
@@ -61,11 +145,10 @@ app.post('/webhook/whatsapp', async (req, res) => {
 });
 
 // ============================================
-// 2. PRIMEIRO ATENDIMENTO - COLETA DE DADOS
+// 4. PRIMEIRO ATENDIMENTO - COLETA DE DADOS
 // ============================================
 
-async function procesarPrimeiroAtendimento(phoneNumber, conteudo, cliente) {
-  // Buscar ou criar sessão de agendamento
+async function procesarPrimeiroAtendimento(instanceName, phoneNumber, conteudo, cliente) {
   let sessao = await buscarSessaoAgendamento(cliente.id);
   
   if (!sessao) {
@@ -73,14 +156,11 @@ async function procesarPrimeiroAtendimento(phoneNumber, conteudo, cliente) {
   }
 
   const etapas = ['coleta_nome', 'coleta_email', 'coleta_cpf', 'confirmacao_dados'];
-  
-  // Determinar próxima etapa
   const proximaEtapa = determinarProximaEtapa(sessao.etapa, etapas);
   
   let resposta = '';
   let dadosColetados = sessao.dados_coletados || {};
 
-  // Coletar dados conforme a etapa
   if (proximaEtapa === 'coleta_nome') {
     dadosColetados.nome = conteudo;
     resposta = `Prazer, ${conteudo}! 😊\n\nAgora preciso do seu e-mail para salvar seus dados:`;
@@ -95,7 +175,6 @@ async function procesarPrimeiroAtendimento(phoneNumber, conteudo, cliente) {
   } 
   else if (proximaEtapa === 'confirmacao_dados') {
     if (conteudo.toLowerCase().includes('sim')) {
-      // Salvar cliente no banco
       await supabase.from('clientes').update({
         nome: dadosColetados.nome,
         email: dadosColetados.email,
@@ -105,53 +184,39 @@ async function procesarPrimeiroAtendimento(phoneNumber, conteudo, cliente) {
         data_primeiro_contato: new Date().toISOString()
       }).eq('id', cliente.id);
 
-      // Deletar sessão
       await supabase.from('sessoes_agendamento').delete().eq('id', sessao.id);
 
       resposta = `Excelente, ${dadosColetados.nome}! 🎉\n\nAgora você está registrado no nosso sistema!\n\nO que você gostaria de fazer?\n1️⃣ Agendar um serviço\n2️⃣ Saber mais sobre nossos serviços\n3️⃣ Falar com um atendente`;
       
-      // Registrar conversa
       await registrarConversa(cliente.id, cliente.tenant_id, conteudo, resposta, 'primeiro_atendimento');
-
-      await enviarWhatsApp(phoneNumber, resposta);
+      await enviarWhatsAppEvolution(instanceName, phoneNumber, resposta);
       return;
     } else {
-      resposta = `Sem problema! Me diga qual dado precisa corrigir.\n\n${JSON.stringify(dadosColetados, null, 2)}`;
+      resposta = `Sem problema! Me diga qual dado precisa corrigir.`;
     }
   }
 
-  // Atualizar sessão
   await supabase.from('sessoes_agendamento').update({
     etapa: proximaEtapa,
     dados_coletados: dadosColetados,
     updated_at: new Date().toISOString()
   }).eq('id', sessao.id);
 
-  // Enviar resposta
-  await enviarWhatsApp(phoneNumber, resposta);
-  
-  // Registrar conversa
+  await enviarWhatsAppEvolution(instanceName, phoneNumber, resposta);
   await registrarConversa(cliente.id, cliente.tenant_id, conteudo, resposta, 'coleta_dados');
 }
 
-function determinarProximaEtapa(etapaAtual, etapas) {
-  const index = etapas.indexOf(etapaAtual);
-  return index + 1 < etapas.length ? etapas[index + 1] : etapas[0];
-}
-
 // ============================================
-// 3. FLUXO DE AGENDAMENTO
+// 5. FLUXO DE AGENDAMENTO
 // ============================================
 
-async function processarConversa(phoneNumber, conteudo, cliente) {
+async function processarConversa(instanceName, phoneNumber, conteudo, cliente) {
   const tenant_id = cliente.tenant_id;
 
-  // Buscar contexto
   const historico = await buscarHistoricoConversas(cliente.id, 10);
   const contextoSalao = await buscarContextoSalao(tenant_id);
   const agendamentosCliente = await buscarAgendamentosCliente(cliente.id);
 
-  // Gerar resposta com Claude
   const resposta = await gerarRespostaComClaude(
     conteudo,
     cliente,
@@ -160,20 +225,15 @@ async function processarConversa(phoneNumber, conteudo, cliente) {
     agendamentosCliente
   );
 
-  // Verificar se está agendando
   if (resposta.includes('agendamento_detectado')) {
-    await processarAgendamento(phoneNumber, conteudo, cliente, resposta);
+    await processarAgendamento(instanceName, phoneNumber, conteudo, cliente, resposta);
   } else {
-    // Enviar resposta normal
-    await enviarWhatsApp(phoneNumber, resposta);
-    
-    // Registrar conversa
+    await enviarWhatsAppEvolution(instanceName, phoneNumber, resposta);
     await registrarConversa(cliente.id, tenant_id, conteudo, resposta, 'conversa_normal');
   }
 }
 
-async function processarAgendamento(phoneNumber, conteudo, cliente, respostaInicial) {
-  // Buscar ou criar sessão
+async function processarAgendamento(instanceName, phoneNumber, conteudo, cliente, respostaInicial) {
   let sessao = await buscarSessaoAgendamento(cliente.id);
   
   if (!sessao) {
@@ -185,10 +245,8 @@ async function processarAgendamento(phoneNumber, conteudo, cliente, respostaInic
 
   let resposta = '';
   let dadosColetados = sessao.dados_coletados || {};
-
   const contextoSalao = await buscarContextoSalao(cliente.tenant_id);
 
-  // ETAPA 1: Escolher serviço
   if (proximaEtapa === 'escolha_servico') {
     const servicos = contextoSalao.servicos || [];
     resposta = `Ótimo, ${cliente.nome}! 💅\n\nQual serviço você gostaria de agendar?\n`;
@@ -197,10 +255,9 @@ async function processarAgendamento(phoneNumber, conteudo, cliente, respostaInic
     });
     resposta += `\nResponda com o número do serviço.`;
   }
-  // ETAPA 2: Escolher profissional
   else if (proximaEtapa === 'escolha_profissional') {
     const servico = contextoSalao.servicos.find(s => s.id === dadosColetados.servico_id);
-    const profissionais = contextoSalao.profissionais.filter(p => p.especialidades.includes(servico.id));
+    const profissionais = contextoSalao.profissionais.filter(p => p.especialidades && p.especialidades.includes(servico.id));
     
     resposta = `Perfeito! Vou agendar ${servico.nome}.\n\nQual profissional você prefere?\n`;
     profissionais.forEach((p, i) => {
@@ -208,7 +265,6 @@ async function processarAgendamento(phoneNumber, conteudo, cliente, respostaInic
     });
     resposta += `\nResponda com o número.`;
   }
-  // ETAPA 3: Escolher horário
   else if (proximaEtapa === 'escolha_horario') {
     const profissional = contextoSalao.profissionais.find(p => p.id === dadosColetados.profissional_id);
     const horariosDisponiveis = await buscarHorariosDisponiveis(
@@ -221,17 +277,13 @@ async function processarAgendamento(phoneNumber, conteudo, cliente, respostaInic
       resposta += `${i + 1}. ${h.data} às ${h.hora}\n`;
     });
     resposta += `\nQual horário funciona melhor para você?`;
-    
     dadosColetados.horariosDisponiveis = horariosDisponiveis;
   }
-  // ETAPA 4: Confirmação
   else if (proximaEtapa === 'confirmacao') {
     resposta = `Resumo do seu agendamento:\n\n📅 Data/Hora: ${dadosColetados.data_hora}\n💅 Serviço: ${dadosColetados.servico_nome}\n💇 Profissional: ${dadosColetados.profissional_nome}\n💰 Valor: R$ ${dadosColetados.valor}\n\nConfirma? Responda *sim* ou *não*`;
   }
 
-  // Se confirmar agendamento
   if (proximaEtapa === 'confirmacao' && conteudo.toLowerCase().includes('sim')) {
-    // Criar agendamento no banco
     const { data: agendamento, error } = await supabase
       .from('agendamentos')
       .insert({
@@ -248,19 +300,15 @@ async function processarAgendamento(phoneNumber, conteudo, cliente, respostaInic
 
     if (error) {
       console.error('Erro ao criar agendamento:', error);
-      resposta = `Desculpa, houve um erro ao confirmar. Tente novamente ou fale com um atendente.`;
+      resposta = `Desculpa, houve um erro ao confirmar. Tente novamente.`;
     } else {
       resposta = `🎉 Seu agendamento foi confirmado!\n\n✅ ID: ${agendamento.id}\n📅 ${dadosColetados.data_hora}\n💅 ${dadosColetados.servico_nome}\n\nAté breve, ${cliente.nome}! 😊`;
 
-      // Deletar sessão
       await supabase.from('sessoes_agendamento').delete().eq('id', sessao.id);
-
-      // Criar automações para este agendamento
-      await criarAutomacoes(agendamento, cliente);
+      await criarAutomacoes(agendamento, cliente, instanceName);
     }
   }
 
-  // Atualizar sessão
   if (sessao && proximaEtapa !== 'confirmacao') {
     await supabase.from('sessoes_agendamento').update({
       etapa: proximaEtapa,
@@ -269,15 +317,12 @@ async function processarAgendamento(phoneNumber, conteudo, cliente, respostaInic
     }).eq('id', sessao.id);
   }
 
-  // Enviar resposta
-  await enviarWhatsApp(phoneNumber, resposta);
-  
-  // Registrar conversa
+  await enviarWhatsAppEvolution(instanceName, phoneNumber, resposta);
   await registrarConversa(cliente.id, cliente.tenant_id, conteudo, resposta, 'agendamento');
 }
 
 // ============================================
-// 4. GERAR RESPOSTA COM CLAUDE
+// 6. GERAR RESPOSTA COM CLAUDE
 // ============================================
 
 async function gerarRespostaComClaude(mensagem, cliente, historico, contextoSalao, agendamentos) {
@@ -286,29 +331,24 @@ async function gerarRespostaComClaude(mensagem, cliente, historico, contextoSala
     .join('\n\n');
 
   const promptSistema = `
-Você é um assistente de IA de um salão/spa chamado "${contextoSalao.nome}".
+Você é um assistente de IA de um salão/spa chamado "${contextoSalao.nome || 'Nosso Salão'}".
 
 DADOS DO SALÃO:
 - Serviços: ${contextoSalao.servicos ? contextoSalao.servicos.map(s => \`\${s.nome} (R$ \${s.preco})\`).join(', ') : 'Nenhum'}
 - Profissionais: ${contextoSalao.profissionais ? contextoSalao.profissionais.map(p => p.nome).join(', ') : 'Nenhum'}
-- Horários: ${contextoSalao.horarios_atendimento ? contextoSalao.horarios_atendimento.map(h => \`\${h.dia_semana}: \${h.horario_abertura}-\${h.horario_fechamento}\`).join(', ') : 'Não informado'}
 - Endereço: ${contextoSalao.endereco || 'Não informado'}
 - Telefone: ${contextoSalao.telefone || 'Não informado'}
 
 DADOS DO CLIENTE:
 - Nome: ${cliente.nome || 'Cliente'}
-- E-mail: ${cliente.email || 'Não informado'}
-- Histórico de agendamentos: ${agendamentos.length > 0 ? agendamentos.map(a => a.data_hora).join(', ') : 'Nenhum'}
+- Histórico: ${agendamentos.length > 0 ? agendamentos.length + ' agendamentos' : 'Novo cliente'}
 
 INSTRUÇÕES:
-1. Sempre seja acolhedor, humanizado e natural.
-2. Use o nome do cliente quando apropriado.
-3. Se o cliente quiser agendar, responda com a tag [agendamento_detectado] antes da resposta.
-4. Responda com emojis naturais quando apropriado.
-5. Oferça soluções baseadas nos serviços reais do salão.
-6. Seja honesto sobre disponibilidade.
-7. Se não souber algo específico, sugira contato com um profissional.
-8. Nunca seja robotizado ou repetitivo.
+1. Sempre seja acolhedor e humanizado.
+2. Use o nome do cliente.
+3. Se detectar intenção de agendar, inicie com [agendamento_detectado].
+4. Nunca seja robotizado.
+5. Responda com emojis naturais.
 `;
 
   try {
@@ -336,20 +376,20 @@ INSTRUÇÕES:
 
     return response.data.content[0].text;
   } catch (error) {
-    console.error('❌ Erro ao chamar Claude:', error.message);
-    return `Desculpa, tive um problema técnico. Pode tentar novamente ou falar com um atendente? 🙏`;
+    console.error('❌ Erro Claude:', error.message);
+    return `Desculpa, tive um problema. Pode tentar novamente? 🙏`;
   }
 }
 
 // ============================================
-// 5. AUTOMAÇÕES AGENDADAS
+// 7. AUTOMAÇÕES AGENDADAS
 // ============================================
 
-async function criarAutomacoes(agendamento, cliente) {
+async function criarAutomacoes(agendamento, cliente, instanceName) {
   const tenant_id = agendamento.tenant_id;
   const dataAgendamento = new Date(agendamento.data_hora);
 
-  // Automação 1: Lembrete no dia do agendamento (1 hora antes)
+  // Automação 1: Lembrete 1h antes
   const lembreteData = new Date(dataAgendamento);
   lembreteData.setHours(lembreteData.getHours() - 1);
 
@@ -359,10 +399,11 @@ async function criarAutomacoes(agendamento, cliente) {
     tenant_id,
     tipo_automacao: 'lembrete_dia',
     data_execucao: lembreteData.toISOString(),
-    executada: false
+    executada: false,
+    instancia_whatsapp: instanceName
   });
 
-  // Automação 2: Agradecimento no dia seguinte
+  // Automação 2: Agradecimento dia +1
   const agradecimentoData = new Date(dataAgendamento);
   agradecimentoData.setDate(agradecimentoData.getDate() + 1);
   agradecimentoData.setHours(10, 0, 0);
@@ -373,10 +414,11 @@ async function criarAutomacoes(agendamento, cliente) {
     tenant_id,
     tipo_automacao: 'pos_atendimento',
     data_execucao: agradecimentoData.toISOString(),
-    executada: false
+    executada: false,
+    instancia_whatsapp: instanceName
   });
 
-  // Automação 3: Reagendamento em 15 dias
+  // Automação 3: Reagendamento 15 dias
   const reagendamentoData = new Date(dataAgendamento);
   reagendamentoData.setDate(reagendamentoData.getDate() + 15);
   reagendamentoData.setHours(14, 0, 0);
@@ -387,10 +429,11 @@ async function criarAutomacoes(agendamento, cliente) {
     tenant_id,
     tipo_automacao: 'reagendamento_15d',
     data_execucao: reagendamentoData.toISOString(),
-    executada: false
+    executada: false,
+    instancia_whatsapp: instanceName
   });
 
-  // Automação 4: Retenção em 45 dias (apenas se cliente recorrente)
+  // Automação 4: Retenção 45 dias
   const isClienteRecorrente = await verificarClienteRecorrente(cliente.id);
   if (isClienteRecorrente) {
     const retencaoData = new Date(dataAgendamento);
@@ -403,23 +446,22 @@ async function criarAutomacoes(agendamento, cliente) {
       tenant_id,
       tipo_automacao: 'retencao_45d',
       data_execucao: retencaoData.toISOString(),
-      executada: false
+      executada: false,
+      instancia_whatsapp: instanceName
     });
   }
 
-  console.log('✅ Automações criadas para agendamento:', agendamento.id);
+  console.log('✅ Automações criadas:', agendamento.id);
 }
 
 // ============================================
-// 6. CRON JOB - EXECUTAR AUTOMAÇÕES
+// 8. CRON JOB - EXECUTAR AUTOMAÇÕES
 // ============================================
 
-// Executar a cada 1 minuto
 cron.schedule('* * * * *', async () => {
   try {
     const agora = new Date().toISOString();
 
-    // Buscar automações que devem ser executadas
     const { data: automacoes } = await supabase
       .from('automacoes_agendadas')
       .select('*, clientes(nome, telefone), agendamentos(*)')
@@ -430,41 +472,39 @@ cron.schedule('* * * * *', async () => {
       await executarAutomacao(automacao);
     }
   } catch (error) {
-    console.error('❌ Erro no cron:', error);
+    console.error('❌ Erro cron:', error);
   }
 });
 
 async function executarAutomacao(automacao) {
-  const { tipo_automacao, cliente_id, agendamento_id, clientes, agendamentos } = automacao;
+  const { tipo_automacao, clientes, agendamentos, instancia_whatsapp } = automacao;
   const cliente = clientes;
   const agendamento = agendamentos;
 
   let mensagem = '';
 
   if (tipo_automacao === 'lembrete_dia') {
-    mensagem = `👋 Oi ${cliente.nome}!\n\nQue tal um lembretinho?\n\n📅 Você tem agendamento HOJE!\n🕐 Horário: ${new Date(agendamento.data_hora).toLocaleString('pt-BR')}\n\nNão perca! 😊`;
+    mensagem = `👋 Oi ${cliente.nome}!\n\nQue tal um lembretinho?\n\n📅 Você tem agendamento HOJE!\n\nNão perca! 😊`;
   } 
   else if (tipo_automacao === 'pos_atendimento') {
-    mensagem = `✨ ${cliente.nome}, tudo bem?\n\nQueremos agradecer sua visita! 🙏\n\nSua experiência foi ótima? Adoraríamos saber sua opinião!\n\nQualquer dúvida ou agendamento novo, é só chamar! 💕`;
+    mensagem = `✨ ${cliente.nome}, tudo bem?\n\nQueremos agradecer sua visita! 🙏\n\nSua experiência foi ótima?\n\nQualquer coisa, é só chamar! 💕`;
   } 
   else if (tipo_automacao === 'reagendamento_15d') {
-    mensagem = `💅 Oi ${cliente.nome}!\n\nJá faz 15 dias do seu último agendamento conosco.\n\nQue tal agendar novamente? Estamos com ótimos horários disponíveis! 📅\n\nResponda com "agendar" se tiver interesse.`;
+    mensagem = `💅 Oi ${cliente.nome}!\n\nJá faz 15 dias do seu último agendamento.\n\nQue tal agendar novamente? 📅\n\nResponda "agendar" se tiver interesse!`;
   } 
   else if (tipo_automacao === 'retencao_45d') {
-    mensagem = `🌟 ${cliente.nome}, sentimos sua falta!\n\nJá faz 45 dias que não te vemos por aqui... 😢\n\nQueremos te presentear com 10% de desconto na próxima visita!\n\nVem resgatar? ✨\n\nResponda "agendar" para aproveitar!`;
+    mensagem = `🌟 ${cliente.nome}, sentimos sua falta!\n\nQueremos te presentear com 10% de desconto! ✨\n\nResponda "agendar" para aproveitar!`;
   }
 
-  if (mensagem) {
-    // Enviar mensagem
-    await enviarWhatsApp(cliente.telefone, mensagem);
+  if (mensagem && instancia_whatsapp) {
+    await enviarWhatsAppEvolution(instancia_whatsapp, cliente.telefone, mensagem);
 
-    // Marcar como executada
     await supabase
       .from('automacoes_agendadas')
       .update({ executada: true })
       .eq('id', automacao.id);
 
-    console.log(`✅ Automação executada: ${tipo_automacao} para ${cliente.nome}`);
+    console.log(`✅ Automação: ${tipo_automacao} → ${cliente.nome}`);
   }
 }
 
@@ -472,24 +512,23 @@ async function executarAutomacao(automacao) {
 // FUNÇÕES AUXILIARES
 // ============================================
 
-async function buscarOuCriarCliente(phoneNumber) {
-  let { data: cliente, error } = await supabase
+async function buscarOuCriarCliente(phoneNumber, tenantId) {
+  let { data: cliente } = await supabase
     .from('clientes')
     .select('*')
     .eq('telefone', phoneNumber)
+    .eq('tenant_id', tenantId)
     .single();
 
-  if (error || !cliente) {
-    // Criar novo cliente
-    const novoCliente = {
-      telefone: phoneNumber,
-      primeiro_atendimento: true,
-      cadastro_completo: false
-    };
-
+  if (!cliente) {
     const { data: clienteCriado } = await supabase
       .from('clientes')
-      .insert(novoCliente)
+      .insert({
+        telefone: phoneNumber,
+        tenant_id: tenantId,
+        primeiro_atendimento: true,
+        cadastro_completo: false
+      })
       .select()
       .single();
 
@@ -522,6 +561,11 @@ async function buscarSessaoAgendamento(cliente_id) {
     .single();
 
   return sessao;
+}
+
+function determinarProximaEtapa(etapaAtual, etapas) {
+  const index = etapas.indexOf(etapaAtual);
+  return index + 1 < etapas.length ? etapas[index + 1] : etapas[0];
 }
 
 async function buscarHistoricoConversas(cliente_id, limite = 10) {
@@ -557,7 +601,6 @@ async function buscarAgendamentosCliente(cliente_id) {
 }
 
 async function buscarHorariosDisponiveis(profissional_id, contextoSalao) {
-  // Buscar agendamentos do profissional dos próximos 7 dias
   const dataHoje = new Date();
   const dataFim = new Date();
   dataFim.setDate(dataFim.getDate() + 7);
@@ -569,7 +612,6 @@ async function buscarHorariosDisponiveis(profissional_id, contextoSalao) {
     .gte('data_hora', dataHoje.toISOString())
     .lte('data_hora', dataFim.toISOString());
 
-  // Gerar horários disponíveis (simplificado)
   const horariosDisponiveis = [];
   for (let i = 0; i < 7; i++) {
     const data = new Date(dataHoje);
@@ -598,28 +640,26 @@ async function registrarConversa(cliente_id, tenant_id, entrada, saida, tipo) {
   });
 }
 
-async function enviarWhatsApp(phoneNumber, mensagem) {
+async function enviarWhatsAppEvolution(instanceName, phoneNumber, mensagem) {
   try {
     const response = await axios.post(
-      `https://graph.instagram.com/v18.0/${WHATSAPP_PHONE_ID}/messages`,
+      `${EVOLUTION_API_URL}/message/sendText/${instanceName}`,
       {
-        messaging_product: 'whatsapp',
-        to: phoneNumber,
-        type: 'text',
-        text: { body: mensagem }
+        number: phoneNumber,
+        text: mensagem
       },
       {
         headers: {
-          'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+          'apikey': EVOLUTION_API_KEY,
           'Content-Type': 'application/json'
         }
       }
     );
 
-    console.log('✅ Mensagem enviada:', response.data);
+    console.log(`✅ Mensagem enviada para ${phoneNumber}`);
     return response.data;
   } catch (error) {
-    console.error('❌ Erro ao enviar mensagem:', error.response?.data || error.message);
+    console.error(`❌ Erro ao enviar mensagem:`, error.message);
     throw error;
   }
 }
@@ -635,29 +675,14 @@ async function verificarClienteRecorrente(cliente_id) {
 }
 
 // ============================================
-// WEBHOOK VALIDAÇÃO (GET)
-// ============================================
-
-app.get('/webhook/whatsapp', (req, res) => {
-  const verify_token = process.env.VERIFY_TOKEN;
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-
-  if (mode === 'subscribe' && token === verify_token) {
-    console.log('✅ Webhook validado');
-    res.status(200).send(challenge);
-  } else {
-    res.sendStatus(403);
-  }
-});
-
-// ============================================
 // HEALTH CHECK
 // ============================================
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'Servidor rodando! ✅' });
+  res.status(200).json({ 
+    status: 'Servidor rodando! ✅',
+    evolution: EVOLUTION_API_URL
+  });
 });
 
 // ============================================
@@ -667,5 +692,7 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor WhatsApp IA rodando na porta ${PORT}`);
-  console.log(`📍 Webhook disponível em: /webhook/whatsapp`);
+  console.log(`📍 Evolution API: ${EVOLUTION_API_URL}`);
+  console.log(`📲 Webhook de mensagens: /webhook/message`);
+  console.log(`📱 Gerar QR Code: GET /qrcode/:tenantId`);
 });
