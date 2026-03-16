@@ -1,7 +1,7 @@
 {
   "name": "redditoapp-whatsapp-ia",
   "version": "1.0.0",
-  "description": "Backend WhatsApp IA para RedditoApp",
+  "description": "Backend WhatsApp IA para RedditoApp com Evolution API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -12,7 +12,11 @@
     "axios": "^1.6.0",
     "@supabase/supabase-js": "^2.38.0",
     "node-cron": "^3.0.2",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "@evolution-api/sdk": "^1.0.0",
+    "whatsapp-web.js": "^1.25.0",
+    "qrcode": "^1.5.3",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
