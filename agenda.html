@@ -1074,6 +1074,7 @@
             initDarkMode();
             loadAll();
             setupPaymentMethodListeners();
+            setupServicePriceListener();
         });
 
         window.addEventListener('storage', e => {
@@ -1501,6 +1502,34 @@
             document.addEventListener('change', async (e) => {
                 if (e.target && e.target.name === 'paymentMethod') {
                     await onPaymentMethodChanged(e.target.value);
+                }
+            });
+        }
+
+        function setupServicePriceListener() {
+            document.addEventListener('change', function(e) {
+                // Listener para preencher valor automaticamente ao selecionar serviço (novo agendamento)
+                if (e.target && e.target.id === 'serviceSelect') {
+                    const serviceId = e.target.value;
+                    const service = allServices.find(s => String(s.id) == String(serviceId));
+                    if (service && service.preco) {
+                        document.getElementById('valueField').value = parseFloat(service.preco).toFixed(2);
+                        console.log('✅ Preço carregado:', service.preco);
+                    } else {
+                        document.getElementById('valueField').value = '';
+                    }
+                }
+                
+                // Listener para preencher valor automaticamente ao selecionar serviço (edição)
+                if (e.target && e.target.id === 'editServiceSelect') {
+                    const serviceId = e.target.value;
+                    const service = allServices.find(s => String(s.id) == String(serviceId));
+                    if (service && service.preco) {
+                        document.getElementById('editValueField').value = parseFloat(service.preco).toFixed(2);
+                        console.log('✅ Preço carregado (edição):', service.preco);
+                    } else {
+                        document.getElementById('editValueField').value = '';
+                    }
                 }
             });
         }
