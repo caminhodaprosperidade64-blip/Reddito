@@ -1587,6 +1587,7 @@
 
         /**
          * Monta o Pix BR Code completo
+         * ✅ CORRIGIDO: Agora merchantCity aceita até 30 caracteres para acomodar ITAQUAQUECETUBA
          */
         function buildPixPayload({ chave, nome, cidade, valor, descricao, txid }) {
             if (!chave?.trim() || !nome?.trim() || !cidade?.trim() || !valor || parseFloat(valor) <= 0) {
@@ -1594,7 +1595,7 @@
             }
 
             const merchantName = normalizeNomeCidade(nome, 25);
-            const merchantCity = normalizeNomeCidade(cidade, 15);
+            const merchantCity = normalizeNomeCidade(cidade, 30);
 
             const gui = formatarCampo('00', 'BR.GOV.BCB.PIX');
             const key = formatarCampo('01', String(chave).trim());
