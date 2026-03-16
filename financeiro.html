@@ -1,735 +1,91 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro - Sistema Profissional</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/pro-design-system.css">
-    <link rel="stylesheet" href="css/pro-components.css">
-    <link rel="stylesheet" href="css/dark-mode.css">
-</head>
-<body>
-    <div class="pro-app">
-        <aside class="pro-sidebar">
-            <div class="pro-sidebar-logo">
-                <a href="dashboard.html" class="pro-logo">
-                    <div class="pro-logo-icon"><i class="fas fa-calendar-check"></i></div>
-                    <span class="pro-logo-text">Sistema Pro</span>
-                </a>
-            </div>
-            <nav class="pro-sidebar-nav">
-                <div class="pro-nav-section">
-                    <a href="dashboard.html" class="pro-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
-                    <a href="agenda.html" class="pro-nav-item"><i class="fas fa-calendar-alt"></i><span>Agenda</span></a>
-                </div>
-                <div class="pro-nav-section">
-                    <div class="pro-nav-section-title">Gestão</div>
-                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
-                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
-                </div>
-                <div class="pro-nav-section">
-                    <div class="pro-nav-section-title">Financeiro</div>
-                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item active"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
-                </div>
-                <div class="pro-nav-section">
-                    <div class="pro-nav-section-title">Automação</div>
-                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
-                </div>
-                <div class="pro-nav-section">
-                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
-                </div>
-            </nav>
-            <div class="pro-sidebar-footer">
-                <div class="pro-user-profile">
-                    <div class="pro-user-avatar" id="userAvatar">A</div>
-                    <div class="pro-user-info">
-                        <div class="pro-user-name" id="userName">Carregando...</div>
-                        <div class="pro-user-role" id="userRole">...</div>
-                    </div>
-                    <button class="pro-user-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
-                </div>
-            </div>
-        </aside>
+// ─── Função auxiliar para obter data local sem timezone ────
+function obterDataLocal(data) {
+    if (!data) return null;
+    const d = new Date(data);
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+}
 
-        <main class="pro-main">
-            <header class="pro-header">
-                <div class="pro-search">
-                    <i class="fas fa-search pro-search-icon"></i>
-                    <input type="text" class="pro-search-input" placeholder="Buscar transações..." id="searchInput" oninput="filtrarLocalmente()">
-                </div>
-                <div class="pro-header-actions">
-                    <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
-                    <div class="pro-header-divider"></div>
-                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
-                </div>
-            </header>
+// ─── Calcular período (CORRIGIDO) ────
+function calcularPeriodo(periodo) {
+    const agora = new Date();
+    const ano = agora.getFullYear();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const dataHoje = `${ano}-${mes}-${dia}`;
 
-            <div class="pro-content">
-                <div class="pro-page-header">
-                    <div class="pro-page-header-top">
-                        <div>
-                            <h1 class="pro-page-title">Financeiro</h1>
-                            <p class="pro-page-subtitle">Controle financeiro completo</p>
-                        </div>
-                        <button class="pro-btn pro-btn-ghost" onclick="exportarFinanceiro()">
-                            <i class="fas fa-download"></i> Exportar CSV
-                        </button>
-                    </div>
-                </div>
+    console.log('📅 Data de hoje (local):', dataHoje);
 
-                <!-- Métricas -->
-                <div class="pro-metrics-grid">
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Faturamento Hoje</span>
-                            <div class="pro-metric-icon success"><i class="fas fa-dollar-sign"></i></div>
-                        </div>
-                        <div class="pro-metric-value" id="faturamentoHoje">R$ 0</div>
-                    </div>
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Faturamento Semana</span>
-                            <div class="pro-metric-icon success"><i class="fas fa-calendar-week"></i></div>
-                        </div>
-                        <div class="pro-metric-value" id="faturamentoSemana">R$ 0</div>
-                    </div>
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Faturamento Mês</span>
-                            <div class="pro-metric-icon success"><i class="fas fa-calendar-alt"></i></div>
-                        </div>
-                        <div class="pro-metric-value" id="faturamentoMes">R$ 0</div>
-                    </div>
-                    <div class="pro-metric-card">
-                        <div class="pro-metric-header">
-                            <span class="pro-metric-label">Lucro Líquido</span>
-                            <div class="pro-metric-icon primary"><i class="fas fa-chart-line"></i></div>
-                        </div>
-                        <div class="pro-metric-value" id="lucroLiquido">R$ 0</div>
-                    </div>
-                </div>
+    let inicio = null, fim = null;
 
-                <!-- Filtros -->
-                <div class="pro-card" style="margin-bottom:24px;">
-                    <div class="pro-card-header">
-                        <h3 class="pro-card-title">Filtros</h3>
-                    </div>
-                    <div class="pro-card-body">
-                        <div class="pro-filters" style="display:flex;flex-wrap:wrap;gap:16px;">
-                            <div style="flex:1;min-width:200px;">
-                                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Período</label>
-                                <select class="pro-select" id="filterPeriodo" onchange="loadFinanceiro()" style="width:100%;">
-                                    <option value="todos">Todos os períodos</option>
-                                    <option value="hoje">Hoje</option>
-                                    <option value="semana">Esta Semana</option>
-                                    <option value="mes" selected>Este Mês</option>
-                                </select>
-                            </div>
-                            <div style="flex:1;min-width:200px;" id="containerFiltroProf">
-                                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Profissional</label>
-                                <select class="pro-select" id="filterProfissional" onchange="loadFinanceiro()" style="width:100%;">
-                                    <option value="">Todos Profissionais</option>
-                                </select>
-                            </div>
-                            <div style="flex:1;min-width:200px;">
-                                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Forma de Pagamento</label>
-                                <select class="pro-select" id="filterPagamento" onchange="loadFinanceiro()" style="width:100%;">
-                                    <option value="">Todas</option>
-                                    <option value="pix">Pix</option>
-                                    <option value="cartao">Cartão</option>
-                                    <option value="dinheiro">Dinheiro</option>
-                                    <option value="debito">Débito</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    if (periodo === 'hoje') {
+        // Não retorna ISO, retorna string local para comparação
+        return { inicio: dataHoje, fim: dataHoje, tipo: 'string' };
+    } else if (periodo === 'semana') {
+        const ini = new Date(agora);
+        ini.setDate(agora.getDate() - agora.getDay());
+        const anoIni = ini.getFullYear();
+        const mesIni = String(ini.getMonth() + 1).padStart(2, '0');
+        const diaIni = String(ini.getDate()).padStart(2, '0');
+        const dataIni = `${anoIni}-${mesIni}-${diaIni}`;
+        return { inicio: dataIni, fim: dataHoje, tipo: 'string' };
+    } else if (periodo === 'mes') {
+        const dataIni = `${ano}-${mes}-01`;
+        return { inicio: dataIni, fim: dataHoje, tipo: 'string' };
+    } else {
+        // 'todos' - sem filtro de data
+        return { inicio: null, fim: null, tipo: 'none' };
+    }
+}
 
-                <!-- Tabela de movimentações -->
-                <div class="pro-card">
-                    <div class="pro-card-header">
-                        <h3 class="pro-card-title">Movimentações Financeiras</h3>
-                    </div>
-                    <div class="pro-card-body">
-                        <div class="pro-table-container">
-                            <table class="pro-table" id="tabelaDono">
-                                <thead>
-                                    <tr>
-                                        <th>Data/Hora</th>
-                                        <th>Cliente</th>
-                                        <th>Serviço</th>
-                                        <th>Profissional</th>
-                                        <th>Forma Pagto</th>
-                                        <th>Valor Serviço</th>
-                                        <th>Comissão</th>
-                                        <th>Valor Líquido</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="financeiroTableDono">
-                                    <tr><td colspan="9" class="pro-empty-state">
-                                        <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
-                                        <p>Carregando...</p>
-                                    </td></tr>
-                                </tbody>
-                            </table>
-                            <table class="pro-table" id="tabelaProfissional" style="display:none;">
-                                <thead>
-                                    <tr>
-                                        <th>Data/Hora</th>
-                                        <th>Cliente</th>
-                                        <th>Serviço</th>
-                                        <th>Forma Pagto</th>
-                                        <th>Valor Serviço</th>
-                                        <th>Valor Líquido</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="financeiroTableProf">
-                                    <tr><td colspan="7" class="pro-empty-state">
-                                        <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
-                                        <p>Carregando...</p>
-                                    </td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+// ─── Atualizar filtro local (CORRIGIDO) ────
+function filtrarLocalmente() {
+    const search        = (document.getElementById('searchInput').value || '').toLowerCase();
+    const filterProf    = document.getElementById('filterProfissional').value;
+    const filterPagto   = document.getElementById('filterPagamento').value;
+    const periodo       = document.getElementById('filterPeriodo').value;
+    const { inicio, fim, tipo } = calcularPeriodo(periodo);
 
-                <!-- Resumos: Profissional + Pagamento + Totalizadores -->
-                <div class="pro-grid-2" style="margin-top:24px;">
-                    <div class="pro-card" id="cardResumoProfissionais">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Resumo por Profissional</h3>
-                        </div>
-                        <div class="pro-card-body">
-                            <div id="resumoProfissionais">
-                                <p style="text-align:center;color:var(--text-secondary);">Carregando...</p>
-                            </div>
-                        </div>
-                    </div>
+    let lista = [...todosAgendamentos];
 
-                    <div class="pro-card">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Faturamento por Forma de Pagamento</h3>
-                        </div>
-                        <div class="pro-card-body">
-                            <div id="resumoPagamento">
-                                <p style="text-align:center;color:var(--text-secondary);">Carregando...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Totalizadores -->
-                <div class="pro-card" style="margin-top:24px;">
-                    <div class="pro-card-header">
-                        <h3 class="pro-card-title">Totalizadores</h3>
-                    </div>
-                    <div class="pro-card-body">
-                        <div style="display:flex;flex-direction:column;gap:16px;">
-                            <div style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-main);border-radius:8px;">
-                                <span style="font-weight:500;">Total Faturado</span>
-                                <span style="font-weight:700;color:var(--success);" id="totalFaturado">R$ 0</span>
-                            </div>
-                            <div id="rowComissoes" style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-main);border-radius:8px;">
-                                <span style="font-weight:500;">Total Comissões</span>
-                                <span style="font-weight:700;color:var(--warning);" id="totalComissoes">R$ 0</span>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;padding:12px;background:var(--primary-light);border-radius:8px;">
-                                <span style="font-weight:600;">Lucro Líquido</span>
-                                <span style="font-weight:700;font-size:20px;color:var(--primary);" id="lucroTotal">R$ 0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Scripts no final do body -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/auth-guard.js"></script>
-    <script src="js/database.js"></script>
-    <script src="js/pro-ui.js"></script>
-    <script src="js/dark-mode.js"></script>
-
-    <script>
-        // ─── Estado ────
-        let todosAgendamentos  = [];
-        let perfilAtual        = null;
-        let profissionalIdAtual = null;
-        let periodoPaginaAtual = { inicio: null, fim: null };
-
-        window.addEventListener('DOMContentLoaded', () => {
-            initDarkMode();
+    // Filtro de período por data local
+    if (tipo === 'string' && inicio && fim) {
+        lista = lista.filter(a => {
+            const dataApt = obterDataLocal(a.data);
+            return dataApt >= inicio && dataApt <= fim;
         });
-
-        // ─── Helper: calcula comissão de um agendamento ────
-        function calcularComissao(apt) {
-            const valor      = parseFloat(apt.valor || 0);
-            const percentual = parseFloat(apt.profissional?.comissao_percentual || 0);
-            return (valor * percentual) / 100;
-        }
-
-        // ─── Helpers de formatação ────
-        function formatCurrency(val) {
-            return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '—';
-            const d = new Date(dateStr + (dateStr.length === 10 ? 'T00:00:00' : ''));
-            return d.toLocaleDateString('pt-BR');
-        }
-
-        // ─── Perfil na sidebar + controle de acesso ────
-        window.addEventListener('perfilCarregado', async (e) => {
-            perfilAtual = e.detail;
-            if (!perfilAtual) return;
-
-            const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
-            document.getElementById('userAvatar').textContent = letra;
-            document.getElementById('userName').textContent   = perfilAtual.nome || perfilAtual.email;
-            document.getElementById('userRole').textContent   = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
-
-            try {
-                const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
-                if (cfg.nome) document.getElementById('tenantName').textContent = cfg.nome;
-            } catch (_) {}
-
-            if (perfilAtual.role !== 'dono') {
-                try {
-                    const todos = await DB.profissionais.listar();
-                    const meu   = (todos || []).find(p => p.user_id === perfilAtual.id);
-                    profissionalIdAtual = meu ? meu.id : null;
-                } catch (_) {}
-
-                document.getElementById('containerFiltroProf').style.display  = 'none';
-                document.getElementById('cardResumoProfissionais').style.display = 'none';
-                document.getElementById('rowComissoes').style.display         = 'none';
-                document.getElementById('tabelaDono').style.display           = 'none';
-                document.getElementById('tabelaProfissional').style.display   = '';
-            }
-
-            loadFinanceiro();
-        });
-
-        // ─── Carregar dados principais ────
-        async function loadFinanceiro() {
-            try {
-                const periodo = document.getElementById('filterPeriodo').value;
-                periodoPaginaAtual = calcularPeriodo(periodo);
-                const { inicio, fim } = periodoPaginaAtual;
-
-                console.log('📅 Período selecionado:', periodo);
-                console.log('📍 Intervalo:', inicio, 'até', fim);
-
-                const [agendamentos, profissionais] = await Promise.all([
-                    DB.agendamentos.listar({ inicio, fim }),
-                    perfilAtual?.role === 'dono' ? DB.profissionais.listar() : Promise.resolve([])
-                ]);
-
-                console.log('✅ Agendamentos carregados:', agendamentos?.length || 0);
-
-                // Filtra apenas concluídos
-                todosAgendamentos = (agendamentos || []).filter(a =>
-                    (a.status || '').toLowerCase().startsWith('conclu')
-                );
-
-                console.log('✅ Agendamentos concluídos:', todosAgendamentos.length);
-
-                if (perfilAtual?.role === 'dono') {
-                    preencherFiltrosProfissionais(profissionais);
-                    renderResumoProfissionais(profissionais);
-                }
-
-                calcularMetricas();
-                filtrarLocalmente();
-
-            } catch (error) {
-                console.error('❌ Erro ao carregar financeiro:', error);
-                const msg = `<tr><td colspan="9" class="pro-empty-state">
-                    <i class="fas fa-exclamation-circle pro-empty-state-icon"></i>
-                    <p>Erro ao carregar dados financeiros</p>
-                </td></tr>`;
-                document.getElementById('financeiroTableDono').innerHTML = msg;
-                document.getElementById('financeiroTableProf').innerHTML = msg.replace('colspan="9"', 'colspan="7"');
-            }
-        }
-
-        // ─── Calcular período ────
-        function calcularPeriodo(periodo) {
-            const agora = new Date();
-            let inicio = null, fim = null;
-
-            if (periodo === 'hoje') {
-                const ano = agora.getFullYear();
-                const mes = String(agora.getMonth() + 1).padStart(2, '0');
-                const dia = String(agora.getDate()).padStart(2, '0');
-                const dataHoje = `${ano}-${mes}-${dia}`;
-                
-                inicio = new Date(dataHoje + 'T00:00:00').toISOString();
-                fim    = new Date(dataHoje + 'T23:59:59').toISOString();
-            } else if (periodo === 'semana') {
-                const ini = new Date(agora);
-                ini.setDate(agora.getDate() - agora.getDay());
-                ini.setHours(0, 0, 0, 0);
-                inicio = ini.toISOString();
-                fim    = agora.toISOString();
-            } else if (periodo === 'mes') {
-                inicio = new Date(agora.getFullYear(), agora.getMonth(), 1, 0, 0, 0).toISOString();
-                fim    = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
-            } else {
-                // 'todos' - sem filtro de data
-                inicio = null;
-                fim    = null;
-            }
-
-            return { inicio, fim };
-        }
-
-        // ─── Preencher dropdown de profissionais ────
-        function preencherFiltrosProfissionais(profissionais) {
-            const select = document.getElementById('filterProfissional');
-            const valorAtual = select.value;
-            select.innerHTML = '<option value="">Todos Profissionais</option>' +
-                (profissionais || []).map(p =>
-                    `<option value="${p.id}">${p.nome}</option>`
-                ).join('');
-            if (valorAtual) select.value = valorAtual;
-        }
-
-        // ─── Calcular métricas do período ────
-        function calcularMetricas() {
-            const agora = new Date();
-            const hoje  = agora.toISOString().split('T')[0];
-
-            const inicioSemana = new Date(agora);
-            inicioSemana.setDate(agora.getDate() - agora.getDay());
-            inicioSemana.setHours(0, 0, 0, 0);
-
-            const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-
-            let base = [...todosAgendamentos];
-            if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
-                base = base.filter(a => a.profissional_id === profissionalIdAtual);
-            }
-
-            const somarValor    = (lista) => lista.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-            const somarComissao = (lista) => lista.reduce((s, a) => s + calcularComissao(a), 0);
-
-            const deHoje   = base.filter(a => (a.data || '').startsWith(hoje));
-            const daSemana = base.filter(a => new Date(a.data) >= inicioSemana);
-            const doMes    = base.filter(a => new Date(a.data) >= inicioMes);
-
-            const totalMes     = somarValor(doMes);
-            const comissoesMes = somarComissao(doMes);
-
-            document.getElementById('faturamentoHoje').textContent   = formatCurrency(somarValor(deHoje));
-            document.getElementById('faturamentoSemana').textContent = formatCurrency(somarValor(daSemana));
-            document.getElementById('faturamentoMes').textContent    = formatCurrency(totalMes);
-            document.getElementById('lucroLiquido').textContent      = formatCurrency(totalMes - comissoesMes);
-        }
-
-        // ─── Filtrar localmente (aplica filtros de profissional e forma de pagamento) ────
-        function filtrarLocalmente() {
-            const search        = (document.getElementById('searchInput').value || '').toLowerCase();
-            const filterProf    = document.getElementById('filterProfissional').value;
-            const filterPagto   = document.getElementById('filterPagamento').value;
-
-            let lista = [...todosAgendamentos];
-
-            if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
-                lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
-            }
-
-            if (filterProf) {
-                lista = lista.filter(a => a.profissional_id === filterProf);
-            }
-
-            if (filterPagto) {
-                lista = lista.filter(a => 
-                    (a.forma_pagamento || '').toLowerCase() === filterPagto.toLowerCase()
-                );
-            }
-
-            if (search) {
-                lista = lista.filter(a =>
-                    (a.cliente?.nome      || '').toLowerCase().includes(search) ||
-                    (a.servico?.nome      || '').toLowerCase().includes(search) ||
-                    (a.profissional?.nome || '').toLowerCase().includes(search)
-                );
-            }
-
-            renderTable(lista);
-            renderTotalizadores(lista);
-            renderResumoPagamento(lista);
-
-            if (perfilAtual?.role === 'dono') {
-                renderResumoProfissionaisFromLista(lista);
-            }
-        }
-
-        // ─── Renderizar tabela ────
-        function renderTable(lista) {
-            const isDono = perfilAtual?.role === 'dono';
-
-            const emptyDono = `<tr><td colspan="9" class="pro-empty-state">
-                <i class="fas fa-chart-line pro-empty-state-icon"></i>
-                <p>Nenhuma movimentação encontrada</p>
-            </td></tr>`;
-            const emptyProf = `<tr><td colspan="7" class="pro-empty-state">
-                <i class="fas fa-chart-line pro-empty-state-icon"></i>
-                <p>Nenhuma movimentação encontrada</p>
-            </td></tr>`;
-
-            if (lista.length === 0) {
-                document.getElementById('financeiroTableDono').innerHTML = emptyDono;
-                document.getElementById('financeiroTableProf').innerHTML = emptyProf;
-                return;
-            }
-
-            const mapaPagamento = {
-                'pix': '📱 Pix',
-                'cartao': '💳 Cartão',
-                'dinheiro': '💵 Dinheiro',
-                'debito': '🏧 Débito'
-            };
-
-            const rowsDono = lista.map(apt => {
-                const valorServico = parseFloat(apt.valor || 0);
-                const comissao     = calcularComissao(apt);
-                const valorLiquido = valorServico - comissao;
-                const clienteNome  = apt.cliente?.nome      || '—';
-                const servicoNome  = apt.servico?.nome      || '—';
-                const profNome     = apt.profissional?.nome || '—';
-                const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
-                const formaPagto   = mapaPagamento[apt.forma_pagamento?.toLowerCase()] || apt.forma_pagamento || '—';
-
-                return `<tr>
-                    <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
-                    <td>${clienteNome}</td>
-                    <td>${servicoNome}</td>
-                    <td>${profNome}</td>
-                    <td>${formaPagto}</td>
-                    <td><strong>${formatCurrency(valorServico)}</strong></td>
-                    <td style="color:var(--warning);">${formatCurrency(comissao)}</td>
-                    <td style="color:var(--success);"><strong>${formatCurrency(valorLiquido)}</strong></td>
-                    <td><span class="pro-badge pro-badge-success">Concluído</span></td>
-                </tr>`;
-            }).join('');
-
-            const rowsProf = lista.map(apt => {
-                const valorServico = parseFloat(apt.valor || 0);
-                const comissao     = calcularComissao(apt);
-                const valorLiquido = valorServico - comissao;
-                const clienteNome  = apt.cliente?.nome || '—';
-                const servicoNome  = apt.servico?.nome || '—';
-                const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
-                const formaPagto   = mapaPagamento[apt.forma_pagamento?.toLowerCase()] || apt.forma_pagamento || '—';
-
-                return `<tr>
-                    <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
-                    <td>${clienteNome}</td>
-                    <td>${servicoNome}</td>
-                    <td>${formaPagto}</td>
-                    <td><strong>${formatCurrency(valorServico)}</strong></td>
-                    <td style="color:var(--success);"><strong>${formatCurrency(valorLiquido)}</strong></td>
-                    <td><span class="pro-badge pro-badge-success">Concluído</span></td>
-                </tr>`;
-            }).join('');
-
-            document.getElementById('financeiroTableDono').innerHTML = isDono ? rowsDono : emptyDono;
-            document.getElementById('financeiroTableProf').innerHTML = !isDono ? rowsProf : emptyProf;
-        }
-
-        // ─── Totalizadores ────
-        function renderTotalizadores(lista) {
-            const totalFaturado  = lista.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-            const totalComissoes = lista.reduce((s, a) => s + calcularComissao(a), 0);
-            const lucro          = totalFaturado - totalComissoes;
-
-            document.getElementById('totalFaturado').textContent  = formatCurrency(totalFaturado);
-            document.getElementById('totalComissoes').textContent = formatCurrency(totalComissoes);
-            document.getElementById('lucroTotal').textContent     = formatCurrency(lucro);
-        }
-
-        // ─── Resumo por profissional (somente dono) ────
-        function renderResumoProfissionais(profissionais) {
-            window._profissionaisCache = profissionais || [];
-            renderResumoProfissionaisFromLista(todosAgendamentos);
-        }
-
-        function renderResumoProfissionaisFromLista(agendamentos) {
-            const container     = document.getElementById('resumoProfissionais');
-            const profissionais = window._profissionaisCache || [];
-
-            const resumo = profissionais.map(prof => {
-                const apts      = agendamentos.filter(a => a.profissional_id === prof.id);
-                const total     = apts.reduce((s, a) => s + parseFloat(a.valor || 0), 0);
-                const comissoes = apts.reduce((s, a) => s + calcularComissao(a), 0);
-                return { nome: prof.nome, total, comissoes, atendimentos: apts.length };
-            })
-            .filter(r => r.atendimentos > 0)
-            .sort((a, b) => b.total - a.total);
-
-            if (resumo.length === 0) {
-                container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">Nenhum dado disponível no período</p>';
-                return;
-            }
-
-            container.innerHTML = resumo.map(item => `
-                <div style="padding:12px;border-bottom:1px solid var(--border-color);">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                        <strong>${item.nome}</strong>
-                        <strong style="color:var(--primary);">${formatCurrency(item.total)}</strong>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);">
-                        <span>Comissão: ${formatCurrency(item.comissoes)}</span>
-                        <span>${item.atendimentos} atendimento${item.atendimentos !== 1 ? 's' : ''}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // ─── Resumo por forma de pagamento (NOVA FUNCIONALIDADE) ────
-        function renderResumoPagamento(agendamentos) {
-            const container = document.getElementById('resumoPagamento');
-
-            const resumo = {};
-            agendamentos.forEach(apt => {
-                const formaPagto = (apt.forma_pagamento || 'Não especificado').toLowerCase();
-                const valor = parseFloat(apt.valor || 0);
-                if (!resumo[formaPagto]) {
-                    resumo[formaPagto] = { total: 0, quantidade: 0 };
-                }
-                resumo[formaPagto].total += valor;
-                resumo[formaPagto].quantidade += 1;
-            });
-
-            const mapaPagamento = {
-                'pix': '📱 Pix',
-                'cartao': '💳 Cartão',
-                'dinheiro': '💵 Dinheiro',
-                'debito': '🏧 Débito',
-                'não especificado': '❓ Não especificado'
-            };
-
-            const formas = Object.keys(resumo)
-                .sort((a, b) => resumo[b].total - resumo[a].total)
-                .map(forma => ({
-                    label: mapaPagamento[forma] || forma,
-                    total: resumo[forma].total,
-                    quantidade: resumo[forma].quantidade
-                }));
-
-            if (formas.length === 0) {
-                container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">Nenhum dado disponível no período</p>';
-                return;
-            }
-
-            container.innerHTML = formas.map(item => `
-                <div style="padding:12px;border-bottom:1px solid var(--border-color);">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                        <strong>${item.label}</strong>
-                        <strong style="color:var(--primary);">${formatCurrency(item.total)}</strong>
-                    </div>
-                    <div style="font-size:12px;color:var(--text-secondary);">
-                        ${item.quantidade} transação${item.quantidade !== 1 ? 's' : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // ─── Exportar CSV ────
-        function exportarFinanceiro() {
-            if (todosAgendamentos.length === 0) {
-                mostrarToast('⚠️ Nenhum dado para exportar.', 'warning');
-                return;
-            }
-
-            const isDono = perfilAtual?.role === 'dono';
-            const cabecalho = isDono
-                ? ['Data', 'Hora', 'Cliente', 'Serviço', 'Profissional', 'Forma Pagto', 'Valor', 'Comissão', 'Líquido']
-                : ['Data', 'Hora', 'Cliente', 'Serviço', 'Forma Pagto', 'Valor', 'Líquido'];
-
-            let lista = [...todosAgendamentos];
-            if (!isDono && profissionalIdAtual) {
-                lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
-            }
-
-            const linhas = [
-                cabecalho,
-                ...lista.map(a => {
-                    const valor    = parseFloat(a.valor || 0);
-                    const comissao = calcularComissao(a);
-                    const liquido  = (valor - comissao).toFixed(2).replace('.', ',');
-                    const formaPagto = a.forma_pagamento || '';
-                    const base = [
-                        a.data || '',
-                        a.hora ? a.hora.substring(0, 5) : '',
-                        a.cliente?.nome || '',
-                        a.servico?.nome || '',
-                    ];
-                    if (isDono) base.push(a.profissional?.nome || '');
-                    base.push(formaPagto);
-                    base.push(valor.toFixed(2).replace('.', ','));
-                    if (isDono) base.push(comissao.toFixed(2).replace('.', ','));
-                    base.push(liquido);
-                    return base;
-                })
-            ];
-
-            const csv  = linhas.map(l => l.map(cell => `"${cell}"`).join(';')).join('\n');
-            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-            const url  = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href     = url;
-            link.download = `financeiro_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
-            URL.revokeObjectURL(url);
-            mostrarToast('✅ CSV exportado com sucesso!', 'success');
-        }
-
-        // ─── Toast ────
-        function mostrarToast(msg, tipo = 'success') {
-            const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
-            const toast = document.createElement('div');
-            toast.textContent = msg;
-            toast.style.cssText = `
-                position:fixed;bottom:24px;right:24px;z-index:9999;
-                padding:14px 20px;border-radius:10px;
-                background:${cores[tipo]||cores.success};
-                color:#fff;font-weight:500;font-size:14px;
-                box-shadow:0 4px 16px rgba(0,0,0,0.15);
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
-        }
-
-        // ─── Logout ────
-        async function logout() {
-            if (confirm('Deseja realmente sair?')) {
-                await Auth.signOut();
-            }
-        }
-
-        // Sincronizar dark mode entre abas
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'sispro_theme') {
-                location.reload();
-            }
-        });
-    </script>
-</body>
-</html>
+        console.log(`🔍 Agendamentos entre ${inicio} e ${fim}:`, lista.length);
+    }
+
+    if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
+        lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
+    }
+
+    if (filterProf) {
+        lista = lista.filter(a => a.profissional_id === filterProf);
+    }
+
+    if (filterPagto) {
+        lista = lista.filter(a => 
+            (a.forma_pagamento || '').toLowerCase() === filterPagto.toLowerCase()
+        );
+    }
+
+    if (search) {
+        lista = lista.filter(a =>
+            (a.cliente?.nome      || '').toLowerCase().includes(search) ||
+            (a.servico?.nome      || '').toLowerCase().includes(search) ||
+            (a.profissional?.nome || '').toLowerCase().includes(search)
+        );
+    }
+
+    renderTable(lista);
+    renderTotalizadores(lista);
+    renderResumoPagamento(lista);
+
+    if (perfilAtual?.role === 'dono') {
+        renderResumoProfissionaisFromLista(lista);
+    }
+}
