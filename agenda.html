@@ -1216,7 +1216,7 @@
                     html += `<div class="time-row"><div class="time-cell hour">${time}</div>`;
                     allProfessionals.forEach((prof, idx) => {
                         const color = COLORS[idx % 3];
-                        const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora.substring(0, 5) === time);
+                        const apt = allAppointments.find(a => a.profissional_id === prof.id && a.hora.substring(0, 5) === time && a.status !== 'cancelado');
                         if (apt) {
                             html += `<div class="schedule-slot booked ${color.slot}" data-apt-id="${apt.id}">
                                         <div class="slot-content">
@@ -1547,7 +1547,7 @@
          * Valida e decompõe o payload Pix (DEBUG)
          */
         function validarPixPayload(payload) {
-            console.log('%c=== VALIDAÇÃO PIX PAYLOAD ===', 'color: #FF6B6B; font-weight: bold; font-size: 14px;');
+            console.log('%c🔍 VALIDANDO PAYLOAD', 'color: #1E88E5; font-weight: bold; font-size: 14px;');
             console.log(`Tamanho total do payload: ${payload.length} caracteres`);
 
             const campos = {};
