@@ -462,6 +462,9 @@
                 
                 document.getElementById('dataInicio').value = obterDataLocal(trinta.toISOString().split('T')[0]);
                 document.getElementById('dataFim').value = obterDataLocal(hoje.toISOString().split('T')[0]);
+                
+                // Carrega dados com o novo período
+                loadFinanceiro();
             } else {
                 container.classList.remove('ativo');
                 loadFinanceiro();
@@ -559,26 +562,33 @@
 
             let lista = [...todosAgendamentos];
 
+            console.log('🔍 Filtrando com período:', periodo, 'de', inicio, 'até', fim);
+            console.log('📊 Total de agendamentos antes dos filtros:', lista.length);
+
             // Filtro de período
             if (inicio && fim) {
                 lista = lista.filter(a => {
                     const dataApt = obterDataLocal(a.data);
                     return dataApt >= inicio && dataApt <= fim;
                 });
+                console.log('📊 Após filtro de período:', lista.length);
             }
 
             if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
                 lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
+                console.log('📊 Após filtro de profissional (acesso restrito):', lista.length);
             }
 
             if (filterProf) {
                 lista = lista.filter(a => a.profissional_id === filterProf);
+                console.log('📊 Após filtro de profissional (selecionado):', lista.length);
             }
 
             if (filterPagto) {
                 lista = lista.filter(a => 
                     (a.forma_pagamento || '').toLowerCase() === filterPagto.toLowerCase()
                 );
+                console.log('📊 Após filtro de pagamento:', lista.length);
             }
 
             // Filtro de busca personalizado
@@ -600,7 +610,10 @@
                                (a.data || '').toLowerCase().includes(search);
                     }
                 });
+                console.log('📊 Após filtro de busca:', lista.length);
             }
+
+            console.log('✅ Total final:', lista.length);
 
             renderTable(lista);
             renderTotalizadores(lista);
