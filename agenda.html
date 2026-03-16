@@ -1481,11 +1481,11 @@
         }
 
         // ========================================
-        // ✅ FUNÇÕES PIX COM VALIDAÇÃO
+        // ✅ FUNÇÕES PIX - REESCRITAS CORRETAMENTE
         // ========================================
 
         /**
-         * Formata campo EMV com ID e tamanho (padStart)
+         * Formata campo EMV com ID e tamanho
          * Exemplo: formatarCampo("59", "BRUNO CESAR") => "5911BRUNO CESAR"
          */
         function formatarCampo(id, valor) {
@@ -1511,10 +1511,10 @@
         }
 
         /**
-         * Normaliza nome/cidade para Pix (✅ ALTERADO)
-         * - remove acentos
-         * - mantém somente A-Z 0-9 e espaço
-         * - colapsa espaços
+         * Normaliza nome/cidade para Pix
+         * - Remove acentos, coloca maiúscula
+         * - Mantém apenas A-Z, 0-9, espaço
+         * - Colapsa espaços e limita tamanho
          */
         function normalizeNomeCidade(str, maxLen) {
             return String(str || '')
@@ -1537,8 +1537,7 @@
         }
 
         /**
-         * Remove caracteres inválidos do BR code (✅ ALTERADO)
-         * IMPORTANTÍSSIMO: NÃO remover espaços internos (isso pode quebrar o CRC/tamanhos).
+         * Remove quebras de linha do BR code (não remove espaços!)
          */
         function sanitizeBrcode(str) {
             return String(str || '').replace(/[\r\n]+/g, '').trim();
@@ -1583,11 +1582,9 @@
                 pos += 4 + len;
             }
 
-            // CRC recebido é o valor do campo 63 (se existir)
             const crcRecebido = campos['63']?.valor || payload.substring(payload.length - 4);
             console.log(`%cCRC-16 Recebido: ${crcRecebido}`, 'color: #4ECDC4; font-weight: bold;');
 
-            // Para calcular CRC, precisamos do payload até "6304" (sem o CRC final)
             const idx6304 = payload.lastIndexOf('6304');
             const payloadSemCrc = idx6304 >= 0 ? payload.substring(0, idx6304 + 4) : payload.substring(0, payload.length - 4);
 
@@ -1613,10 +1610,10 @@
         }
 
         /**
-         * Monta o Pix BR Code completo (✅ REESCRITO - compatível com bancos)
-         * - Monta 26 com subcampos 00/01/02
-         * - 60 com tamanho máximo 15 (padrão mais aceito)
-         * - Não "sanitiza" depois de montado (apenas remove quebras)
+         * Monta o Pix BR Code completo (CORRIGIDO)
+         * - Constrói 26 com subcampos 00, 01, (02 opcional)
+         * - 60 com máximo 15 caracteres (padrão Pix)
+         * - CRC calculado corretamente
          */
         function buildPixPayload({ chave, nome, cidade, valor, descricao, txid }) {
             if (!chave?.trim() || !nome?.trim() || !cidade?.trim() || !valor || parseFloat(valor) <= 0) {
@@ -1624,9 +1621,9 @@
             }
 
             const merchantName = normalizeNomeCidade(nome, 25);
-            const merchantCity = normalizeNomeCidade(cidade, 15); // ✅ volte ao padrão de 15
+            const merchantCity = normalizeNomeCidade(cidade, 15);
 
-            // 26 (Merchant Account Info): 00 GUI + 01 CHAVE + 02 DESC (opcional)
+            // Campo 26: GUI (00) + CHAVE (01) + DESC opcional (02)
             const gui = formatarCampo('00', 'BR.GOV.BCB.PIX');
             const key = formatarCampo('01', String(chave).trim());
 
@@ -1644,8 +1641,9 @@
 
             const merchantAccountInfo = formatarCampo('26', gui + key + desc);
 
+            // Monta payload
             const payloadFormatIndicator = formatarCampo('00', '01');
-            const pointOfInitiationMethod = formatarCampo('01', '11'); // estático
+            const pointOfInitiationMethod = formatarCampo('01', '11');
             const merchantCategoryCode = formatarCampo('52', '0000');
             const transactionCurrency = formatarCampo('53', '986');
 
@@ -1712,7 +1710,6 @@
                     txid: txid
                 });
 
-                // ✅ sanitiza só quebras e trim (não remove espaços)
                 const brcodeForQr = sanitizeBrcode(brcode);
 
                 // VALIDAÇÃO
