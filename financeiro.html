@@ -12,6 +12,43 @@
     <link rel="stylesheet" href="css/pro-design-system.css">
     <link rel="stylesheet" href="css/pro-components.css">
     <link rel="stylesheet" href="css/dark-mode.css">
+    <style>
+        .filtro-periodo-custom {
+            display: none;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .filtro-periodo-custom.ativo {
+            display: flex;
+        }
+
+        .filtro-periodo-custom input[type="date"] {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .filtro-periodo-custom input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .filtro-periodo-custom label {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+    </style>
 </head>
 <body>
     <div class="pro-app">
@@ -134,12 +171,23 @@
                         <div class="pro-filters" style="display:flex;flex-wrap:wrap;gap:16px;">
                             <div style="flex:1;min-width:200px;">
                                 <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Período</label>
-                                <select class="pro-select" id="filterPeriodo" onchange="loadFinanceiro()" style="width:100%;">
+                                <select class="pro-select" id="filterPeriodo" onchange="aoMudarPeriodo()" style="width:100%;">
                                     <option value="todos">Todos os períodos</option>
                                     <option value="hoje">Hoje</option>
                                     <option value="semana">Esta Semana</option>
                                     <option value="mes" selected>Este Mês</option>
+                                    <option value="personalizado">Personalizado</option>
                                 </select>
+                                <div id="containerFiltroCustom" class="filtro-periodo-custom">
+                                    <div style="flex:1;">
+                                        <label>De:</label>
+                                        <input type="date" id="dataInicio" onchange="filtrarLocalmente()">
+                                    </div>
+                                    <div style="flex:1;">
+                                        <label>Até:</label>
+                                        <input type="date" id="dataFim" onchange="filtrarLocalmente()">
+                                    </div>
+                                </div>
                             </div>
                             <div style="flex:1;min-width:200px;" id="containerFiltroProf">
                                 <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Profissional</label>
@@ -400,6 +448,26 @@
             }
         }
 
+        // ─── Função para mostrar/ocultar campos de data personalizada ────
+        function aoMudarPeriodo() {
+            const periodo = document.getElementById('filterPeriodo').value;
+            const container = document.getElementById('containerFiltroCustom');
+            
+            if (periodo === 'personalizado') {
+                container.classList.add('ativo');
+                // Define datas padrão (últimos 30 dias)
+                const hoje = new Date();
+                const trinta = new Date(hoje);
+                trinta.setDate(trinta.getDate() - 30);
+                
+                document.getElementById('dataInicio').value = obterDataLocal(trinta.toISOString().split('T')[0]);
+                document.getElementById('dataFim').value = obterDataLocal(hoje.toISOString().split('T')[0]);
+            } else {
+                container.classList.remove('ativo');
+                loadFinanceiro();
+            }
+        }
+
         // ─── Calcular período ────
         function calcularPeriodo(periodo) {
             const agora = new Date();
@@ -426,6 +494,11 @@
                 const dataIni = `${ano}-${mes}-01`;
                 console.log('📌 Mês: de', dataIni, 'até', dataHoje);
                 return { inicio: dataIni, fim: dataHoje };
+            } else if (periodo === 'personalizado') {
+                const inicio = document.getElementById('dataInicio').value;
+                const fim = document.getElementById('dataFim').value;
+                console.log('📌 Período personalizado: de', inicio, 'até', fim);
+                return { inicio, fim };
             } else {
                 console.log('📌 Todos os períodos (sem filtro)');
                 return { inicio: null, fim: null };
