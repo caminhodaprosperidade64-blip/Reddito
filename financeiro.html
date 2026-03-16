@@ -116,21 +116,46 @@
                     </div>
                 </div>
 
+                <!-- Filtros -->
+                <div class="pro-card" style="margin-bottom:24px;">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">Filtros</h3>
+                    </div>
+                    <div class="pro-card-body">
+                        <div class="pro-filters" style="display:flex;flex-wrap:wrap;gap:16px;">
+                            <div style="flex:1;min-width:200px;">
+                                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Período</label>
+                                <select class="pro-select" id="filterPeriodo" onchange="loadFinanceiro()" style="width:100%;">
+                                    <option value="todos">Todos os períodos</option>
+                                    <option value="hoje">Hoje</option>
+                                    <option value="semana">Esta Semana</option>
+                                    <option value="mes" selected>Este Mês</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;min-width:200px;" id="containerFiltroProf">
+                                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Profissional</label>
+                                <select class="pro-select" id="filterProfissional" onchange="loadFinanceiro()" style="width:100%;">
+                                    <option value="">Todos Profissionais</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;min-width:200px;">
+                                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">Forma de Pagamento</label>
+                                <select class="pro-select" id="filterPagamento" onchange="loadFinanceiro()" style="width:100%;">
+                                    <option value="">Todas</option>
+                                    <option value="pix">Pix</option>
+                                    <option value="cartao">Cartão</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                    <option value="debito">Débito</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tabela de movimentações -->
                 <div class="pro-card">
                     <div class="pro-card-header">
                         <h3 class="pro-card-title">Movimentações Financeiras</h3>
-                        <div class="pro-filters" style="flex-wrap:wrap;gap:8px;">
-                            <select class="pro-select" style="width:150px;" id="filterPeriodo" onchange="loadFinanceiro()">
-                                <option value="todos">Todos</option>
-                                <option value="hoje">Hoje</option>
-                                <option value="semana">Esta Semana</option>
-                                <option value="mes" selected>Este Mês</option>
-                            </select>
-                            <select class="pro-select" style="width:200px;" id="filterProfissional" onchange="filtrarLocalmente()">
-                                <option value="">Todos Profissionais</option>
-                            </select>
-                        </div>
                     </div>
                     <div class="pro-card-body">
                         <div class="pro-table-container">
@@ -141,6 +166,7 @@
                                         <th>Cliente</th>
                                         <th>Serviço</th>
                                         <th>Profissional</th>
+                                        <th>Forma Pagto</th>
                                         <th>Valor Serviço</th>
                                         <th>Comissão</th>
                                         <th>Valor Líquido</th>
@@ -148,7 +174,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="financeiroTableDono">
-                                    <tr><td colspan="8" class="pro-empty-state">
+                                    <tr><td colspan="9" class="pro-empty-state">
                                         <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
                                         <p>Carregando...</p>
                                     </td></tr>
@@ -160,13 +186,14 @@
                                         <th>Data/Hora</th>
                                         <th>Cliente</th>
                                         <th>Serviço</th>
+                                        <th>Forma Pagto</th>
                                         <th>Valor Serviço</th>
                                         <th>Valor Líquido</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="financeiroTableProf">
-                                    <tr><td colspan="6" class="pro-empty-state">
+                                    <tr><td colspan="7" class="pro-empty-state">
                                         <i class="fas fa-spinner fa-spin pro-empty-state-icon"></i>
                                         <p>Carregando...</p>
                                     </td></tr>
@@ -176,7 +203,7 @@
                     </div>
                 </div>
 
-                <!-- Resumo por profissional + Totalizadores -->
+                <!-- Resumos: Profissional + Pagamento + Totalizadores -->
                 <div class="pro-grid-2" style="margin-top:24px;">
                     <div class="pro-card" id="cardResumoProfissionais">
                         <div class="pro-card-header">
@@ -191,22 +218,34 @@
 
                     <div class="pro-card">
                         <div class="pro-card-header">
-                            <h3 class="pro-card-title">Totalizadores</h3>
+                            <h3 class="pro-card-title">Faturamento por Forma de Pagamento</h3>
                         </div>
                         <div class="pro-card-body">
-                            <div style="display:flex;flex-direction:column;gap:16px;">
-                                <div style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-main);border-radius:8px;">
-                                    <span style="font-weight:500;">Total Faturado</span>
-                                    <span style="font-weight:700;color:var(--success);" id="totalFaturado">R$ 0</span>
-                                </div>
-                                <div id="rowComissoes" style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-main);border-radius:8px;">
-                                    <span style="font-weight:500;">Total Comissões</span>
-                                    <span style="font-weight:700;color:var(--warning);" id="totalComissoes">R$ 0</span>
-                                </div>
-                                <div style="display:flex;justify-content:space-between;padding:12px;background:var(--primary-light);border-radius:8px;">
-                                    <span style="font-weight:600;">Lucro Líquido</span>
-                                    <span style="font-weight:700;font-size:20px;color:var(--primary);" id="lucroTotal">R$ 0</span>
-                                </div>
+                            <div id="resumoPagamento">
+                                <p style="text-align:center;color:var(--text-secondary);">Carregando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totalizadores -->
+                <div class="pro-card" style="margin-top:24px;">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">Totalizadores</h3>
+                    </div>
+                    <div class="pro-card-body">
+                        <div style="display:flex;flex-direction:column;gap:16px;">
+                            <div style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-main);border-radius:8px;">
+                                <span style="font-weight:500;">Total Faturado</span>
+                                <span style="font-weight:700;color:var(--success);" id="totalFaturado">R$ 0</span>
+                            </div>
+                            <div id="rowComissoes" style="display:flex;justify-content:space-between;padding:12px;background:var(--bg-main);border-radius:8px;">
+                                <span style="font-weight:500;">Total Comissões</span>
+                                <span style="font-weight:700;color:var(--warning);" id="totalComissoes">R$ 0</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:12px;background:var(--primary-light);border-radius:8px;">
+                                <span style="font-weight:600;">Lucro Líquido</span>
+                                <span style="font-weight:700;font-size:20px;color:var(--primary);" id="lucroTotal">R$ 0</span>
                             </div>
                         </div>
                     </div>
@@ -229,6 +268,7 @@
         let todosAgendamentos  = [];
         let perfilAtual        = null;
         let profissionalIdAtual = null;
+        let periodoPaginaAtual = { inicio: null, fim: null };
 
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
@@ -274,11 +314,11 @@
                     profissionalIdAtual = meu ? meu.id : null;
                 } catch (_) {}
 
-                document.getElementById('filterProfissional').style.display     = 'none';
+                document.getElementById('containerFiltroProf').style.display  = 'none';
                 document.getElementById('cardResumoProfissionais').style.display = 'none';
-                document.getElementById('rowComissoes').style.display            = 'none';
-                document.getElementById('tabelaDono').style.display              = 'none';
-                document.getElementById('tabelaProfissional').style.display      = '';
+                document.getElementById('rowComissoes').style.display         = 'none';
+                document.getElementById('tabelaDono').style.display           = 'none';
+                document.getElementById('tabelaProfissional').style.display   = '';
             }
 
             loadFinanceiro();
@@ -288,17 +328,25 @@
         async function loadFinanceiro() {
             try {
                 const periodo = document.getElementById('filterPeriodo').value;
-                const { inicio, fim } = calcularPeriodo(periodo);
+                periodoPaginaAtual = calcularPeriodo(periodo);
+                const { inicio, fim } = periodoPaginaAtual;
+
+                console.log('📅 Período selecionado:', periodo);
+                console.log('📍 Intervalo:', inicio, 'até', fim);
 
                 const [agendamentos, profissionais] = await Promise.all([
                     DB.agendamentos.listar({ inicio, fim }),
                     perfilAtual?.role === 'dono' ? DB.profissionais.listar() : Promise.resolve([])
                 ]);
 
+                console.log('✅ Agendamentos carregados:', agendamentos?.length || 0);
+
                 // Filtra apenas concluídos
                 todosAgendamentos = (agendamentos || []).filter(a =>
                     (a.status || '').toLowerCase().startsWith('conclu')
                 );
+
+                console.log('✅ Agendamentos concluídos:', todosAgendamentos.length);
 
                 if (perfilAtual?.role === 'dono') {
                     preencherFiltrosProfissionais(profissionais);
@@ -309,13 +357,13 @@
                 filtrarLocalmente();
 
             } catch (error) {
-                console.error('Erro ao carregar financeiro:', error);
-                const msg = `<tr><td colspan="8" class="pro-empty-state">
+                console.error('❌ Erro ao carregar financeiro:', error);
+                const msg = `<tr><td colspan="9" class="pro-empty-state">
                     <i class="fas fa-exclamation-circle pro-empty-state-icon"></i>
                     <p>Erro ao carregar dados financeiros</p>
                 </td></tr>`;
                 document.getElementById('financeiroTableDono').innerHTML = msg;
-                document.getElementById('financeiroTableProf').innerHTML = msg.replace('colspan="8"', 'colspan="6"');
+                document.getElementById('financeiroTableProf').innerHTML = msg.replace('colspan="9"', 'colspan="7"');
             }
         }
 
@@ -325,8 +373,13 @@
             let inicio = null, fim = null;
 
             if (periodo === 'hoje') {
-                inicio = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).toISOString();
-                fim    = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59).toISOString();
+                const ano = agora.getFullYear();
+                const mes = String(agora.getMonth() + 1).padStart(2, '0');
+                const dia = String(agora.getDate()).padStart(2, '0');
+                const dataHoje = `${ano}-${mes}-${dia}`;
+                
+                inicio = new Date(dataHoje + 'T00:00:00').toISOString();
+                fim    = new Date(dataHoje + 'T23:59:59').toISOString();
             } else if (periodo === 'semana') {
                 const ini = new Date(agora);
                 ini.setDate(agora.getDate() - agora.getDay());
@@ -334,8 +387,12 @@
                 inicio = ini.toISOString();
                 fim    = agora.toISOString();
             } else if (periodo === 'mes') {
-                inicio = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
+                inicio = new Date(agora.getFullYear(), agora.getMonth(), 1, 0, 0, 0).toISOString();
                 fim    = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
+            } else {
+                // 'todos' - sem filtro de data
+                inicio = null;
+                fim    = null;
             }
 
             return { inicio, fim };
@@ -352,7 +409,7 @@
             if (valorAtual) select.value = valorAtual;
         }
 
-        // ─── Calcular métricas do período completo ────
+        // ─── Calcular métricas do período ────
         function calcularMetricas() {
             const agora = new Date();
             const hoje  = agora.toISOString().split('T')[0];
@@ -384,10 +441,11 @@
             document.getElementById('lucroLiquido').textContent      = formatCurrency(totalMes - comissoesMes);
         }
 
-        // ─── Filtrar localmente ────
+        // ─── Filtrar localmente (aplica filtros de profissional e forma de pagamento) ────
         function filtrarLocalmente() {
-            const search     = (document.getElementById('searchInput').value || '').toLowerCase();
-            const filterProf = document.getElementById('filterProfissional').value;
+            const search        = (document.getElementById('searchInput').value || '').toLowerCase();
+            const filterProf    = document.getElementById('filterProfissional').value;
+            const filterPagto   = document.getElementById('filterPagamento').value;
 
             let lista = [...todosAgendamentos];
 
@@ -397,6 +455,12 @@
 
             if (filterProf) {
                 lista = lista.filter(a => a.profissional_id === filterProf);
+            }
+
+            if (filterPagto) {
+                lista = lista.filter(a => 
+                    (a.forma_pagamento || '').toLowerCase() === filterPagto.toLowerCase()
+                );
             }
 
             if (search) {
@@ -409,6 +473,7 @@
 
             renderTable(lista);
             renderTotalizadores(lista);
+            renderResumoPagamento(lista);
 
             if (perfilAtual?.role === 'dono') {
                 renderResumoProfissionaisFromLista(lista);
@@ -419,11 +484,11 @@
         function renderTable(lista) {
             const isDono = perfilAtual?.role === 'dono';
 
-            const emptyDono = `<tr><td colspan="8" class="pro-empty-state">
+            const emptyDono = `<tr><td colspan="9" class="pro-empty-state">
                 <i class="fas fa-chart-line pro-empty-state-icon"></i>
                 <p>Nenhuma movimentação encontrada</p>
             </td></tr>`;
-            const emptyProf = `<tr><td colspan="6" class="pro-empty-state">
+            const emptyProf = `<tr><td colspan="7" class="pro-empty-state">
                 <i class="fas fa-chart-line pro-empty-state-icon"></i>
                 <p>Nenhuma movimentação encontrada</p>
             </td></tr>`;
@@ -434,6 +499,13 @@
                 return;
             }
 
+            const mapaPagamento = {
+                'pix': '📱 Pix',
+                'cartao': '💳 Cartão',
+                'dinheiro': '💵 Dinheiro',
+                'debito': '🏧 Débito'
+            };
+
             const rowsDono = lista.map(apt => {
                 const valorServico = parseFloat(apt.valor || 0);
                 const comissao     = calcularComissao(apt);
@@ -442,12 +514,14 @@
                 const servicoNome  = apt.servico?.nome      || '—';
                 const profNome     = apt.profissional?.nome || '—';
                 const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
+                const formaPagto   = mapaPagamento[apt.forma_pagamento?.toLowerCase()] || apt.forma_pagamento || '—';
 
                 return `<tr>
                     <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
                     <td>${clienteNome}</td>
                     <td>${servicoNome}</td>
                     <td>${profNome}</td>
+                    <td>${formaPagto}</td>
                     <td><strong>${formatCurrency(valorServico)}</strong></td>
                     <td style="color:var(--warning);">${formatCurrency(comissao)}</td>
                     <td style="color:var(--success);"><strong>${formatCurrency(valorLiquido)}</strong></td>
@@ -462,11 +536,13 @@
                 const clienteNome  = apt.cliente?.nome || '—';
                 const servicoNome  = apt.servico?.nome || '—';
                 const hora         = apt.hora ? apt.hora.substring(0, 5) : '';
+                const formaPagto   = mapaPagamento[apt.forma_pagamento?.toLowerCase()] || apt.forma_pagamento || '—';
 
                 return `<tr>
                     <td>${formatDate(apt.data)}${hora ? ' ' + hora : ''}</td>
                     <td>${clienteNome}</td>
                     <td>${servicoNome}</td>
+                    <td>${formaPagto}</td>
                     <td><strong>${formatCurrency(valorServico)}</strong></td>
                     <td style="color:var(--success);"><strong>${formatCurrency(valorLiquido)}</strong></td>
                     <td><span class="pro-badge pro-badge-success">Concluído</span></td>
@@ -526,6 +602,55 @@
             `).join('');
         }
 
+        // ─── Resumo por forma de pagamento (NOVA FUNCIONALIDADE) ────
+        function renderResumoPagamento(agendamentos) {
+            const container = document.getElementById('resumoPagamento');
+
+            const resumo = {};
+            agendamentos.forEach(apt => {
+                const formaPagto = (apt.forma_pagamento || 'Não especificado').toLowerCase();
+                const valor = parseFloat(apt.valor || 0);
+                if (!resumo[formaPagto]) {
+                    resumo[formaPagto] = { total: 0, quantidade: 0 };
+                }
+                resumo[formaPagto].total += valor;
+                resumo[formaPagto].quantidade += 1;
+            });
+
+            const mapaPagamento = {
+                'pix': '📱 Pix',
+                'cartao': '💳 Cartão',
+                'dinheiro': '💵 Dinheiro',
+                'debito': '🏧 Débito',
+                'não especificado': '❓ Não especificado'
+            };
+
+            const formas = Object.keys(resumo)
+                .sort((a, b) => resumo[b].total - resumo[a].total)
+                .map(forma => ({
+                    label: mapaPagamento[forma] || forma,
+                    total: resumo[forma].total,
+                    quantidade: resumo[forma].quantidade
+                }));
+
+            if (formas.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">Nenhum dado disponível no período</p>';
+                return;
+            }
+
+            container.innerHTML = formas.map(item => `
+                <div style="padding:12px;border-bottom:1px solid var(--border-color);">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                        <strong>${item.label}</strong>
+                        <strong style="color:var(--primary);">${formatCurrency(item.total)}</strong>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-secondary);">
+                        ${item.quantidade} transação${item.quantidade !== 1 ? 's' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
         // ─── Exportar CSV ────
         function exportarFinanceiro() {
             if (todosAgendamentos.length === 0) {
@@ -535,8 +660,8 @@
 
             const isDono = perfilAtual?.role === 'dono';
             const cabecalho = isDono
-                ? ['Data', 'Hora', 'Cliente', 'Serviço', 'Profissional', 'Valor', 'Comissão', 'Líquido']
-                : ['Data', 'Hora', 'Cliente', 'Serviço', 'Valor', 'Líquido'];
+                ? ['Data', 'Hora', 'Cliente', 'Serviço', 'Profissional', 'Forma Pagto', 'Valor', 'Comissão', 'Líquido']
+                : ['Data', 'Hora', 'Cliente', 'Serviço', 'Forma Pagto', 'Valor', 'Líquido'];
 
             let lista = [...todosAgendamentos];
             if (!isDono && profissionalIdAtual) {
@@ -549,6 +674,7 @@
                     const valor    = parseFloat(a.valor || 0);
                     const comissao = calcularComissao(a);
                     const liquido  = (valor - comissao).toFixed(2).replace('.', ',');
+                    const formaPagto = a.forma_pagamento || '';
                     const base = [
                         a.data || '',
                         a.hora ? a.hora.substring(0, 5) : '',
@@ -556,6 +682,7 @@
                         a.servico?.nome || '',
                     ];
                     if (isDono) base.push(a.profissional?.nome || '');
+                    base.push(formaPagto);
                     base.push(valor.toFixed(2).replace('.', ','));
                     if (isDono) base.push(comissao.toFixed(2).replace('.', ','));
                     base.push(liquido);
@@ -563,7 +690,7 @@
                 })
             ];
 
-            const csv  = linhas.map(l => l.join(';')).join('\n');
+            const csv  = linhas.map(l => l.map(cell => `"${cell}"`).join(';')).join('\n');
             const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
             const url  = URL.createObjectURL(blob);
             const link = document.createElement('a');
