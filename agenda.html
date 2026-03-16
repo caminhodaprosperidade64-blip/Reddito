@@ -1489,8 +1489,9 @@
          * Exemplo: formatarCampo("59", "BRUNO CESAR") => "5911BRUNO CESAR"
          */
         function formatarCampo(id, valor) {
-            const tamanho = valor.length.toString().padStart(2, '0');
-            return id + tamanho + valor;
+            const v = String(valor ?? '');
+            const tamanho = v.length.toString().padStart(2, '0');
+            return id + tamanho + v;
         }
 
         /**
@@ -1510,13 +1511,17 @@
         }
 
         /**
-         * Normaliza nome/cidade para Pix
+         * Normaliza nome/cidade para Pix (✅ ALTERADO)
+         * - remove acentos
+         * - mantém somente A-Z 0-9 e espaço
+         * - colapsa espaços
          */
         function normalizeNomeCidade(str, maxLen) {
             return String(str || '')
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                 .toUpperCase()
-                .replace(/[^A-Z0-9 \-\.]/g, '')
+                .replace(/[^A-Z0-9 ]/g, '')
+                .replace(/\s+/g, ' ')
                 .trim()
                 .slice(0, maxLen);
         }
@@ -1532,10 +1537,11 @@
         }
 
         /**
-         * Remove caracteres inválidos do BR code
+         * Remove caracteres inválidos do BR code (✅ ALTERADO)
+         * IMPORTANTÍSSIMO: NÃO remover espaços internos (isso pode quebrar o CRC/tamanhos).
          */
         function sanitizeBrcode(str) {
-            return String(str || '').replace(/[\r\n\s]+/g, '').trim();
+            return String(str || '').replace(/[\r\n]+/g, '').trim();
         }
 
         /**
@@ -1548,22 +1554,43 @@
             const campos = {};
             let pos = 0;
 
-            while (pos < payload.length - 4) {
+            while (pos < payload.length) {
                 const id = payload.substring(pos, pos + 2);
-                const len = parseInt(payload.substring(pos + 2, pos + 4), 10);
-                const value = payload.substring(pos + 4, pos + 4 + len);
 
+                // CRC (63) encerra o parse
+                if (id === '63') {
+                    const len = parseInt(payload.substring(pos + 2, pos + 4), 10);
+                    const value = payload.substring(pos + 4, pos + 4 + len);
+                    campos[id] = { tamanho: len, valor: value };
+                    console.log(`  ID: ${id} | Tamanho: ${String(len).padStart(2, '0')} | Valor: ${value}`);
+                    pos += 4 + len;
+                    break;
+                }
+
+                const lenStr = payload.substring(pos + 2, pos + 4);
+                const len = parseInt(lenStr, 10);
+
+                if (!Number.isFinite(len) || len < 0) {
+                    console.warn('⚠️ Parse inválido em pos', pos, 'id', id, 'lenStr', lenStr);
+                    break;
+                }
+
+                const value = payload.substring(pos + 4, pos + 4 + len);
                 campos[id] = { tamanho: len, valor: value };
 
-                console.log(`  ID: ${id} | Tamanho: ${len.toString().padStart(2, '0')} | Valor: ${value}`);
+                console.log(`  ID: ${id} | Tamanho: ${String(len).padStart(2, '0')} | Valor: ${value}`);
 
                 pos += 4 + len;
             }
 
-            const crcRecebido = payload.substring(payload.length - 4);
+            // CRC recebido é o valor do campo 63 (se existir)
+            const crcRecebido = campos['63']?.valor || payload.substring(payload.length - 4);
             console.log(`%cCRC-16 Recebido: ${crcRecebido}`, 'color: #4ECDC4; font-weight: bold;');
 
-            const payloadSemCrc = payload.substring(0, payload.length - 4);
+            // Para calcular CRC, precisamos do payload até "6304" (sem o CRC final)
+            const idx6304 = payload.lastIndexOf('6304');
+            const payloadSemCrc = idx6304 >= 0 ? payload.substring(0, idx6304 + 4) : payload.substring(0, payload.length - 4);
+
             const crcCalculado = crc16(payloadSemCrc);
             console.log(`CRC-16 Calculado: ${crcCalculado}`);
             console.log(`%cCRC válido? ${crcRecebido === crcCalculado ? '✅ SIM' : '❌ NÃO'}`, crcRecebido === crcCalculado ? 'color: green;' : 'color: red;');
@@ -1586,8 +1613,10 @@
         }
 
         /**
-         * Monta o Pix BR Code completo
-         * ✅ CORRIGIDO: Agora merchantCity aceita até 30 caracteres para acomodar ITAQUAQUECETUBA
+         * Monta o Pix BR Code completo (✅ REESCRITO - compatível com bancos)
+         * - Monta 26 com subcampos 00/01/02
+         * - 60 com tamanho máximo 15 (padrão mais aceito)
+         * - Não "sanitiza" depois de montado (apenas remove quebras)
          */
         function buildPixPayload({ chave, nome, cidade, valor, descricao, txid }) {
             if (!chave?.trim() || !nome?.trim() || !cidade?.trim() || !valor || parseFloat(valor) <= 0) {
@@ -1595,37 +1624,53 @@
             }
 
             const merchantName = normalizeNomeCidade(nome, 25);
-            const merchantCity = normalizeNomeCidade(cidade, 30);
+            const merchantCity = normalizeNomeCidade(cidade, 15); // ✅ volte ao padrão de 15
 
+            // 26 (Merchant Account Info): 00 GUI + 01 CHAVE + 02 DESC (opcional)
             const gui = formatarCampo('00', 'BR.GOV.BCB.PIX');
             const key = formatarCampo('01', String(chave).trim());
 
             let desc = '';
             if (descricao) {
-                const cleanDesc = String(descricao)
+                const cleanDesc = String(descricao || '')
                     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[^\w \-\.]/g, '')
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9 ]/g, '')
+                    .replace(/\s+/g, ' ')
                     .trim()
                     .slice(0, 50);
                 if (cleanDesc) desc = formatarCampo('02', cleanDesc);
             }
 
             const merchantAccountInfo = formatarCampo('26', gui + key + desc);
+
             const payloadFormatIndicator = formatarCampo('00', '01');
-            const pointOfInitiationMethod = formatarCampo('01', '11');
+            const pointOfInitiationMethod = formatarCampo('01', '11'); // estático
             const merchantCategoryCode = formatarCampo('52', '0000');
             const transactionCurrency = formatarCampo('53', '986');
-            const transactionAmount = formatarCampo('54', String(parseFloat(valor).toFixed(2)));
+
+            const amount = Number(valor).toFixed(2);
+            const transactionAmount = formatarCampo('54', amount);
+
             const countryCode = formatarCampo('58', 'BR');
             const mName = formatarCampo('59', merchantName);
             const mCity = formatarCampo('60', merchantCity);
-            const txidValue = normalizeTxid(txid || 'AGENDAMENTO', 25);
-            const txidField = formatarCampo('05', txidValue);
-            const additionalData = formatarCampo('62', txidField);
 
-            const withoutCrc = payloadFormatIndicator + pointOfInitiationMethod + merchantAccountInfo +
-                merchantCategoryCode + transactionCurrency + transactionAmount + countryCode +
-                mName + mCity + additionalData + '6304';
+            const txidValue = normalizeTxid(txid || 'AGENDAMENTO', 25);
+            const additionalData = formatarCampo('62', formatarCampo('05', txidValue));
+
+            const withoutCrc =
+                payloadFormatIndicator +
+                pointOfInitiationMethod +
+                merchantAccountInfo +
+                merchantCategoryCode +
+                transactionCurrency +
+                transactionAmount +
+                countryCode +
+                mName +
+                mCity +
+                additionalData +
+                '6304';
 
             const crc = crc16(withoutCrc);
             return withoutCrc + crc;
@@ -1642,9 +1687,6 @@
                     return;
                 }
 
-                console.log('📋 Agendamento:', apt);
-                console.log('💰 Valor bruto:', apt.valor, 'Tipo:', typeof apt.valor);
-
                 if (!paymentConfig?.pix_chave || !paymentConfig?.pix_nome || !paymentConfig?.pix_cidade) {
                     document.getElementById('pixCopiaCola').value = '';
                     clearPixQr();
@@ -1653,26 +1695,13 @@
                 }
 
                 let valor = parseFloat(apt.valor);
-
                 if (isNaN(valor) || valor <= 0) {
-                    console.error('❌ Valor inválido:', apt.valor);
                     alert('⚠️ O agendamento não tem um valor válido. Configure o valor antes de finalizar.');
                     return;
                 }
-
                 valor = valor.toFixed(2);
-                console.log('✅ Valor formatado:', valor);
 
                 const txid = normalizeTxid(`AGEND${String(apt.id).replace(/[^0-9A-Za-z]/g, '').slice(0, 12)}`);
-                console.log('✅ TXID gerado:', txid);
-
-                console.log('📝 Gerando BR Code com:', {
-                    chave: paymentConfig.pix_chave,
-                    nome: paymentConfig.pix_nome,
-                    cidade: paymentConfig.pix_cidade,
-                    valor: valor,
-                    txid: txid
-                });
 
                 const brcode = buildPixPayload({
                     chave: paymentConfig.pix_chave,
@@ -1683,21 +1712,15 @@
                     txid: txid
                 });
 
+                // ✅ sanitiza só quebras e trim (não remove espaços)
                 const brcodeForQr = sanitizeBrcode(brcode);
-
-                if (!brcodeForQr || brcodeForQr.length < 30) {
-                    console.error('❌ BR Code inválido:', brcodeForQr);
-                    alert('Erro: BR Code inválido. Verifique os dados Pix.');
-                    return;
-                }
-
-                console.log('✅ BR Code gerado com sucesso!');
-                console.log('📏 Tamanho:', brcodeForQr.length, 'caracteres');
-                console.log('📝 Código:', brcodeForQr);
 
                 // VALIDAÇÃO
                 console.log('%c🔍 VALIDANDO PAYLOAD', 'color: #1E88E5; font-weight: bold; font-size: 14px;');
                 const validacao = validarPixPayload(brcodeForQr);
+                if (!validacao.crcValido) {
+                    console.warn('⚠️ CRC inválido - o banco vai recusar. Verifique logs acima.');
+                }
 
                 document.getElementById('pixCopiaCola').value = brcodeForQr;
 
@@ -1708,30 +1731,21 @@
                 }
 
                 container.innerHTML = '';
-
                 await new Promise(resolve => setTimeout(resolve, 150));
 
-                try {
-                    currentQRCode = new QRCode(container, {
-                        text: brcodeForQr,
-                        width: 300,
-                        height: 300,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.L,
-                        quietZone: 15
-                    });
+                currentQRCode = new QRCode(container, {
+                    text: brcodeForQr,
+                    width: 300,
+                    height: 300,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.L
+                });
 
-                    console.log('✅ QR Code renderizado com sucesso!');
-                } catch (qrError) {
-                    console.error('❌ Erro ao criar QR Code:', qrError);
-                    container.innerHTML = '<div style="color: red; text-align: center; padding: 20px;">Erro ao gerar QR Code</div>';
-                    throw qrError;
-                }
+                console.log('✅ QR Code renderizado com sucesso!');
 
             } catch (err) {
                 console.error('❌ Erro completo:', err);
-                console.error('Stack:', err.stack);
                 alert('Erro ao gerar QR Code: ' + err.message);
             }
         }
