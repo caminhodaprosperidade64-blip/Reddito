@@ -63,6 +63,13 @@
                 <div class="pro-search">
                     <i class="fas fa-search pro-search-icon"></i>
                     <input type="text" class="pro-search-input" placeholder="Buscar transações..." id="searchInput" oninput="filtrarLocalmente()">
+                    <select class="pro-select" id="searchType" onchange="filtrarLocalmente()" style="width:120px;margin-left:8px;">
+                        <option value="todos">Todos os campos</option>
+                        <option value="cliente">Cliente</option>
+                        <option value="servico">Serviço</option>
+                        <option value="profissional">Profissional</option>
+                        <option value="data">Data</option>
+                    </select>
                 </div>
                 <div class="pro-header-actions">
                     <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
@@ -78,9 +85,11 @@
                             <h1 class="pro-page-title">Financeiro</h1>
                             <p class="pro-page-subtitle">Controle financeiro completo</p>
                         </div>
-                        <button class="pro-btn pro-btn-ghost" onclick="exportarFinanceiro()">
-                            <i class="fas fa-download"></i> Exportar CSV
-                        </button>
+                        <div style="display:flex;gap:8px;">
+                            <button class="pro-btn pro-btn-ghost" onclick="abrirModalExportar()">
+                                <i class="fas fa-download"></i> Exportar
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -254,8 +263,30 @@
         </main>
     </div>
 
+    <!-- Modal de Exportação -->
+    <div id="modalExportar" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:var(--bg-primary);border-radius:12px;padding:24px;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <h2 style="margin-top:0;margin-bottom:16px;color:var(--text-primary);">Escolher Formato de Exportação</h2>
+            <p style="color:var(--text-secondary);margin-bottom:24px;">Selecione o formato desejado para exportar os dados financeiros:</p>
+            
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+                <button id="btnExportCSV" class="pro-btn pro-btn-primary" style="width:100%;justify-content:center;" onclick="exportarFinanceiro('csv')">
+                    <i class="fas fa-file-csv"></i> Exportar como CSV
+                </button>
+                <button id="btnExportXLSX" class="pro-btn pro-btn-primary" style="width:100%;justify-content:center;" onclick="exportarFinanceiro('xlsx')">
+                    <i class="fas fa-file-excel"></i> Exportar como XLSX
+                </button>
+            </div>
+
+            <button class="pro-btn pro-btn-ghost" style="width:100%;justify-content:center;" onclick="fecharModalExportar()">
+                Cancelar
+            </button>
+        </div>
+    </div>
+
     <!-- Scripts no final do body -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/auth-guard.js"></script>
@@ -369,7 +400,7 @@
             }
         }
 
-        // ─── Calcular período (CORRIGIDO) ────
+        // ─── Calcular período ────
         function calcularPeriodo(periodo) {
             const agora = new Date();
             const ano = agora.getFullYear();
@@ -396,7 +427,6 @@
                 console.log('📌 Mês: de', dataIni, 'até', dataHoje);
                 return { inicio: dataIni, fim: dataHoje };
             } else {
-                // 'todos' - sem filtro de data
                 console.log('📌 Todos os períodos (sem filtro)');
                 return { inicio: null, fim: null };
             }
@@ -445,9 +475,10 @@
             document.getElementById('lucroLiquido').textContent      = formatCurrency(totalMes - comissoesMes);
         }
 
-        // ─── Filtrar localmente (CORRIGIDO) ────
+        // ─── Filtrar localmente com tipo de busca personalizado ────
         function filtrarLocalmente() {
             const search        = (document.getElementById('searchInput').value || '').toLowerCase();
+            const searchType    = document.getElementById('searchType').value;
             const filterProf    = document.getElementById('filterProfissional').value;
             const filterPagto   = document.getElementById('filterPagamento').value;
             const periodo       = document.getElementById('filterPeriodo').value;
@@ -455,14 +486,12 @@
 
             let lista = [...todosAgendamentos];
 
-            // Filtro de período por data local (ANTES de outros filtros)
+            // Filtro de período
             if (inicio && fim) {
                 lista = lista.filter(a => {
                     const dataApt = obterDataLocal(a.data);
-                    const resultado = dataApt >= inicio && dataApt <= fim;
-                    return resultado;
+                    return dataApt >= inicio && dataApt <= fim;
                 });
-                console.log(`🔍 Agendamentos entre ${inicio} e ${fim}:`, lista.length);
             }
 
             if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
@@ -471,26 +500,34 @@
 
             if (filterProf) {
                 lista = lista.filter(a => a.profissional_id === filterProf);
-                console.log(`🔍 Agendamentos do profissional:`, lista.length);
             }
 
             if (filterPagto) {
                 lista = lista.filter(a => 
                     (a.forma_pagamento || '').toLowerCase() === filterPagto.toLowerCase()
                 );
-                console.log(`🔍 Agendamentos com pagamento ${filterPagto}:`, lista.length);
             }
 
+            // Filtro de busca personalizado
             if (search) {
-                lista = lista.filter(a =>
-                    (a.cliente?.nome      || '').toLowerCase().includes(search) ||
-                    (a.servico?.nome      || '').toLowerCase().includes(search) ||
-                    (a.profissional?.nome || '').toLowerCase().includes(search)
-                );
-                console.log(`🔍 Agendamentos com busca "${search}":`, lista.length);
+                lista = lista.filter(a => {
+                    if (searchType === 'cliente') {
+                        return (a.cliente?.nome || '').toLowerCase().includes(search);
+                    } else if (searchType === 'servico') {
+                        return (a.servico?.nome || '').toLowerCase().includes(search);
+                    } else if (searchType === 'profissional') {
+                        return (a.profissional?.nome || '').toLowerCase().includes(search);
+                    } else if (searchType === 'data') {
+                        return (a.data || '').toLowerCase().includes(search);
+                    } else {
+                        // 'todos' - buscar em todos os campos
+                        return (a.cliente?.nome || '').toLowerCase().includes(search) ||
+                               (a.servico?.nome || '').toLowerCase().includes(search) ||
+                               (a.profissional?.nome || '').toLowerCase().includes(search) ||
+                               (a.data || '').toLowerCase().includes(search);
+                    }
+                });
             }
-
-            console.log('📊 Total final após filtros:', lista.length);
 
             renderTable(lista);
             renderTotalizadores(lista);
@@ -585,7 +622,7 @@
             document.getElementById('lucroTotal').textContent     = formatCurrency(lucro);
         }
 
-        // ─── Resumo por profissional (somente dono) ────
+        // ─── Resumo por profissional ────
         function renderResumoProfissionais(profissionais) {
             window._profissionaisCache = profissionais || [];
             renderResumoProfissionaisFromLista(todosAgendamentos);
@@ -672,10 +709,32 @@
             `).join('');
         }
 
-        // ─── Exportar CSV ────
-        function exportarFinanceiro() {
+        // ─── Modal de Exportação ────
+        function abrirModalExportar() {
             if (todosAgendamentos.length === 0) {
                 mostrarToast('⚠️ Nenhum dado para exportar.', 'warning');
+                return;
+            }
+            document.getElementById('modalExportar').style.display = 'flex';
+        }
+
+        function fecharModalExportar() {
+            document.getElementById('modalExportar').style.display = 'none';
+        }
+
+        // Fechar modal ao clicar fora
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('modalExportar');
+            if (e.target === modal) {
+                fecharModalExportar();
+            }
+        });
+
+        // ─── Exportar em CSV ou XLSX ────
+        function exportarFinanceiro(formato) {
+            if (todosAgendamentos.length === 0) {
+                mostrarToast('⚠️ Nenhum dado para exportar.', 'warning');
+                fecharModalExportar();
                 return;
             }
 
@@ -689,29 +748,39 @@
                 lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
             }
 
-            const linhas = [
-                cabecalho,
-                ...lista.map(a => {
-                    const valor    = parseFloat(a.valor || 0);
-                    const comissao = calcularComissao(a);
-                    const liquido  = (valor - comissao).toFixed(2).replace('.', ',');
-                    const formaPagto = a.forma_pagamento || '';
-                    const base = [
-                        a.data || '',
-                        a.hora ? a.hora.substring(0, 5) : '',
-                        a.cliente?.nome || '',
-                        a.servico?.nome || '',
-                    ];
-                    if (isDono) base.push(a.profissional?.nome || '');
-                    base.push(formaPagto);
-                    base.push(valor.toFixed(2).replace('.', ','));
-                    if (isDono) base.push(comissao.toFixed(2).replace('.', ','));
-                    base.push(liquido);
-                    return base;
-                })
-            ];
+            const linhas = lista.map(a => {
+                const valor    = parseFloat(a.valor || 0);
+                const comissao = calcularComissao(a);
+                const liquido  = valor - comissao;
+                const formaPagto = a.forma_pagamento || '';
+                const base = [
+                    a.data || '',
+                    a.hora ? a.hora.substring(0, 5) : '',
+                    a.cliente?.nome || '',
+                    a.servico?.nome || '',
+                ];
+                if (isDono) base.push(a.profissional?.nome || '');
+                base.push(formaPagto);
+                base.push(valor);
+                if (isDono) base.push(comissao);
+                base.push(liquido);
+                return base;
+            });
 
-            const csv  = linhas.map(l => l.map(cell => `"${cell}"`).join(';')).join('\n');
+            const dataExport = [cabecalho, ...linhas];
+
+            if (formato === 'csv') {
+                exportarCSV(dataExport);
+            } else if (formato === 'xlsx') {
+                exportarXLSX(dataExport, cabecalho);
+            }
+
+            fecharModalExportar();
+        }
+
+        // ─── Função para exportar CSV ────
+        function exportarCSV(dados) {
+            const csv = dados.map(l => l.map(cell => `"${cell}"`).join(';')).join('\n');
             const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
             const url  = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -720,6 +789,38 @@
             link.click();
             URL.revokeObjectURL(url);
             mostrarToast('✅ CSV exportado com sucesso!', 'success');
+        }
+
+        // ─── Função para exportar XLSX ────
+        function exportarXLSX(dados, cabecalho) {
+            try {
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.aoa_to_sheet(dados);
+
+                // Formatar cabeçalho
+                const headerStyle = {
+                    fill: { fgColor: { rgb: 'FF4472C4' } },
+                    font: { bold: true, color: { rgb: 'FFFFFFFF' } },
+                    alignment: { horizontal: 'center', vertical: 'center' }
+                };
+
+                // Aplicar estilo ao cabeçalho
+                for (let i = 0; i < cabecalho.length; i++) {
+                    const cellRef = XLSX.utils.encode_col(i) + '1';
+                    worksheet[cellRef].s = headerStyle;
+                }
+
+                // Ajustar largura das colunas
+                const colWidths = cabecalho.map(() => 15);
+                worksheet['!cols'] = colWidths.map(w => ({ wch: w }));
+
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Financeiro');
+                XLSX.writeFile(workbook, `financeiro_${new Date().toISOString().split('T')[0]}.xlsx`);
+                mostrarToast('✅ XLSX exportado com sucesso!', 'success');
+            } catch (error) {
+                console.error('❌ Erro ao exportar XLSX:', error);
+                mostrarToast('❌ Erro ao exportar XLSX. Tente novamente.', 'error');
+            }
         }
 
         // ─── Toast ────
