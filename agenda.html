@@ -568,8 +568,13 @@
             color: white;
         }
 
-        .pro-btn-primary:hover {
+        .pro-btn-primary:hover:not(:disabled) {
             background: #4f46e5;
+        }
+
+        .pro-btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .pro-btn-secondary {
@@ -578,7 +583,7 @@
             border: 1px solid var(--border-color);
         }
 
-        .pro-btn-secondary:hover {
+        .pro-btn-secondary:hover:not(:disabled) {
             background: var(--border-color);
         }
 
@@ -587,7 +592,7 @@
             color: white;
         }
 
-        .pro-btn-success:hover {
+        .pro-btn-success:hover:not(:disabled) {
             background: #059669;
         }
 
@@ -596,7 +601,7 @@
             color: white;
         }
 
-        .pro-btn-danger:hover {
+        .pro-btn-danger:hover:not(:disabled) {
             background: #dc2626;
         }
 
@@ -632,7 +637,6 @@
             font-size: 0.85rem;
         }
 
-        /* ✅ AJUSTE 1: Aumentar tamanho para 300px (>= 256px) */
         #pixQr {
             width: 300px;
             height: 300px;
@@ -648,19 +652,17 @@
             margin: 1rem 0;
         }
 
-        /* ✅ AJUSTE 2: CSS para evitar fantasmas (canvas escondido) */
         #pixQr canvas {
-            display: none; /* Esconde o canvas, deixa apenas a imagem */
+            display: none;
         }
 
-        /* ✅ AJUSTE 3: CSS para a imagem do QR Code */
         #pixQr img {
             display: block;
             margin: 0 auto;
-            max-width: 100%; /* Garante que ele não estiche */
+            max-width: 100%;
             height: auto;
-            image-rendering: pixelated; /* Mantém os quadrados nítidos */
-            border: 15px solid #fff;    /* Cria a margem de segurança branca */
+            image-rendering: pixelated;
+            border: 15px solid #fff;
         }
 
         @media (max-width: 520px) {
@@ -925,7 +927,7 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="pro-btn pro-btn-secondary" onclick="closeEditModal()">Cancelar</button>
-                        <button type="submit" class="pro-btn pro-btn-primary">Salvar Alterações</button>
+                        <button type="submit" class="pro-btn pro-btn-primary" id="saveEditButton">Salvar Alterações</button>
                     </div>
                 </form>
             </div>
@@ -1060,6 +1062,7 @@
         let finalizingAppointment = null;
         let paymentConfig = { pix_chave: null, pix_nome: null, pix_cidade: null };
         let currentQRCode = null;
+        let isUpdating = false;
 
         const COLORS = {
             0: { bg: 'bg-prof-1', badge: 'badge-prof-1', slot: 'slot-prof-1' },
@@ -1302,7 +1305,7 @@
                 });
                 if (result.success || result.data) {
                     closeModal();
-                    renderSchedule();
+                    await renderSchedule();
                     alert('✅ Agendamento criado!');
                 }
             } catch (error) {
@@ -1358,33 +1361,73 @@
 
         function closeEditModal() {
             document.getElementById('editAppointmentModal').classList.remove('active');
+            isUpdating = false;
         }
 
         async function updateAppointment(e) {
             e.preventDefault();
-            if (!viewingAppointment) return;
-            const clientId = document.getElementById('editClientSelect').value;
-            const serviceId = document.getElementById('editServiceSelect').value;
-            const value = parseFloat(document.getElementById('editValueField').value) || 0;
-            const notes = document.getElementById('editNotesField').value;
+
+            if (!viewingAppointment) {
+                alert('❌ Erro: Agendamento não carregado');
+                return;
+            }
+
+            if (isUpdating) {
+                console.warn('⚠️ Atualização já em progresso...');
+                return;
+            }
+
+            isUpdating = true;
+            const saveButton = document.getElementById('saveEditButton');
+            saveButton.disabled = true;
+            saveButton.textContent = '⏳ Salvando...';
+
             try {
-                await DB.agendamentos.atualizar(viewingAppointment.id, {
+                const clientId = document.getElementById('editClientSelect').value;
+                const serviceId = document.getElementById('editServiceSelect').value;
+                const value = parseFloat(document.getElementById('editValueField').value) || 0;
+                const notes = document.getElementById('editNotesField').value || '';
+
+                if (!clientId || !serviceId) {
+                    alert('⚠️ Por favor, selecione cliente e serviço');
+                    saveButton.disabled = false;
+                    saveButton.textContent = 'Salvar Alterações';
+                    isUpdating = false;
+                    return;
+                }
+
+                console.log('🔄 Atualizando agendamento ID:', viewingAppointment.id);
+                console.log('Dados a atualizar:', { cliente_id: clientId, servico_id: serviceId, valor: value, observacoes: notes });
+
+                const result = await DB.agendamentos.atualizar(viewingAppointment.id, {
                     cliente_id: clientId,
                     servico_id: serviceId,
                     valor: value,
                     observacoes: notes
                 });
+
+                console.log('✅ Resultado da atualização:', result);
+
+                saveButton.disabled = false;
+                saveButton.textContent = 'Salvar Alterações';
+                isUpdating = false;
+
                 closeEditModal();
                 await renderSchedule();
-                alert('✅ Atualizado!');
+                alert('✅ Agendamento atualizado com sucesso!');
+                viewingAppointment = null;
+
             } catch (error) {
-                console.error('Erro ao atualizar:', error);
-                alert('Erro ao atualizar');
+                console.error('❌ Erro ao atualizar:', error);
+                saveButton.disabled = false;
+                saveButton.textContent = 'Salvar Alterações';
+                isUpdating = false;
+                alert('❌ Erro ao atualizar agendamento: ' + (error.message || 'Tente novamente'));
             }
         }
 
         function handleCancel() {
-            if (!confirm('Cancelar agendamento?')) return;
+            if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
             cancelAppointmentNow();
         }
 
@@ -1394,10 +1437,10 @@
                 await DB.agendamentos.atualizar(viewingAppointment.id, { status: 'cancelado' });
                 closeViewModal();
                 await renderSchedule();
-                alert('✅ Cancelado!');
+                alert('✅ Agendamento cancelado!');
             } catch (error) {
                 console.error('Erro ao cancelar:', error);
-                alert('Erro ao cancelar');
+                alert('Erro ao cancelar agendamento');
             }
         }
 
@@ -1480,23 +1523,12 @@
             currentQRCode = null;
         }
 
-        // ========================================
-        // ✅ FUNÇÕES PIX - REESCRITAS CORRETAMENTE
-        // ========================================
-
-        /**
-         * Formata campo EMV com ID e tamanho
-         * Exemplo: formatarCampo("59", "BRUNO CESAR") => "5911BRUNO CESAR"
-         */
         function formatarCampo(id, valor) {
             const v = String(valor ?? '');
             const tamanho = v.length.toString().padStart(2, '0');
             return id + tamanho + v;
         }
 
-        /**
-         * Calcula CRC16 CCITT para Pix
-         */
         function crc16(payload) {
             let crc = 0xFFFF;
             for (let i = 0; i < payload.length; i++) {
@@ -1510,12 +1542,6 @@
             return crc.toString(16).toUpperCase().padStart(4, '0');
         }
 
-        /**
-         * Normaliza nome/cidade para Pix
-         * - Remove acentos, coloca maiúscula
-         * - Mantém apenas A-Z, 0-9, espaço
-         * - Colapsa espaços e limita tamanho
-         */
         function normalizeNomeCidade(str, maxLen) {
             return String(str || '')
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -1526,9 +1552,6 @@
                 .slice(0, maxLen);
         }
 
-        /**
-         * Normaliza TXID (apenas alphanumericos)
-         */
         function normalizeTxid(str, maxLen = 25) {
             return String(str || '')
                 .toUpperCase()
@@ -1536,16 +1559,10 @@
                 .slice(0, maxLen);
         }
 
-        /**
-         * Remove quebras de linha do BR code (não remove espaços!)
-         */
         function sanitizeBrcode(str) {
             return String(str || '').replace(/[\r\n]+/g, '').trim();
         }
 
-        /**
-         * Valida e decompõe o payload Pix (DEBUG)
-         */
         function validarPixPayload(payload) {
             console.log('%c🔍 VALIDANDO PAYLOAD', 'color: #1E88E5; font-weight: bold; font-size: 14px;');
             console.log(`Tamanho total do payload: ${payload.length} caracteres`);
@@ -1556,7 +1573,6 @@
             while (pos < payload.length) {
                 const id = payload.substring(pos, pos + 2);
 
-                // CRC (63) encerra o parse
                 if (id === '63') {
                     const len = parseInt(payload.substring(pos + 2, pos + 4), 10);
                     const value = payload.substring(pos + 4, pos + 4 + len);
@@ -1609,12 +1625,6 @@
             };
         }
 
-        /**
-         * Monta o Pix BR Code completo (CORRIGIDO)
-         * - Constrói 26 com subcampos 00, 01, (02 opcional)
-         * - 60 com máximo 15 caracteres (padrão Pix)
-         * - CRC calculado corretamente
-         */
         function buildPixPayload({ chave, nome, cidade, valor, descricao, txid }) {
             if (!chave?.trim() || !nome?.trim() || !cidade?.trim() || !valor || parseFloat(valor) <= 0) {
                 throw new Error('Dados Pix inválidos');
@@ -1623,7 +1633,6 @@
             const merchantName = normalizeNomeCidade(nome, 25);
             const merchantCity = normalizeNomeCidade(cidade, 15);
 
-            // Campo 26: GUI (00) + CHAVE (01) + DESC opcional (02)
             const gui = formatarCampo('00', 'BR.GOV.BCB.PIX');
             const key = formatarCampo('01', String(chave).trim());
 
@@ -1641,7 +1650,6 @@
 
             const merchantAccountInfo = formatarCampo('26', gui + key + desc);
 
-            // Monta payload
             const payloadFormatIndicator = formatarCampo('00', '01');
             const pointOfInitiationMethod = formatarCampo('01', '11');
             const merchantCategoryCode = formatarCampo('52', '0000');
@@ -1674,9 +1682,6 @@
             return withoutCrc + crc;
         }
 
-        /**
-         * Gera QR Code para o agendamento atual
-         */
         async function generatePixQrForCurrentAppointment() {
             try {
                 const apt = finalizingAppointment;
@@ -1712,7 +1717,6 @@
 
                 const brcodeForQr = sanitizeBrcode(brcode);
 
-                // VALIDAÇÃO
                 console.log('%c🔍 VALIDANDO PAYLOAD', 'color: #1E88E5; font-weight: bold; font-size: 14px;');
                 const validacao = validarPixPayload(brcodeForQr);
                 if (!validacao.crcValido) {
