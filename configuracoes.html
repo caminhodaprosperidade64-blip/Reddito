@@ -147,23 +147,13 @@
                             </div>
                         </div>
 
-                        <!-- Horário de Funcionamento -->
+                        <!-- ✅ NOVO: Horário de Funcionamento com Dias Individuais -->
                         <div class="pro-card">
                             <div class="pro-card-header">
                                 <h3 class="pro-card-title">Horário de Funcionamento</h3>
                             </div>
                             <div class="pro-card-body">
                                 <form id="scheduleForm" onsubmit="saveSchedule(event)">
-                                    <div class="pro-form-row">
-                                        <div class="pro-form-group">
-                                            <label class="pro-label">Abertura</label>
-                                            <input type="time" class="pro-input" id="openTime" value="08:00" required>
-                                        </div>
-                                        <div class="pro-form-group">
-                                            <label class="pro-label">Fechamento</label>
-                                            <input type="time" class="pro-input" id="closeTime" value="20:00" required>
-                                        </div>
-                                    </div>
                                     <div class="pro-form-group">
                                         <label class="pro-label">Intervalo entre atendimentos</label>
                                         <select class="pro-select" id="slotDuration">
@@ -173,34 +163,14 @@
                                             <option value="60">60 minutos</option>
                                         </select>
                                     </div>
-                                    <div class="pro-form-group">
-                                        <label class="pro-label">Dias de Funcionamento</label>
-                                        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                                <input type="checkbox" id="dia1" checked> Segunda-feira
-                                            </label>
-                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                                <input type="checkbox" id="dia2" checked> Terça-feira
-                                            </label>
-                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                                <input type="checkbox" id="dia3" checked> Quarta-feira
-                                            </label>
-                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                                <input type="checkbox" id="dia4" checked> Quinta-feira
-                                            </label>
-                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                                <input type="checkbox" id="dia5" checked> Sexta-feira
-                                            </label>
-                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                                <input type="checkbox" id="dia6" checked> Sábado
-                                            </label>
-                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                                <input type="checkbox" id="dia0"> Domingo
-                                            </label>
-                                        </div>
+
+                                    <label class="pro-label" style="margin-top:16px;">Horários por Dia</label>
+                                    <div id="horariosContainer" style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+                                        <!-- Será preenchido via JavaScript -->
                                     </div>
-                                    <button type="submit" class="pro-btn pro-btn-primary">
-                                        <i class="fas fa-save"></i> Salvar Horário
+
+                                    <button type="submit" class="pro-btn pro-btn-primary" style="margin-top:16px;">
+                                        <i class="fas fa-save"></i> Salvar Horários
                                     </button>
                                 </form>
                             </div>
@@ -246,45 +216,7 @@
                       </div>
                     </section>
 
-                    <!-- Convite de Profissional -->
-                    <div class="pro-card" style="margin-top:24px;">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title"><i class="fas fa-user-plus" style="color:var(--primary);margin-right:8px;"></i>Convidar Profissional</h3>
-                        </div>
-                        <div class="pro-card-body">
-                            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
-                                Envie um convite para um profissional se cadastrar no sistema vinculado ao seu estabelecimento.
-                                Após o cadastro, ele terá acesso apenas à própria agenda e ganhos.
-                            </p>
-                            <div class="pro-form-row" style="align-items:flex-end;">
-                                <div class="pro-form-group" style="flex:1;">
-                                    <label class="pro-label">Email do Profissional</label>
-                                    <input type="email" class="pro-input" id="emailConvite" placeholder="profissional@email.com">
-                                </div>
-                                <div class="pro-form-group" style="flex:1;">
-                                    <label class="pro-label">Nome do Profissional</label>
-                                    <input type="text" class="pro-input" id="nomeConvite" placeholder="Nome completo">
-                                </div>
-                                <div class="pro-form-group" style="flex-shrink:0;">
-                                    <button class="pro-btn pro-btn-primary" onclick="gerarLinkConvite()">
-                                        <i class="fas fa-link"></i> Gerar Link de Convite
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="resultadoConvite" style="display:none;margin-top:16px;padding:14px;background:var(--bg-main);border-radius:8px;border:1px solid var(--border-color);">
-                                <p style="font-size:13px;font-weight:600;margin-bottom:8px;">🔗 Link de convite gerado:</p>
-                                <div style="display:flex;gap:8px;align-items:center;">
-                                    <input type="text" class="pro-input" id="linkConviteGerado" readonly style="font-size:12px;flex:1;">
-                                    <button class="pro-btn pro-btn-secondary" onclick="copiarLink()">
-                                        <i class="fas fa-copy"></i> Copiar
-                                    </button>
-                                </div>
-                                <p style="font-size:12px;color:var(--text-secondary);margin-top:8px;">
-                                    ⚠️ Este link expira em 7 dias. Compartilhe apenas com o profissional convidado.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- ✅ REMOVIDO: Seção de Convite de Profissional -->
 
                     <!-- Gerenciamento de Dados -->
                     <div class="pro-card" style="margin-top:24px;">
@@ -293,7 +225,10 @@
                         </div>
                         <div class="pro-card-body">
                             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
-                                Ações irreversíveis — use com cuidado.
+                                <strong>📊 Exportar Dados:</strong> Faz um backup de todos os seus clientes, serviços, profissionais e agendamentos em um arquivo JSON que você pode guardar com segurança.
+                            </p>
+                            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+                                <strong>🗑️ Limpar Todos os Dados:</strong> Remove <strong>PERMANENTEMENTE</strong> todos os clientes, serviços, profissionais e agendamentos. Esta ação é <strong>irreversível</strong> — use apenas se tiver certeza absoluta.
                             </p>
                             <div style="display:flex;gap:12px;flex-wrap:wrap;">
                                 <button class="pro-btn pro-btn-secondary" onclick="exportarDados()">
@@ -437,6 +372,55 @@
             border: none;
         }
         .pro-btn-danger:hover { background: #DC2626; }
+
+        /* ✅ Estilo para horários por dia */
+        .horario-dia-item {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .horario-dia-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .horario-dia-nome {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 100px;
+        }
+
+        .horario-dia-inputs {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .horario-dia-inputs input[type="time"] {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 13px;
+            width: 100px;
+        }
+
+        .horario-dia-inputs input[type="time"]:disabled {
+            background: var(--bg-main);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
     </style>
 
     <script>
@@ -445,6 +429,8 @@
         let tenantData = null;
         const STORAGE_KEY_CONFIG = 'sispro_config';
         const STORAGE_KEY_PREFS  = 'sispro_prefs';
+
+        const DIAS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
@@ -469,10 +455,38 @@
                 // ✅ CARREGAR DADOS DO SUPABASE
                 await carregarDadosEmpresaDoSupabase();
                 loadPixConfig();
+                renderizarHorarios();
             }
 
             carregarPreferencias();
         });
+
+        // ─── ✅ NOVA FUNÇÃO: Renderizar horários por dia ────────────────
+        function renderizarHorarios() {
+            const container = document.getElementById('horariosContainer');
+            
+            container.innerHTML = DIAS.map((dia, index) => `
+                <div class="horario-dia-item">
+                    <input type="checkbox" id="diaAtivo-${index}" checked onchange="toggleDiaHorario(${index})">
+                    <span class="horario-dia-nome">${dia}</span>
+                    <div class="horario-dia-inputs">
+                        <input type="time" id="horaInicio-${index}" value="08:00">
+                        <span>até</span>
+                        <input type="time" id="horaFim-${index}" value="18:00">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ─── Ativar/desativar horários do dia ────────────────────────────
+        function toggleDiaHorario(index) {
+            const checkbox = document.getElementById('diaAtivo-' + index);
+            const inicio = document.getElementById('horaInicio-' + index);
+            const fim = document.getElementById('horaFim-' + index);
+            
+            inicio.disabled = !checkbox.checked;
+            fim.disabled = !checkbox.checked;
+        }
 
         // ─── ✅ NOVA FUNÇÃO: Carregar dados do Supabase ────────────────
         async function carregarDadosEmpresaDoSupabase() {
@@ -541,20 +555,24 @@
                 } else if (Array.isArray(horarios) && horarios.length > 0) {
                     console.log('✅ Horários carregados:', horarios);
 
-                    // Preencher horários
-                    const primeiroHorario = horarios[0];
-                    if (primeiroHorario.hora_inicio) {
-                        document.getElementById('openTime').value = primeiroHorario.hora_inicio;
-                    }
-                    if (primeiroHorario.hora_fim) {
-                        document.getElementById('closeTime').value = primeiroHorario.hora_fim;
-                    }
-
-                    // Marcar dias ativos
+                    // ✅ Preencher horários individuais por dia
                     horarios.forEach(h => {
-                        const checkbox = document.getElementById('dia' + h.dia_semana);
-                        if (checkbox) {
-                            checkbox.checked = h.ativo === true;
+                        const diaIndex = h.dia_semana;
+                        
+                        const checkboxAtivo = document.getElementById('diaAtivo-' + diaIndex);
+                        const inputInicio = document.getElementById('horaInicio-' + diaIndex);
+                        const inputFim = document.getElementById('horaFim-' + diaIndex);
+                        
+                        if (checkboxAtivo) {
+                            checkboxAtivo.checked = h.ativo === true;
+                        }
+                        if (inputInicio) {
+                            inputInicio.value = h.hora_inicio || '08:00';
+                            inputInicio.disabled = h.ativo !== true;
+                        }
+                        if (inputFim) {
+                            inputFim.value = h.hora_fim || '18:00';
+                            inputFim.disabled = h.ativo !== true;
                         }
                     });
                 }
@@ -726,25 +744,21 @@
             }
         }
 
-        // ─── ✅ Salvar horário NO SUPABASE ────────────────────────────
+        // ─── ✅ NOVA FUNÇÃO: Salvar horários com dias individuais NO SUPABASE ────────────────────────────
         async function saveSchedule(e) {
             e.preventDefault();
 
-            const diasSelecionados = [0, 1, 2, 3, 4, 5, 6].filter(d => {
-                const el = document.getElementById('dia' + d);
-                return el && el.checked;
-            });
-
-            if (diasSelecionados.length === 0) {
-                mostrarToast('⚠️ Selecione pelo menos um dia de funcionamento.', 'warning');
-                return;
+            // Verificar se pelo menos um dia está selecionado
+            const diasComFuncionamento = [];
+            for (let i = 0; i < 7; i++) {
+                const checkbox = document.getElementById('diaAtivo-' + i);
+                if (checkbox && checkbox.checked) {
+                    diasComFuncionamento.push(i);
+                }
             }
 
-            const abertura   = document.getElementById('openTime').value;
-            const fechamento = document.getElementById('closeTime').value;
-
-            if (abertura >= fechamento) {
-                mostrarToast('⚠️ O horário de abertura deve ser anterior ao fechamento.', 'warning');
+            if (diasComFuncionamento.length === 0) {
+                mostrarToast('⚠️ Selecione pelo menos um dia de funcionamento.', 'warning');
                 return;
             }
 
@@ -756,7 +770,7 @@
                     throw new Error('Tenant não identificado');
                 }
 
-                console.log('📝 Salvando horários...');
+                console.log('📝 Salvando horários individuais por dia...');
 
                 // ✅ Deletar horários antigos
                 await supabase
@@ -764,72 +778,41 @@
                     .delete()
                     .eq('tenant_id', tenant_id);
 
-                // ✅ Inserir novos horários
-                const horarios = [0, 1, 2, 3, 4, 5, 6].map(dia => ({
-                    tenant_id,
-                    dia_semana: dia,
-                    ativo: diasSelecionados.includes(dia),
-                    hora_inicio: abertura,
-                    hora_fim: fechamento
-                }));
+                // ✅ Construir horários para cada dia
+                const horarios = [];
+                for (let i = 0; i < 7; i++) {
+                    const diaAtivo = document.getElementById('diaAtivo-' + i).checked;
+                    const horaInicio = document.getElementById('horaInicio-' + i).value;
+                    const horaFim = document.getElementById('horaFim-' + i).value;
 
+                    // Validar se as horas estão corretas (quando o dia está ativo)
+                    if (diaAtivo && horaInicio >= horaFim) {
+                        mostrarToast(`⚠️ O horário de ${DIAS[i]} está inválido.`, 'warning');
+                        return;
+                    }
+
+                    horarios.push({
+                        tenant_id,
+                        dia_semana: i,
+                        ativo: diaAtivo,
+                        hora_inicio: horaInicio,
+                        hora_fim: horaFim
+                    });
+                }
+
+                // ✅ Inserir novos horários
                 const { error } = await supabase
                     .from('horarios_atendimento')
                     .insert(horarios);
 
                 if (error) throw error;
 
-                mostrarToast('✅ Horário de funcionamento salvo!', 'success');
+                console.log('✅ Horários salvos:', horarios);
+                mostrarToast('✅ Horários de funcionamento salvos!', 'success');
 
             } catch (err) {
                 console.error('❌ Erro ao salvar horários:', err);
                 mostrarToast('❌ Erro ao salvar horários: ' + (err.message || ''), 'error');
-            }
-        }
-
-        // ─── Convidar profissional ─────────────────────────────────────
-        function gerarLinkConvite() {
-            const email = document.getElementById('emailConvite').value.trim();
-            const nome  = document.getElementById('nomeConvite').value.trim();
-
-            if (!email || !email.includes('@')) {
-                mostrarToast('⚠️ Informe um email válido para o convite.', 'warning');
-                return;
-            }
-            if (!nome) {
-                mostrarToast('⚠️ Informe o nome do profissional.', 'warning');
-                return;
-            }
-            if (!perfilAtual?.tenant_id) {
-                mostrarToast('❌ Erro: tenant não identificado.', 'error');
-                return;
-            }
-
-            const payload = {
-                tenant_id: perfilAtual.tenant_id,
-                email,
-                nome,
-                expiry: Date.now() + 7 * 24 * 60 * 60 * 1000
-            };
-            const token = btoa(JSON.stringify(payload));
-            const link  = `${window.location.origin}/cadastro-profissional.html?convite=${token}`;
-
-            document.getElementById('linkConviteGerado').value = link;
-            document.getElementById('resultadoConvite').style.display = 'block';
-            mostrarToast('✅ Link gerado! Compartilhe com o profissional.', 'success');
-        }
-
-        function copiarLink() {
-            const input = document.getElementById('linkConviteGerado');
-            input.select();
-            input.setSelectionRange(0, 99999);
-            try {
-                navigator.clipboard.writeText(input.value).then(() => {
-                    mostrarToast('✅ Link copiado para a área de transferência!', 'success');
-                });
-            } catch (_) {
-                document.execCommand('copy');
-                mostrarToast('✅ Link copiado!', 'success');
             }
         }
 
