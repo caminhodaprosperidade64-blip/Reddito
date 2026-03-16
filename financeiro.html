@@ -103,13 +103,6 @@
                 <div class="pro-search">
                     <i class="fas fa-search pro-search-icon"></i>
                     <input type="text" class="pro-search-input" placeholder="Buscar transações..." id="searchInput" oninput="filtrarLocalmente()">
-                    <select class="pro-select" id="searchType" onchange="filtrarLocalmente()" style="width:120px;margin-left:8px;">
-                        <option value="todos">Todos os campos</option>
-                        <option value="cliente">Cliente</option>
-                        <option value="servico">Serviço</option>
-                        <option value="profissional">Profissional</option>
-                        <option value="data">Data</option>
-                    </select>
                 </div>
                 <div class="pro-header-actions">
                     <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
@@ -586,7 +579,6 @@
         // ─── Filtrar localmente com ordem correta de filtros ────
         function filtrarLocalmente() {
             const search = (document.getElementById('searchInput').value || '').toLowerCase();
-            const searchType = document.getElementById('searchType').value;
             const filterProf = document.getElementById('filterProfissional').value;
             const filterPagto = document.getElementById('filterPagamento').value;
             const periodo = document.getElementById('filterPeriodo').value;
@@ -633,25 +625,14 @@
                 console.log('✅ 3º Forma de Pagamento: Todas');
             }
 
-            // 4º FILTRO: BUSCA PERSONALIZADA
+            // 4º FILTRO: BUSCA PERSONALIZADA (busca em TODOS os campos)
             if (search) {
-                lista = lista.filter(a => {
-                    if (searchType === 'cliente') {
-                        return (a.cliente?.nome || '').toLowerCase().includes(search);
-                    } else if (searchType === 'servico') {
-                        return (a.servico?.nome || '').toLowerCase().includes(search);
-                    } else if (searchType === 'profissional') {
-                        return (a.profissional?.nome || '').toLowerCase().includes(search);
-                    } else if (searchType === 'data') {
-                        return (a.data || '').toLowerCase().includes(search);
-                    } else {
-                        // 'todos' - buscar em todos os campos
-                        return (a.cliente?.nome || '').toLowerCase().includes(search) ||
-                               (a.servico?.nome || '').toLowerCase().includes(search) ||
-                               (a.profissional?.nome || '').toLowerCase().includes(search) ||
-                               (a.data || '').toLowerCase().includes(search);
-                    }
-                });
+                lista = lista.filter(a => 
+                    (a.cliente?.nome || '').toLowerCase().includes(search) ||
+                    (a.servico?.nome || '').toLowerCase().includes(search) ||
+                    (a.profissional?.nome || '').toLowerCase().includes(search) ||
+                    (a.data || '').toLowerCase().includes(search)
+                );
                 console.log('✅ 4º Após BUSCA:', lista.length);
             } else {
                 console.log('✅ 4º Busca: Nenhuma');
