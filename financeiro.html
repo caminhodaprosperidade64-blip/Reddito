@@ -268,7 +268,6 @@
         let todosAgendamentos  = [];
         let perfilAtual        = null;
         let profissionalIdAtual = null;
-        let periodoPaginaAtual = { inicio: null, fim: null };
 
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
@@ -290,6 +289,16 @@
             if (!dateStr) return '—';
             const d = new Date(dateStr + (dateStr.length === 10 ? 'T00:00:00' : ''));
             return d.toLocaleDateString('pt-BR');
+        }
+
+        // ─── Função auxiliar para obter data local sem timezone ────
+        function obterDataLocal(data) {
+            if (!data) return null;
+            const d = new Date(data);
+            const ano = d.getFullYear();
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const dia = String(d.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
         }
 
         // ─── Perfil na sidebar + controle de acesso ────
@@ -327,15 +336,8 @@
         // ─── Carregar dados principais ────
         async function loadFinanceiro() {
             try {
-                const periodo = document.getElementById('filterPeriodo').value;
-                periodoPaginaAtual = calcularPeriodo(periodo);
-                const { inicio, fim } = periodoPaginaAtual;
-
-                console.log('📅 Período selecionado:', periodo);
-                console.log('📍 Intervalo:', inicio, 'até', fim);
-
                 const [agendamentos, profissionais] = await Promise.all([
-                    DB.agendamentos.listar({ inicio, fim }),
+                    DB.agendamentos.listar(),
                     perfilAtual?.role === 'dono' ? DB.profissionais.listar() : Promise.resolve([])
                 ]);
 
@@ -367,35 +369,37 @@
             }
         }
 
-        // ─── Calcular período ────
+        // ─── Calcular período (CORRIGIDO) ────
         function calcularPeriodo(periodo) {
             const agora = new Date();
-            let inicio = null, fim = null;
+            const ano = agora.getFullYear();
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const dia = String(agora.getDate()).padStart(2, '0');
+            const dataHoje = `${ano}-${mes}-${dia}`;
+
+            console.log('📅 Data de hoje (local):', dataHoje);
+            console.log('📌 Período selecionado:', periodo);
 
             if (periodo === 'hoje') {
-                const ano = agora.getFullYear();
-                const mes = String(agora.getMonth() + 1).padStart(2, '0');
-                const dia = String(agora.getDate()).padStart(2, '0');
-                const dataHoje = `${ano}-${mes}-${dia}`;
-                
-                inicio = new Date(dataHoje + 'T00:00:00').toISOString();
-                fim    = new Date(dataHoje + 'T23:59:59').toISOString();
+                return { inicio: dataHoje, fim: dataHoje };
             } else if (periodo === 'semana') {
                 const ini = new Date(agora);
                 ini.setDate(agora.getDate() - agora.getDay());
-                ini.setHours(0, 0, 0, 0);
-                inicio = ini.toISOString();
-                fim    = agora.toISOString();
+                const anoIni = ini.getFullYear();
+                const mesIni = String(ini.getMonth() + 1).padStart(2, '0');
+                const diaIni = String(ini.getDate()).padStart(2, '0');
+                const dataIni = `${anoIni}-${mesIni}-${diaIni}`;
+                console.log('📌 Semana: de', dataIni, 'até', dataHoje);
+                return { inicio: dataIni, fim: dataHoje };
             } else if (periodo === 'mes') {
-                inicio = new Date(agora.getFullYear(), agora.getMonth(), 1, 0, 0, 0).toISOString();
-                fim    = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59).toISOString();
+                const dataIni = `${ano}-${mes}-01`;
+                console.log('📌 Mês: de', dataIni, 'até', dataHoje);
+                return { inicio: dataIni, fim: dataHoje };
             } else {
                 // 'todos' - sem filtro de data
-                inicio = null;
-                fim    = null;
+                console.log('📌 Todos os períodos (sem filtro)');
+                return { inicio: null, fim: null };
             }
-
-            return { inicio, fim };
         }
 
         // ─── Preencher dropdown de profissionais ────
@@ -441,13 +445,25 @@
             document.getElementById('lucroLiquido').textContent      = formatCurrency(totalMes - comissoesMes);
         }
 
-        // ─── Filtrar localmente (aplica filtros de profissional e forma de pagamento) ────
+        // ─── Filtrar localmente (CORRIGIDO) ────
         function filtrarLocalmente() {
             const search        = (document.getElementById('searchInput').value || '').toLowerCase();
             const filterProf    = document.getElementById('filterProfissional').value;
             const filterPagto   = document.getElementById('filterPagamento').value;
+            const periodo       = document.getElementById('filterPeriodo').value;
+            const { inicio, fim } = calcularPeriodo(periodo);
 
             let lista = [...todosAgendamentos];
+
+            // Filtro de período por data local (ANTES de outros filtros)
+            if (inicio && fim) {
+                lista = lista.filter(a => {
+                    const dataApt = obterDataLocal(a.data);
+                    const resultado = dataApt >= inicio && dataApt <= fim;
+                    return resultado;
+                });
+                console.log(`🔍 Agendamentos entre ${inicio} e ${fim}:`, lista.length);
+            }
 
             if (perfilAtual?.role !== 'dono' && profissionalIdAtual) {
                 lista = lista.filter(a => a.profissional_id === profissionalIdAtual);
@@ -455,12 +471,14 @@
 
             if (filterProf) {
                 lista = lista.filter(a => a.profissional_id === filterProf);
+                console.log(`🔍 Agendamentos do profissional:`, lista.length);
             }
 
             if (filterPagto) {
                 lista = lista.filter(a => 
                     (a.forma_pagamento || '').toLowerCase() === filterPagto.toLowerCase()
                 );
+                console.log(`🔍 Agendamentos com pagamento ${filterPagto}:`, lista.length);
             }
 
             if (search) {
@@ -469,7 +487,10 @@
                     (a.servico?.nome      || '').toLowerCase().includes(search) ||
                     (a.profissional?.nome || '').toLowerCase().includes(search)
                 );
+                console.log(`🔍 Agendamentos com busca "${search}":`, lista.length);
             }
+
+            console.log('📊 Total final após filtros:', lista.length);
 
             renderTable(lista);
             renderTotalizadores(lista);
@@ -602,7 +623,7 @@
             `).join('');
         }
 
-        // ─── Resumo por forma de pagamento (NOVA FUNCIONALIDADE) ────
+        // ─── Resumo por forma de pagamento ────
         function renderResumoPagamento(agendamentos) {
             const container = document.getElementById('resumoPagamento');
 
