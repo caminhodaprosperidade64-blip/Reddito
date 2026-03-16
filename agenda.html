@@ -1347,7 +1347,10 @@
         }
 
         function handleEdit() {
-            if (!viewingAppointment) return;
+            if (!viewingAppointment) {
+                alert('❌ Erro: Agendamento não carregado');
+                return;
+            }
             document.getElementById('editProfName').value = viewingAppointment.profissional?.nome || '';
             document.getElementById('editDate').value = new Date(viewingAppointment.data).toLocaleDateString('pt-BR');
             document.getElementById('editTime').value = viewingAppointment.hora.substring(0, 5);
@@ -1355,12 +1358,13 @@
             document.getElementById('editServiceSelect').value = viewingAppointment.servico_id;
             document.getElementById('editValueField').value = viewingAppointment.valor;
             document.getElementById('editNotesField').value = viewingAppointment.observacoes || '';
-            closeViewModal();
+            
             document.getElementById('editAppointmentModal').classList.add('active');
         }
 
         function closeEditModal() {
             document.getElementById('editAppointmentModal').classList.remove('active');
+            viewingAppointment = null;
             isUpdating = false;
         }
 
@@ -1415,7 +1419,6 @@
                 closeEditModal();
                 await renderSchedule();
                 alert('✅ Agendamento atualizado com sucesso!');
-                viewingAppointment = null;
 
             } catch (error) {
                 console.error('❌ Erro ao atualizar:', error);
