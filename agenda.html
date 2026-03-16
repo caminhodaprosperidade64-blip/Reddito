@@ -1547,20 +1547,17 @@
 
                 document.getElementById('pixCopiaCola').value = brcodeForQr;
 
-                // ✅ AJUSTE 1: Obter o container
                 const container = document.getElementById('pixQr');
                 if (!container) {
                     console.error('❌ Container #pixQr não encontrado');
                     return;
                 }
 
-                // ✅ AJUSTE 1: LIMPAR o container ANTES de gerar um novo QR Code
                 container.innerHTML = '';
 
                 await new Promise(resolve => setTimeout(resolve, 150));
 
                 try {
-                    // Gerar o novo QR Code limpo
                     currentQRCode = new QRCode(container, {
                         text: brcodeForQr,
                         width: 300,
@@ -1597,9 +1594,10 @@
                 .catch(() => alert('Erro ao copiar'));
         }
 
-        function emv(id, value) {
-            const v = String(value);
-            return `${id}${String(v.length).padStart(2, '0')}${v}`;
+        // ✅ FUNÇÃO FORMATARCAMPO com padStart
+        function formatarCampo(id, valor) {
+            const tamanho = valor.length.toString().padStart(2, '0');
+            return id + tamanho + valor;
         }
 
         function crc16(payload) {
@@ -1638,8 +1636,11 @@
 
             const merchantName = normalizeNomeCidade(nome, 25);
             const merchantCity = normalizeNomeCidade(cidade, 15);
-            const gui = emv('00', 'BR.GOV.BCB.PIX');
-            const key = emv('01', String(chave).trim());
+            
+            // ✅ Usando formatarCampo em vez de emv
+            const gui = formatarCampo('00', 'BR.GOV.BCB.PIX');
+            const key = formatarCampo('01', String(chave).trim());
+            
             let desc = '';
             if (descricao) {
                 const cleanDesc = String(descricao)
@@ -1647,21 +1648,21 @@
                     .replace(/[^\w \-\.]/g, '')
                     .trim()
                     .slice(0, 50);
-                if (cleanDesc) desc = emv('02', cleanDesc);
+                if (cleanDesc) desc = formatarCampo('02', cleanDesc);
             }
 
-            const merchantAccountInfo = emv('26', gui + key + desc);
-            const payloadFormatIndicator = emv('00', '01');
-            const pointOfInitiationMethod = emv('01', '11');
-            const merchantCategoryCode = emv('52', '0000');
-            const transactionCurrency = emv('53', '986');
-            const transactionAmount = emv('54', String(parseFloat(valor).toFixed(2)));
-            const countryCode = emv('58', 'BR');
-            const mName = emv('59', merchantName);
-            const mCity = emv('60', merchantCity);
+            const merchantAccountInfo = formatarCampo('26', gui + key + desc);
+            const payloadFormatIndicator = formatarCampo('00', '01');
+            const pointOfInitiationMethod = formatarCampo('01', '11');
+            const merchantCategoryCode = formatarCampo('52', '0000');
+            const transactionCurrency = formatarCampo('53', '986');
+            const transactionAmount = formatarCampo('54', String(parseFloat(valor).toFixed(2)));
+            const countryCode = formatarCampo('58', 'BR');
+            const mName = formatarCampo('59', merchantName);
+            const mCity = formatarCampo('60', merchantCity);
             const txidValue = normalizeTxid(txid || 'AGENDAMENTO', 25);
-            const txidField = emv('05', txidValue);
-            const additionalData = emv('62', txidField);
+            const txidField = formatarCampo('05', txidValue);
+            const additionalData = formatarCampo('62', txidField);
 
             const withoutCrc = payloadFormatIndicator + pointOfInitiationMethod + merchantAccountInfo +
                 merchantCategoryCode + transactionCurrency + transactionAmount + countryCode +
