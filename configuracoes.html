@@ -876,7 +876,7 @@
             document.getElementById('whatsapp-error').style.display = 'none';
             
             try {
-                const response = await fetch(`http://localhost:3000/api/whatsapp/connect/${tenantId}`, {
+                const response = await fetch(`https://reddito-production.up.railway.app/api/whatsapp/connect/${tenantId}`, {
                     method: 'POST',
                 });
                 
@@ -897,7 +897,7 @@
             } catch (error) {
                 console.error('Erro:', error);
                 document.getElementById('whatsapp-error').textContent = 
-                    '❌ Erro ao conectar. Verifique se o servidor está rodando (localhost:3000)';
+                    '❌ Erro ao conectar. Verifique se o servidor está rodando (Railway)';
                 document.getElementById('whatsapp-error').style.display = 'block';
                 btn.innerHTML = '<i class="fab fa-whatsapp"></i> Conectar WhatsApp';
             } finally {
@@ -911,7 +911,7 @@
             if (!tenantId) return;
             
             try {
-                const response = await fetch(`http://localhost:3000/api/whatsapp/status/${tenantId}`);
+                const response = await fetch(`https://reddito-production.up.railway.app/api/whatsapp/status/${tenantId}`);
                 const data = await response.json();
                 
                 const badge = document.getElementById('whatsapp-status-badge');
