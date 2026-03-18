@@ -177,6 +177,54 @@
                         </div>
                     </div>
 
+                    <!-- ====== NOVO: CONFIGURAÇÕES WHATSAPP ====== -->
+                    <div class="pro-card" style="margin-top:24px;">
+                        <div class="pro-card-header">
+                            <h3 class="pro-card-title">🟢 Integração WhatsApp</h3>
+                        </div>
+                        <div class="pro-card-body">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:16px;background:var(--bg-secondary);border-radius:8px;">
+                                <div>
+                                    <strong>Status da Conexão</strong>
+                                    <p id="whatsapp-status-text" style="font-size:13px;margin-top:4px;color:var(--text-secondary);">Verificando status...</p>
+                                </div>
+                                <span id="whatsapp-status-badge" style="padding:8px 16px;border-radius:20px;background:#EF4444;color:white;font-weight:600;font-size:12px;">❌ Desconectado</span>
+                            </div>
+
+                            <div style="margin-bottom:16px;">
+                                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+                                    <strong>ℹ️ Como funciona:</strong> Ao conectar seu WhatsApp, uma IA começará a responder automaticamente mensagens dos seus clientes. A IA é capaz de:
+                                </p>
+                                <ul style="font-size:13px;color:var(--text-secondary);margin-left:20px;list-style-type:disc;">
+                                    <li>Cumprimentar clientes e coletar dados (nome, email, CPF)</li>
+                                    <li>Responder perguntas sobre serviços e profissionais</li>
+                                    <li>Agendar compromissos automaticamente</li>
+                                    <li>Enviar lembretes antes dos atendimentos</li>
+                                    <li>Enviar agradecimentos após os atendimentos</li>
+                                    <li>Tentar reagendamentos de clientes que não apareceram</li>
+                                </ul>
+                            </div>
+
+                            <button class="pro-btn pro-btn-primary" onclick="conectarWhatsApp()" style="width:100%;margin-bottom:16px;">
+                                <i class="fab fa-whatsapp"></i> Conectar WhatsApp
+                            </button>
+
+                            <div id="qrcode-container" style="display:none;text-align:center;margin:20px 0;padding:20px;border:2px dashed var(--primary);border-radius:8px;background:var(--bg-secondary);">
+                                <p style="font-weight:600;margin-bottom:16px;">📱 Escaneie o código com seu WhatsApp:</p>
+                                <img id="qrcode-img" src="" alt="QR Code" style="max-width:300px;margin:0 auto;display:block;">
+                                <p style="color:var(--text-secondary);font-size:12px;margin-top:16px;">
+                                    <strong>Passo a passo:</strong><br>
+                                    1. Abra o WhatsApp no seu celular<br>
+                                    2. Vá em Configurações → Dispositivos Conectados<br>
+                                    3. Clique em "Conectar um Dispositivo"<br>
+                                    4. Aponte a câmera para o código acima
+                                </p>
+                            </div>
+
+                            <div id="whatsapp-error" style="display:none;padding:12px;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:6px;color:#DC2626;font-size:13px;"></div>
+                        </div>
+                    </div>
+
                     <!-- ====== CONFIGURAÇÕES: PAGAMENTOS (PIX) ====== -->
                     <section class="pro-card" style="padding: 1.5rem; margin-top: 1.5rem;">
                       <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
@@ -456,6 +504,8 @@
                 await carregarDadosEmpresaDoSupabase();
                 loadPixConfig();
                 renderizarHorarios();
+                verificarStatusWhatsApp();
+                iniciarMonitorWhatsApp();
             }
 
             carregarPreferencias();
@@ -674,7 +724,7 @@
             } catch (_) {}
         }
 
-        // ─── ✅ Salvar dados do estabelecimento NO SUPABASE ────────────
+        // ─── ✅ NOVA FUNÇÃO: Salvar dados do estabelecimento NO SUPABASE ────────────
         async function saveEstablishment(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSalvarEstabelecimento');
@@ -814,6 +864,79 @@
                 console.error('❌ Erro ao salvar horários:', err);
                 mostrarToast('❌ Erro ao salvar horários: ' + (err.message || ''), 'error');
             }
+        }
+
+        // ─── ✅ NOVA FUNÇÃO: Conectar WhatsApp ─────────────────────────
+        async function conectarWhatsApp() {
+            const tenantId = perfilAtual?.tenant_id;
+            const btn = event.target;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando QR code...';
+            document.getElementById('whatsapp-error').style.display = 'none';
+            
+            try {
+                const response = await fetch(`http://localhost:3000/api/whatsapp/connect/${tenantId}`, {
+                    method: 'POST',
+                });
+                
+                const data = await response.json();
+                
+                if (data.qrCode) {
+                    document.getElementById('qrcode-img').src = data.qrCode;
+                    document.getElementById('qrcode-container').style.display = 'block';
+                    btn.innerHTML = '✅ QR Code gerado! Escaneie com seu WhatsApp';
+                    mostrarToast('📱 QR code pronto! Escaneie com seu WhatsApp', 'success');
+                } else if (data.status === 'already_connected') {
+                    mostrarToast('✅ WhatsApp já está conectado!', 'success');
+                    btn.innerHTML = '<i class="fab fa-whatsapp"></i> Conectar WhatsApp';
+                    document.getElementById('qrcode-container').style.display = 'none';
+                } else {
+                    throw new Error(data.error || 'Erro ao gerar QR code');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('whatsapp-error').textContent = 
+                    '❌ Erro ao conectar. Verifique se o servidor está rodando (localhost:3000)';
+                document.getElementById('whatsapp-error').style.display = 'block';
+                btn.innerHTML = '<i class="fab fa-whatsapp"></i> Conectar WhatsApp';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ─── ✅ NOVA FUNÇÃO: Verificar status WhatsApp ─────────────────
+        async function verificarStatusWhatsApp() {
+            const tenantId = perfilAtual?.tenant_id;
+            if (!tenantId) return;
+            
+            try {
+                const response = await fetch(`http://localhost:3000/api/whatsapp/status/${tenantId}`);
+                const data = await response.json();
+                
+                const badge = document.getElementById('whatsapp-status-badge');
+                const text = document.getElementById('whatsapp-status-text');
+                
+                if (data.connected) {
+                    badge.textContent = '✅ Conectado';
+                    badge.style.background = '#10B981';
+                    text.textContent = `Conectado desde ${new Date(data.connectedAt).toLocaleString('pt-BR')}`;
+                    document.getElementById('qrcode-container').style.display = 'none';
+                } else {
+                    badge.textContent = '❌ Desconectado';
+                    badge.style.background = '#EF4444';
+                    text.textContent = 'Clique no botão abaixo para conectar seu WhatsApp';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status:', error);
+            }
+        }
+
+        // ─── ✅ NOVA FUNÇÃO: Monitorar status a cada 10 segundos ───────
+        function iniciarMonitorWhatsApp() {
+            setInterval(() => {
+                verificarStatusWhatsApp();
+            }, 10000);
         }
 
         // ─── Salvar perfil pessoal ─────────────────────────────────────
