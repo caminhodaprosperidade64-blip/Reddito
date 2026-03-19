@@ -27,7 +27,7 @@ const app = express();
 // CORS CONFIGURATION
 // ============================================
 app.use(cors({
-  origin: '*',
+  origin: ['https://www.redditoapp.com', 'https://redditoapp.com'], // Permite apenas esses domínios
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: false,
@@ -495,7 +495,7 @@ app.listen(PORT, () => {
   logger.info(`📍 Health check: http://localhost:${PORT}/health`);
   logger.info(`📱 Conectar WhatsApp: POST /api/whatsapp/connect/:tenantId`);
   logger.info(`✅ Status WhatsApp: GET /api/whatsapp/status/:tenantId`);
-  logger.info(`🌐 CORS habilitado para todas as origens`);
+  logger.info(`🌐 CORS habilitado para os domínios https://www.redditoapp.com e https://redditoapp.com`);
 });
 
 export default app;
