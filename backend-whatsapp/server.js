@@ -1,3 +1,4 @@
+console.log('>>> INICIANDO: backend-whatsapp/server.js');
 import express from 'express';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
