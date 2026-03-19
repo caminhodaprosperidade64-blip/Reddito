@@ -330,22 +330,22 @@
 
     <script>
         const STORAGE_KEY_WA = 'sispro_whatsapp';
+        let perfilAtual = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             initDarkMode();
         });
 
-        // ─── Perfil na sidebar + controle de acesso ────────────────────
         window.addEventListener('perfilCarregado', (e) => {
-            const perfil = e.detail;
-            if (!perfil) return;
+            perfilAtual = e.detail;
+            if (!perfilAtual) return;
 
-            const letra = (perfil.nome || perfil.email || 'U')[0].toUpperCase();
+            const letra = (perfilAtual.nome || perfilAtual.email || 'U')[0].toUpperCase();
             document.getElementById('userAvatar').textContent = letra;
-            document.getElementById('userName').textContent   = perfil.nome || perfil.email;
-            document.getElementById('userRole').textContent   = perfil.role === 'dono' ? 'Proprietário' : 'Profissional';
+            document.getElementById('userName').textContent   = perfilAtual.nome || perfilAtual.email;
+            document.getElementById('userRole').textContent   = perfilAtual.role === 'dono' ? 'Proprietário' : 'Profissional';
 
-            if (perfil.role !== 'dono') {
+            if (perfilAtual.role !== 'dono') {
                 document.getElementById('secaoDono').style.display          = 'none';
                 document.getElementById('avisoAcessoRestrito').style.display = 'block';
             } else {
@@ -358,7 +358,6 @@
             } catch (_) {}
         });
 
-        // ─── Carregar configurações salvas ─────────────────────────────
         function carregarConfiguracoes() {
             try {
                 const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || '{}');
@@ -378,7 +377,6 @@
             }
         }
 
-        // ─── Salvar automações ─────────────────────────────────────────
         function salvarAutomacoes() {
             const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || '{}');
             localStorage.setItem(STORAGE_KEY_WA, JSON.stringify({
@@ -392,7 +390,6 @@
             mostrarToast('✅ Automações salvas!', 'success');
         }
 
-        // ─── Salvar templates ──────────────────────────────────────────
         function salvarTemplates() {
             const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || '{}');
             localStorage.setItem(STORAGE_KEY_WA, JSON.stringify({
@@ -405,7 +402,6 @@
             mostrarToast('✅ Templates salvos!', 'success');
         }
 
-        // ─── Preencher mensagem manual ao trocar template ──────────────
         document.addEventListener('DOMContentLoaded', () => {
             const sel = document.getElementById('templateManual');
             if (sel) {
@@ -422,18 +418,23 @@
             }
         });
 
-        // ─── Conectar WhatsApp ──────────────────────────────────────────
         async function conectarWhatsApp() {
+            const btn = event.target;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando QR code...';
+
             try {
-                const cfg = JSON.parse(localStorage.getItem('sispro_config') || '{}');
-                const tenantId = cfg.id || cfg.tenant_id;
+                const tenantId = perfilAtual?.tenant_id;
+
+                console.log('🔍 Tentando conectar com tenantId:', tenantId);
+                console.log('🔍 perfilAtual:', perfilAtual);
 
                 if (!tenantId) {
-                    mostrarToast('❌ Erro: Não foi possível obter o ID da conta.', 'error');
-                    return;
+                    throw new Error('Tenant ID não encontrado. Verifique se você está logado corretamente.');
                 }
 
-                mostrarToast('⏳ Carregando QR Code...', 'info');
+                console.log('📡 Enviando requisição para:', `https://reddito-production.up.railway.app/api/whatsapp/connect/${tenantId}`);
 
                 const response = await fetch(`https://reddito-production.up.railway.app/api/whatsapp/connect/${tenantId}`, {
                     method: 'POST',
@@ -442,21 +443,26 @@
                     }
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Erro ao conectar: ${response.status}`);
-                }
+                console.log('📡 Status da resposta:', response.status);
 
                 const data = await response.json();
+                console.log('📡 Dados recebidos:', data);
 
-                verificarStatusWhatsApp(tenantId);
-
+                if (data.success) {
+                    console.log('✅ Sucesso na requisição');
+                    verificarStatusWhatsApp(tenantId);
+                } else {
+                    throw new Error(data.error || 'Erro ao gerar QR code');
+                }
             } catch (error) {
-                console.error('Erro ao conectar WhatsApp:', error);
-                mostrarToast(`❌ Erro ao conectar: ${error.message}`, 'error');
+                console.error('❌ Erro ao conectar WhatsApp:', error);
+                mostrarToast('❌ ' + (error.message || 'Erro ao conectar. Verifique se o servidor está rodando (Railway)'), 'error');
+                btn.innerHTML = '<i class="fab fa-whatsapp"></i> Conectar WhatsApp';
+            } finally {
+                btn.disabled = false;
             }
         }
 
-        // ─── Verificar Status da Conexão ────────────────────────────────
         async function verificarStatusWhatsApp(tenantId, tentativas = 0) {
             try {
                 const response = await fetch(`https://reddito-production.up.railway.app/api/whatsapp/status/${tenantId}`);
@@ -485,7 +491,6 @@
             }
         }
 
-        // ─── Mostrar Modal com QR Code ──────────────────────────────────
         function mostrarModalQRCode(qrCodeDataUrl, tenantId) {
             const modalAnterior = document.getElementById('modalQRCode');
             if (modalAnterior) modalAnterior.remove();
@@ -585,7 +590,6 @@
             document.body.appendChild(modal);
         }
 
-        // ─── Atualizar Status da Conexão ────────────────────────────────
         function atualizarStatusConexao(status) {
             const statusEl = document.getElementById('connectionStatus');
             if (!statusEl) return;
@@ -605,12 +609,10 @@
             }
         }
 
-        // ─── Abrir WhatsApp Web ────────────────────────────────────────
         function abrirWhatsAppWeb(tenantId) {
             window.open('https://web.whatsapp.com', '_blank', 'width=600,height=800');
         }
 
-        // ─── Envio manual ──────────────────────────────────────────────
         function enviarMensagemManual() {
             const numero   = document.getElementById('numeroManual').value.trim();
             const mensagem = document.getElementById('mensagemManual').value.trim();
@@ -630,7 +632,6 @@
             mostrarToast('✅ WhatsApp Web aberto! Confirme o envio no app.', 'success');
         }
 
-        // ─── Toast ─────────────────────────────────────────────────────
         function mostrarToast(msg, tipo = 'success') {
             const cores = { success:'#10B981', error:'#EF4444', warning:'#F59E0B', info:'#6366F1' };
             const toast = document.createElement('div');
@@ -646,14 +647,12 @@
             setTimeout(() => toast.remove(), 3500);
         }
 
-        // ─── Logout ────────────────────────────────────────────────────
         async function logout() {
             if (confirm('Deseja realmente sair?')) {
                 await Auth.signOut();
             }
         }
 
-        // Sincronizar dark mode entre abas
         window.addEventListener('storage', (e) => {
             if (e.key === 'sispro_theme') {
                 location.reload();
