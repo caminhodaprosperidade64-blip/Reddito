@@ -17,14 +17,36 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import qrcodeTerminal from 'qrcode-terminal';
 import Levenshtein from 'js-levenshtein';
+import cors from 'cors';
 
 dotenv.config();
+
+console.log('>>> INICIANDO: backend-whatsapp/server.js');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
+
+/**
+ * CORS - permitir apenas os domínios de frontend necessários.
+ * Ajuste a lista `origin` conforme os domínios reais do seu frontend.
+ */
+app.use(cors({
+  origin: [
+    'https://www.redditoapp.com',
+    'https://redditoapp.com',
+    // adicione localhost durante desenvolvimento, ex:
+    // 'http://localhost:3000'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true,
+  maxAge: 86400
+}));
+app.options('*', cors());
+
 
 // ============================================
 // CONFIGURAÇÕES
@@ -962,4 +984,3 @@ const server = app.listen(PORT, () => {
 });
 
 export default app;
-
