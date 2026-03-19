@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import cron from 'node-cron';
@@ -24,6 +25,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
 app.use(express.json());
 
 const supabase = createClient(
@@ -856,6 +865,7 @@ const server = app.listen(PORT, () => {
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`📱 Conectar WhatsApp: POST /api/whatsapp/connect/:tenantId`);
   console.log(`✅ Status WhatsApp: GET /api/whatsapp/status/:tenantId`);
+  console.log(`🌐 CORS habilitado para todas as origens`);
 });
 
 export default app;
