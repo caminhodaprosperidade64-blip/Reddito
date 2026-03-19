@@ -6,829 +6,438 @@ import cron from 'node-cron';
 import QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
-import { Boom } from '@hapi/boom';
+import Boom from '@hapi/boom';
 import pino from 'pino';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs';
-import makeWASocket, { 
-  useMultiFileAuthState, 
-  DisconnectReason,
-  isJidBroadcast 
-} from '@whiskeysockets/baileys';
+import { fileURLToPath } from 'url';
+import makeWASocket, { useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import qrcodeTerminal from 'qrcode-terminal';
-import Levenshtein from 'js-levenshtein';
+import leven from 'js-levenshtein';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const logger = pino();
 const app = express();
 
+// ============================================
+// CORS CONFIGURATION
+// ============================================
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: false,
+  maxAge: 86400
 }));
 
+app.options('*', cors());
+
+// ============================================
+// MIDDLEWARE
+// ============================================
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+// ============================================
+// SUPABASE CLIENT
+// ============================================
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
-const PORT = process.env.PORT || 3000;
+if (!supabaseUrl || !supabaseServiceKey) {
+  logger.error('❌ Variáveis Supabase não configuradas');
+  process.exit(1);
+}
 
-const logger = pino();
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// ============================================
+// GLOBAL STATE
+// ============================================
 const conexoesWhatsApp = {};
+const sessoes = {};
 
-async function conectarWhatsAppTenant(tenantId) {
-  try {
-    const authDir = path.join(__dirname, 'auth_info', tenantId);
-    
-    if (!fs.existsSync(authDir)) {
-      fs.mkdirSync(authDir, { recursive: true });
-    }
-
-    const { state, saveCreds } = await useMultiFileAuthState(authDir);
-
-    const sock = makeWASocket({
-      auth: state,
-      logger: pino({ level: 'silent' }),
-      printQRInTerminal: false,
-      defaultQueryTimeoutMs: undefined
-    });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    sock.ev.on('messages.upsert', async (m) => {
-      const message = m.messages[0];
-      if (!message.message || isJidBroadcast(message.key.remoteJid)) return;
-
-      const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
-      const conteudo = message.message.conversation || 
-                       message.message.extendedTextMessage?.text || '';
-
-      console.log(`📨 [${tenantId}] ${phoneNumber}: ${conteudo}`);
-
-      try {
-        await processarMensagemWhatsApp(tenantId, phoneNumber, conteudo, sock);
-      } catch (error) {
-        console.error(`❌ Erro ao processar mensagem:`, error.message);
-      }
-    });
-
-    sock.ev.on('connection.update', async (update) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (qr) {
-        console.log(`\n📱 QR Code para ${tenantId}:\n`);
-        qrcodeTerminal.generate(qr, { small: true });
-
-        const qrBase64 = await QRCode.toDataURL(qr);
-        await supabase
-          .from('tenants')
-          .update({ whatsapp_qrcode: qrBase64 })
-          .eq('id', tenantId);
-
-        console.log(`✅ QR code salvo no banco para ${tenantId}`);
-      }
-
-      if (connection === 'open') {
-        console.log(`✅ WhatsApp conectado para ${tenantId}`);
-        await supabase
-          .from('tenants')
-          .update({
-            whatsapp_conectado: true,
-            whatsapp_conectado_em: new Date().toISOString(),
-            whatsapp_qrcode: null
-          })
-          .eq('id', tenantId);
-      }
-
-      if (connection === 'close') {
-        const shouldReconnect = 
-          lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-
-        if (shouldReconnect) {
-          console.log(`🔄 Reconectando ${tenantId}...`);
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          conectarWhatsAppTenant(tenantId);
-        } else {
-          console.log(`❌ ${tenantId} desconectado.`);
-          await supabase
-            .from('tenants')
-            .update({ whatsapp_conectado: false })
-            .eq('id', tenantId);
-        }
-      }
-    });
-
-    conexoesWhatsApp[tenantId] = sock;
-    return sock;
-  } catch (error) {
-    console.error(`❌ Erro ao conectar WhatsApp para ${tenantId}:`, error);
-    throw error;
-  }
-}
-
-async function processarMensagemWhatsApp(tenantId, phoneNumber, conteudo, sock) {
-  const cliente = await buscarOuCriarCliente(phoneNumber, tenantId);
-  const contextoSalao = await buscarContextoSalao(tenantId);
-
-  if (cliente.primeiro_atendimento) {
-    await processarPrimeiroAtendimento(tenantId, phoneNumber, conteudo, cliente, contextoSalao, sock);
-  } else {
-    const historico = await buscarHistoricoConversas(cliente.id, 15);
-    const agendamentos = await buscarAgendamentosCliente(cliente.id);
-
-    const resposta = await gerarRespostaComClaude(
-      conteudo,
-      cliente,
-      historico,
-      contextoSalao,
-      agendamentos
-    );
-
-    await sock.sendMessage(phoneNumber + '@s.whatsapp.net', {
-      text: resposta
-    });
-
-    await registrarConversa(cliente.id, tenantId, conteudo, resposta, 'conversa_ia');
-    await detectarIntencoes(tenantId, phoneNumber, conteudo, cliente, contextoSalao, sock);
-  }
-}
-
-async function processarPrimeiroAtendimento(tenantId, phoneNumber, conteudo, cliente, contextoSalao, sock) {
-  let sessao = await buscarSessaoAgendamento(cliente.id);
-
-  if (!sessao) {
-    sessao = await criarSessaoAgendamento(cliente.id, tenantId);
-  }
-
-  const etapas = ['coleta_nome', 'coleta_email', 'confirmacao'];
-  const proximaEtapa = determinarProximaEtapa(sessao.etapa || 'coleta_nome', etapas);
-
-  let resposta = '';
-  let dadosColetados = sessao.dados_coletados || {};
-
-  if (proximaEtapa === 'coleta_nome') {
-    dadosColetados.nome = extrairNome(conteudo);
-    resposta = `Prazer conhecê-lo(a), ${dadosColetados.nome}! 😊\n\nPara completar seu cadastro, qual é seu melhor e-mail?`;
-  }
-  else if (proximaEtapa === 'coleta_email') {
-    dadosColetados.email = conteudo.trim();
-    resposta = `Perfeito! Aqui está seu resumo:\n\n👤 Nome: ${dadosColetados.nome}\n📧 E-mail: ${dadosColetados.email}\n\nEstá tudo certo? Responda *sim* ou *não*`;
-  }
-  else if (proximaEtapa === 'confirmacao') {
-    if (conteudo.toLowerCase().includes('sim')) {
-      await supabase
-        .from('clientes')
-        .update({
-          nome: dadosColetados.nome,
-          email: dadosColetados.email,
-          primeiro_atendimento: false,
-          cadastro_completo: true,
-          data_primeiro_contato: new Date().toISOString()
-        })
-        .eq('id', cliente.id);
-
-      await supabase.from('sessoes_agendamento').delete().eq('id', sessao.id);
-
-      resposta = `🎉 Bem-vindo(a) ao ${contextoSalao.nome || 'nosso salão'}, ${dadosColetados.nome}!\n\nAgora você está no nosso sistema. Como posso ajudá-lo(a)?\n\n1️⃣ Agendar um serviço\n2️⃣ Conhecer nossos serviços\n3️⃣ Falar com um atendente`;
-
-      await sock.sendMessage(phoneNumber + '@s.whatsapp.net', {
-        text: resposta
-      });
-
-      await registrarConversa(cliente.id, tenantId, conteudo, resposta, 'cadastro_completo');
-      return;
-    } else {
-      resposta = `Sem problema! Qual dado precisa corrigir?`;
-    }
-  }
-
-  await supabase
-    .from('sessoes_agendamento')
-    .update({
-      etapa: proximaEtapa,
-      dados_coletados: dadosColetados,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', sessao.id);
-
-  await sock.sendMessage(phoneNumber + '@s.whatsapp.net', {
-    text: resposta
+// ============================================
+// HEALTH CHECK
+// ============================================
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'Servidor rodando! ✅',
+    timestamp: new Date().toISOString(),
+    whatsappConnections: Object.keys(conexoesWhatsApp).length
   });
+});
 
-  await registrarConversa(cliente.id, tenantId, conteudo, resposta, 'coleta_dados');
-}
+// ============================================
+// FUNÇÕES AUXILIARES
+// ============================================
 
-async function detectarIntencoes(tenantId, phoneNumber, conteudo, cliente, contextoSalao, sock) {
-  const textoLower = conteudo.toLowerCase();
-
-  if (verificarIntencao(textoLower, ['agendar', 'quero marcar', 'gostaria de marcar', 'fazer um agendamento', 'scheduling'])) {
-    await iniciarFluxoAgendamento(tenantId, phoneNumber, cliente, contextoSalao, sock);
-  }
-  else if (verificarIntencao(textoLower, ['cancelar', 'desmarcar', 'cancel', 'não vou mais', 'cancela'])) {
-    await procesarCancelamento(tenantId, phoneNumber, cliente, sock);
-  }
-  else if (verificarIntencao(textoLower, ['valor', 'preço', 'quanto custa', 'duração', 'quanto tempo'])) {
-    await responderDuvidasServicos(tenantId, phoneNumber, cliente, contextoSalao, conteudo, sock);
-  }
-  else if (verificarIntencao(textoLower, ['horário', 'funciona', 'aberto', 'fecha', 'horario'])) {
-    await responderDuvidasHorarios(tenantId, phoneNumber, cliente, contextoSalao, sock);
-  }
-}
-
-async function iniciarFluxoAgendamento(tenantId, phoneNumber, cliente, contextoSalao, sock) {
-  let sessao = await buscarSessaoAgendamento(cliente.id);
-
-  if (!sessao) {
-    sessao = await criarSessaoAgendamento(cliente.id, tenantId);
-  }
-
-  const etapas = ['escolha_servico', 'escolha_profissional', 'escolha_data', 'escolha_horario', 'confirmacao'];
-  const proximaEtapa = determinarProximaEtapa(sessao.etapa || 'escolha_servico', etapas);
-
-  let resposta = '';
-  let dadosColetados = sessao.dados_coletados || {};
-
-  if (proximaEtapa === 'escolha_servico') {
-    resposta = `Ótimo, ${cliente.nome}! 💅\n\nQual serviço você gostaria de agendar?\n\n`;
-    contextoSalao.servicos?.forEach((s, i) => {
-      resposta += `${i + 1}. ${s.nome} - R$ ${s.preco}\n`;
-    });
-    resposta += `\nResponda com o número do serviço.`;
-  }
-  else if (proximaEtapa === 'escolha_profissional') {
-    const servicoId = extrairNumeroOpcao(sessao.dados_coletados?.servico_opcao);
-    const servico = contextoSalao.servicos?.[servicoId - 1];
-
-    if (!servico) {
-      resposta = `Desculpa, não entendi. Pode repetir o número do serviço?`;
-    } else {
-      dadosColetados.servico_id = servico.id;
-      dadosColetados.servico_nome = servico.nome;
-      dadosColetados.valor = servico.preco;
-
-      resposta = `Perfeito! Você escolheu ${servico.nome}.\n\nAgora, qual profissional você prefere?\n\n`;
-      contextoSalao.profissionais?.forEach((p, i) => {
-        resposta += `${i + 1}. ${p.nome}\n`;
-      });
-      resposta += `\nResponda com o número.`;
-    }
-  }
-  else if (proximaEtapa === 'escolha_data') {
-    const profissionalId = extrairNumeroOpcao(sessao.dados_coletados?.profissional_opcao);
-    const profissional = contextoSalao.profissionais?.[profissionalId - 1];
-
-    if (!profissional) {
-      resposta = `Desculpa, não entendi. Pode repetir o número do profissional?`;
-    } else {
-      dadosColetados.profissional_id = profissional.id;
-      dadosColetados.profissional_nome = profissional.nome;
-
-      resposta = `Ótimo! Você escolheu a ${profissional.nome}.\n\nQual data você prefere?\n\n`;
-      const dataHoje = new Date();
-      for (let i = 0; i < 7; i++) {
-        const data = new Date(dataHoje);
-        data.setDate(data.getDate() + i);
-        resposta += `${i + 1}. ${data.toLocaleDateString('pt-BR')} (${obterDiaSemana(data)})\n`;
-      }
-      resposta += `\nResponda com o número da data.`;
-    }
-  }
-  else if (proximaEtapa === 'escolha_horario') {
-    const dataOpcao = extrairNumeroOpcao(sessao.dados_coletados?.data_opcao);
-    const dataHoje = new Date();
-    const dataSelecionada = new Date(dataHoje);
-    dataSelecionada.setDate(dataSelecionada.getDate() + (dataOpcao - 1));
-
-    dadosColetados.data = dataSelecionada.toISOString().split('T')[0];
-
-    const horariosDisponiveis = await buscarHorariosDisponiveis(
-      dadosColetados.profissional_id,
-      dataSelecionada,
-      contextoSalao
-    );
-
-    resposta = `Ótimo! Para o dia ${dataSelecionada.toLocaleDateString('pt-BR')}, temos os seguintes horários disponíveis:\n\n`;
-    horariosDisponiveis.forEach((h, i) => {
-      resposta += `${i + 1}. ${h}\n`;
-    });
-    resposta += `\nQual horário funciona melhor para você?`;
-    dadosColetados.horariosDisponiveis = horariosDisponiveis;
-  }
-  else if (proximaEtapa === 'confirmacao') {
-    const horarioOpcao = extrairNumeroOpcao(sessao.dados_coletados?.horario_opcao);
-    const horario = dadosColetados.horariosDisponiveis?.[horarioOpcao - 1];
-
-    if (!horario) {
-      resposta = `Desculpa, não entendi. Pode repetir o número do horário?`;
-    } else {
-      dadosColetados.horario = horario;
-      dadosColetados.data_hora = `${dadosColetados.data}T${horario}:00`;
-
-      resposta = `📋 Resumo do seu agendamento:\n\n`;
-      resposta += `👤 Cliente: ${cliente.nome}\n`;
-      resposta += `💅 Serviço: ${dadosColetados.servico_nome}\n`;
-      resposta += `💇 Profissional: ${dadosColetados.profissional_nome}\n`;
-      resposta += `📅 Data: ${new Date(dadosColetados.data_hora).toLocaleDateString('pt-BR')}\n`;
-      resposta += `🕐 Horário: ${horario}\n`;
-      resposta += `💰 Valor: R$ ${dadosColetados.valor}\n\n`;
-      resposta += `Confirma o agendamento? Responda *sim* ou *não*`;
-    }
-  }
-
-  if (proximaEtapa === 'confirmacao' && conteudo.toLowerCase().includes('sim')) {
-    const { data: agendamento, error } = await supabase
-      .from('agendamentos')
-      .insert({
-        cliente_id: cliente.id,
-        profissional_id: dadosColetados.profissional_id,
-        servico_id: dadosColetados.servico_id,
-        data_hora: dadosColetados.data_hora,
-        status: 'confirmado',
-        origem: 'whatsapp_ia',
-        tenant_id: tenantId
-      })
-      .select()
+async function buscarTenant(tenantId) {
+  try {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('id', tenantId)
       .single();
 
-    if (error) {
-      resposta = `Desculpa, houve um erro ao confirmar. Tente novamente.`;
-    } else {
-      resposta = `🎉 Seu agendamento foi confirmado!\n\n`;
-      resposta += `✅ ID do agendamento: #${agendamento.id}\n`;
-      resposta += `📅 ${new Date(agendamento.data_hora).toLocaleDateString('pt-BR')} às ${new Date(agendamento.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}\n`;
-      resposta += `💅 ${dadosColetados.servico_nome}\n\n`;
-      resposta += `Até breve, ${cliente.nome}! 😊\n\nQualquer dúvida, é só chamar!`;
-
-      await supabase.from('sessoes_agendamento').delete().eq('id', sessao.id);
-      await criarAutomacoes(agendamento, cliente, tenantId, phoneNumber);
-
-      await sock.sendMessage(phoneNumber + '@s.whatsapp.net', {
-        text: resposta
-      });
-
-      await registrarConversa(cliente.id, tenantId, conteudo, resposta, 'agendamento_confirmado');
-      return;
-    }
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    logger.error({ tenantId, error }, 'Erro ao buscar tenant');
+    return null;
   }
-
-  await supabase
-    .from('sessoes_agendamento')
-    .update({
-      etapa: proximaEtapa,
-      dados_coletados: { ...dadosColetados, [Object.keys(sessao.dados_coletados || {})[0]]: conteudo },
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', sessao.id);
-
-  await sock.sendMessage(phoneNumber + '@s.whatsapp.net', {
-    text: resposta
-  });
-
-  await registrarConversa(cliente.id, tenantId, conteudo, resposta, 'agendamento_processo');
 }
 
-async function procesarCancelamento(tenantId, phoneNumber, cliente, sock) {
-  const agendamentos = await buscarAgendamentosCliente(cliente.id);
+async function buscarHistoricoCliente(tenantId, telefone) {
+  try {
+    const { data, error } = await supabase
+      .from('conversas_whatsapp')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('cliente_telefone', telefone)
+      .order('timestamp', { ascending: false })
+      .limit(10);
 
-  if (agendamentos.length === 0) {
-    const resposta = `${cliente.nome}, você não possui agendamentos pendentes. 😊`;
-    await sock.sendMessage(phoneNumber + '@s.whatsapp.net', { text: resposta });
-    await registrarConversa(cliente.id, tenantId, 'cancelar', resposta, 'cancelamento');
-    return;
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error({ tenantId, telefone, error }, 'Erro ao buscar histórico');
+    return [];
   }
-
-  let resposta = `Qual agendamento você gostaria de cancelar?\n\n`;
-  agendamentos.slice(0, 5).forEach((a, i) => {
-    const data = new Date(a.data_hora);
-    resposta += `${i + 1}. ${data.toLocaleDateString('pt-BR')} às ${data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}\n`;
-  });
-  resposta += `\nResponda com o número ou "cancelar tudo"`;
-
-  await sock.sendMessage(phoneNumber + '@s.whatsapp.net', { text: resposta });
-  await registrarConversa(cliente.id, tenantId, 'cancelar', resposta, 'cancelamento_listar');
 }
 
-async function responderDuvidasServicos(tenantId, phoneNumber, cliente, contextoSalao, conteudo, sock) {
-  let mensagem = `Claro, ${cliente.nome}! 😊\n\nAqui estão nossos serviços:\n\n`;
+async function buscarAgendamentosPorCliente(tenantId, telefone) {
+  try {
+    const { data, error } = await supabase
+      .from('agendamentos')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('cliente_telefone', telefone);
 
-  contextoSalao.servicos?.forEach(s => {
-    mensagem += `💅 *${s.nome}*\n`;
-    mensagem += `   Valor: R$ ${s.preco}\n`;
-    mensagem += `   Duração: ${s.duracao_minutos || 'Consulte'} minutos\n\n`;
-  });
-
-  mensagem += `Gostaria de agendar algum? Responda "agendar"`;
-
-  await sock.sendMessage(phoneNumber + '@s.whatsapp.net', { text: mensagem });
-  await registrarConversa(cliente.id, tenantId, conteudo, mensagem, 'duvida_servicos');
-}
-
-async function responderDuvidasHorarios(tenantId, phoneNumber, cliente, contextoSalao, sock) {
-  const horarios = contextoSalao.horarios_atendimento || [];
-  
-  let resposta = `Nossos horários de funcionamento:\n\n`;
-  const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-
-  for (let i = 0; i < 7; i++) {
-    const horario = horarios.find(h => h.dia_semana === i);
-    if (horario && horario.ativo) {
-      resposta += `${diasSemana[i]}: ${horario.hora_inicio} - ${horario.hora_fim}\n`;
-    } else {
-      resposta += `${diasSemana[i]}: Fechado\n`;
-    }
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error({ tenantId, telefone, error }, 'Erro ao buscar agendamentos');
+    return [];
   }
-
-  resposta += `\nGostaria de agendar? Responda "agendar"`;
-
-  await sock.sendMessage(phoneNumber + '@s.whatsapp.net', { text: resposta });
-  await registrarConversa(cliente.id, tenantId, 'horarios', resposta, 'duvida_horarios');
 }
 
-async function gerarRespostaComClaude(mensagem, cliente, historico, contextoSalao, agendamentos) {
-  const historicoFormatado = historico
-    .slice(0, 10)
-    .map(h => `Cliente: ${h.mensagem_entrada}\nAssistente: ${h.mensagem_saida}`)
-    .join('\n\n');
+async function buscarServicos(tenantId) {
+  try {
+    const { data, error } = await supabase
+      .from('servicos')
+      .select('*')
+      .eq('tenant_id', tenantId);
 
-  const nomeEmpresa = contextoSalao.nome || 'Nosso Salão';
-  const enderecoEmpresa = contextoSalao.endereco || 'Não informado';
-  const telefoneEmpresa = contextoSalao.telefone || 'Não informado';
-  
-  const servicosFormatados = contextoSalao.servicos 
-    ? contextoSalao.servicos.map(s => s.nome + ' (R$ ' + s.preco + ')').join(', ')
-    : 'Vários';
-  
-  const profissionaisFormatados = contextoSalao.profissionais
-    ? contextoSalao.profissionais.map(p => p.nome).join(', ')
-    : 'Experientes';
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error({ tenantId, error }, 'Erro ao buscar serviços');
+    return [];
+  }
+}
 
-  const nomeCliente = cliente.nome || 'Cliente';
-  const emailCliente = cliente.email || 'Não informado';
+async function buscarHorariosDisponiveis(tenantId, profissionalId, data) {
+  try {
+    const { data: horarios, error } = await supabase
+      .from('horarios_atendimento')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('profissional_id', profissionalId)
+      .eq('data', data);
 
-  const promptSistema = `
-Você é um assistente de IA humanizado para o ${nomeEmpresa}.
+    if (error) throw error;
+    return horarios || [];
+  } catch (error) {
+    logger.error({ tenantId, profissionalId, data, error }, 'Erro ao buscar horários');
+    return [];
+  }
+}
 
-DADOS DA EMPRESA:
-- Nome: ${nomeEmpresa}
-- Endereço: ${enderecoEmpresa}
-- Telefone: ${telefoneEmpresa}
-- Serviços: ${servicosFormatados}
-- Profissionais: ${profissionaisFormatados}
+async function buscarProfissionais(tenantId) {
+  try {
+    const { data, error } = await supabase
+      .from('profissionais')
+      .select('*')
+      .eq('tenant_id', tenantId);
 
-DADOS DO CLIENTE:
-- Nome: ${nomeCliente}
-- Email: ${emailCliente}
-- Agendamentos anteriores: ${agendamentos.length}
-- Histórico: ${historicoFormatado || 'Primeira conversa'}
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    logger.error({ tenantId, error }, 'Erro ao buscar profissionais');
+    return [];
+  }
+}
 
-INSTRUÇÕES CRÍTICAS:
-1. Seja acolhedor, amigável e HUMANIZADO - nada de robótico.
-2. Sempre use o nome do cliente (${nomeCliente}).
-3. Tolere erros de digitação e interprete a intenção.
-4. Se detectar intenção de agendar, seja incentivador.
-5. Se for pergunta sobre serviços/horários/preços, responda com informações do salão.
-6. Responda SEMPRE em português natural e conversacional.
-7. Use emojis naturalmente.
-8. Se o cliente for recorrente, mencione que é bom tê-lo de volta.
-9. Nunca seja agressivo ou desagradável.
-10. Se não sabe algo, ofereça conectá-lo com um atendente.
+async function cadastrarCliente(tenantId, nome, telefone, email, tipoServico) {
+  try {
+    const { data, error } = await supabase
+      .from('clientes')
+      .insert([{
+        tenant_id: tenantId,
+        nome,
+        telefone,
+        email,
+        tipo_servico: tipoServico,
+        data_cadastro: new Date().toISOString()
+      }])
+      .select();
 
-RESPONDA APENAS COM A MENSAGEM, SEM PREFIXOS OU EXPLICAÇÕES.
-`;
+    if (error) throw error;
+    return data?.[0] || null;
+  } catch (error) {
+    logger.error({ tenantId, nome, telefone, error }, 'Erro ao cadastrar cliente');
+    return null;
+  }
+}
 
+async function salvarConversa(tenantId, clienteTelefone, clienteNome, mensagem, tipo) {
+  try {
+    await supabase
+      .from('conversas_whatsapp')
+      .insert([{
+        tenant_id: tenantId,
+        cliente_telefone: clienteTelefone,
+        cliente_nome: clienteNome,
+        mensagem,
+        tipo,
+        timestamp: new Date().toISOString()
+      }]);
+  } catch (error) {
+    logger.error({ tenantId, clienteTelefone, error }, 'Erro ao salvar conversa');
+  }
+}
+
+async function criarAgendamento(tenantId, clienteTelefone, clienteNome, servico, profissional, data, horario) {
+  try {
+    const { data: agendamento, error } = await supabase
+      .from('agendamentos')
+      .insert([{
+        tenant_id: tenantId,
+        cliente_telefone: clienteTelefone,
+        cliente_nome: clienteNome,
+        servico,
+        profissional_id: profissional,
+        data,
+        horario,
+        status: 'confirmado',
+        data_agendamento: new Date().toISOString()
+      }])
+      .select();
+
+    if (error) throw error;
+    return agendamento?.[0] || null;
+  } catch (error) {
+    logger.error({ tenantId, clienteTelefone, error }, 'Erro ao criar agendamento');
+    return null;
+  }
+}
+
+async function cancelarAgendamento(tenantId, clienteTelefone) {
+  try {
+    const { error } = await supabase
+      .from('agendamentos')
+      .update({ status: 'cancelado' })
+      .eq('tenant_id', tenantId)
+      .eq('cliente_telefone', clienteTelefone)
+      .eq('status', 'confirmado');
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    logger.error({ tenantId, clienteTelefone, error }, 'Erro ao cancelar agendamento');
+    return false;
+  }
+}
+
+async function gerarRespostaComClaude(sistemaPrompt, historico) {
   try {
     const response = await axios.post(
       'https://api.anthropic.com/v1/messages',
       {
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1000,
-        system: promptSistema,
-        messages: [
-          {
-            role: 'user',
-            content: mensagem
-          }
-        ]
+        max_tokens: 1024,
+        system: sistemaPrompt,
+        messages: historico
       },
       {
         headers: {
-          'x-api-key': CLAUDE_API_KEY,
+          'x-api-key': process.env.CLAUDE_API_KEY,
           'anthropic-version': '2023-06-01',
           'content-type': 'application/json'
         }
       }
     );
 
-    return response.data.content[0].text || `Desculpa, não consegui processar. Pode tentar de novo? 🙏`;
+    return response.data.content[0].text;
   } catch (error) {
-    console.error('❌ Erro Claude:', error.message);
-    return `Desculpa, tive um problema. Você poderia tentar novamente? 🙏`;
+    logger.error({ error }, 'Erro ao gerar resposta com Claude');
+    return 'Desculpe, não consegui processar sua solicitação. Tente novamente.';
   }
 }
 
-async function criarAutomacoes(agendamento, cliente, tenantId, phoneNumber) {
-  const dataAgendamento = new Date(agendamento.data_hora);
+function detectarIntencao(mensagem) {
+  const lower = mensagem.toLowerCase();
+  
+  if (leven(lower, 'agendar') <= 2 || leven(lower, 'marcar') <= 2 || /quer|quero|gostaria|agendar|marcar|reservar|hora/.test(lower)) {
+    return 'agendar';
+  }
+  if (leven(lower, 'cancelar') <= 2 || leven(lower, 'desmarca') <= 2 || /cancel|desmark|remov/.test(lower)) {
+    return 'cancelar';
+  }
+  if (/duvida|pergunta|qual|quanto|quando|como|telefone|endereco|horario|aberto|atendimento/.test(lower)) {
+    return 'faq';
+  }
+  return 'geral';
+}
 
-  const lembreteData = new Date(dataAgendamento);
-  lembreteData.setHours(lembreteData.getHours() - 1);
+// ============================================
+// SISTEMA PROMPT HUMANIZADO
+// ============================================
+const SYSTEM_PROMPT = `Você é um assistente de atendimento humanizado, cordial e atencioso para um estabelecimento. Seu objetivo é:
 
-  await supabase.from('automacoes_agendadas').insert({
-    cliente_id: cliente.id,
-    agendamento_id: agendamento.id,
-    tenant_id: tenantId,
-    tipo_automacao: 'lembrete_dia',
-    data_execucao: lembreteData.toISOString(),
-    executada: false,
-    telefone_whatsapp: phoneNumber
-  });
+1. **Identificar intenção**: Detecte automaticamente se o cliente quer agendar, cancelar ou tirar dúvidas, mesmo com erros de digitação.
+2. **Cadastro (primeiro atendimento)**: Se for a primeira mensagem do cliente, colete nome, telefone, email e tipo de serviço desejado de forma natural, sem parecer um formulário.
+3. **Personalisação**: Após o cadastro, sempre trate o cliente pelo nome nos próximos atendimentos.
+4. **Humanização**: Seja natural, educado e conversacional. Evite respostas robóticas.
+5. **Agendamentos**: Ajude o cliente a agendar serviços, sugerindo datas e horários disponíveis. Se o horário desejado não estiver disponível, ofereça as 3 opções mais próximas.
+6. **Cancelamentos**: Processe cancelamentos de forma simples e amigável.
+7. **FAQ**: Responda perguntas sobre serviços, preços, políticas e horários de funcionamento.
+8. **Análise de histórico**: Considere conversas anteriores do cliente para oferecer melhor atendimento.
 
-  const agradecimentoData = new Date(dataAgendamento);
-  agradecimentoData.setDate(agradecimentoData.getDate() + 1);
-  agradecimentoData.setHours(10, 0, 0);
+Mantenha sempre um tom profissional, mas jamais robótico.`;
 
-  await supabase.from('automacoes_agendadas').insert({
-    cliente_id: cliente.id,
-    agendamento_id: agendamento.id,
-    tenant_id: tenantId,
-    tipo_automacao: 'pos_atendimento',
-    data_execucao: agradecimentoData.toISOString(),
-    executada: false,
-    telefone_whatsapp: phoneNumber
-  });
+// ============================================
+// CONEXÃO WHATSAPP COM BAILEYS
+// ============================================
+async function conectarWhatsApp(tenantId) {
+  try {
+    const authPath = path.join(__dirname, `auth_info/${tenantId}`);
+    
+    if (!fs.existsSync(authPath)) {
+      fs.mkdirSync(authPath, { recursive: true });
+    }
 
-  const reagendamentoData = new Date(dataAgendamento);
-  reagendamentoData.setDate(reagendamentoData.getDate() + 15);
-  reagendamentoData.setHours(14, 0, 0);
+    const { state, saveCreds } = await useMultiFileAuthState(authPath);
 
-  await supabase.from('automacoes_agendadas').insert({
-    cliente_id: cliente.id,
-    agendamento_id: agendamento.id,
-    tenant_id: tenantId,
-    tipo_automacao: 'reagendamento_15d',
-    data_execucao: reagendamentoData.toISOString(),
-    executada: false,
-    telefone_whatsapp: phoneNumber
-  });
-
-  const isRecorrente = await verificarClienteRecorrente(cliente.id);
-  if (isRecorrente) {
-    const retencaoData = new Date(dataAgendamento);
-    retencaoData.setDate(retencaoData.getDate() + 45);
-    retencaoData.setHours(16, 0, 0);
-
-    await supabase.from('automacoes_agendadas').insert({
-      cliente_id: cliente.id,
-      agendamento_id: agendamento.id,
-      tenant_id: tenantId,
-      tipo_automacao: 'retencao_45d',
-      data_execucao: retencaoData.toISOString(),
-      executada: false,
-      telefone_whatsapp: phoneNumber
+    const socket = makeWASocket({
+      auth: state,
+      printQRInTerminal: false
     });
-  }
 
-  console.log(`✅ Automações criadas para agendamento #${agendamento.id}`);
-}
+    socket.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
 
-cron.schedule('*/5 * * * *', async () => {
-  try {
-    const agora = new Date().toISOString();
+      if (qr) {
+        logger.info({ tenantId }, '📱 QR Code gerado');
+        try {
+          const qrDataUrl = await QRCode.toDataURL(qr);
+          await supabase
+            .from('tenants')
+            .update({ whatsapp_qrcode: qrDataUrl, conexao_status: 'pendente' })
+            .eq('id', tenantId);
+        } catch (error) {
+          logger.error({ tenantId, error }, 'Erro ao salvar QR code');
+        }
+      }
 
-    const { data: automacoes } = await supabase
-      .from('automacoes_agendadas')
-      .select('*, clientes(nome), agendamentos(servicos(nome))')
-      .eq('executada', false)
-      .lte('data_execucao', agora);
+      if (connection === 'open') {
+        logger.info({ tenantId }, '✅ WhatsApp conectado');
+        conexoesWhatsApp[tenantId] = socket;
+        await supabase
+          .from('tenants')
+          .update({ conexao_status: 'conectado' })
+          .eq('id', tenantId);
+      }
 
-    for (const automacao of automacoes || []) {
-      await executarAutomacao(automacao);
-    }
+      if (connection === 'close') {
+        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+        logger.warn({ tenantId, shouldReconnect }, '🔌 WhatsApp desconectado');
+        
+        if (shouldReconnect) {
+          setTimeout(() => conectarWhatsApp(tenantId), 3000);
+        }
+      }
+    });
+
+    socket.ev.on('creds.update', saveCreds);
+
+    socket.ev.on('messages.upsert', async (m) => {
+      if (m.type !== 'notify') return;
+
+      for (const msg of m.messages) {
+        if (!msg.message || msg.key.fromMe) continue;
+
+        const clienteId = msg.key.remoteJid.split('@')[0];
+        const mensagemTexto = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+        
+        logger.info({ tenantId, clienteId, mensagem: mensagemTexto }, '📨 Mensagem recebida');
+
+        // Buscar histórico
+        const historico = await buscarHistoricoCliente(tenantId, clienteId);
+        const agendamentos = await buscarAgendamentosPorCliente(tenantId, clienteId);
+        
+        // Determinar nome do cliente
+        let clienteNome = msg.pushName || 'Cliente';
+        
+        // Se for primeira mensagem, cadastrar
+        if (historico.length === 0) {
+          clienteNome = msg.pushName || 'Novo Cliente';
+          await cadastrarCliente(tenantId, clienteNome, clienteId, '', 'geral');
+        }
+
+        // Montar contexto para Claude
+        const contexto = `
+Cliente: ${clienteNome}
+Histórico: ${historico.map(h => `${h.tipo}: ${h.mensagem}`).join('\n')}
+Agendamentos: ${agendamentos.map(a => `${a.data} às ${a.horario} - ${a.servico}`).join('\n') || 'Nenhum'}
+Mensagem atual: ${mensagemTexto}
+`;
+
+        // Gerar resposta com Claude
+        const resposta = await gerarRespostaComClaude(SYSTEM_PROMPT, [
+          {
+            role: 'user',
+            content: contexto
+          }
+        ]);
+
+        // Salvar conversa
+        await salvarConversa(tenantId, clienteId, clienteNome, mensagemTexto, 'cliente');
+        await salvarConversa(tenantId, clienteId, clienteNome, resposta, 'ia');
+
+        // Enviar resposta
+        await socket.sendMessage(msg.key.remoteJid, { text: resposta });
+      }
+    });
+
+    return socket;
   } catch (error) {
-    console.error('❌ Erro cron:', error);
-  }
-});
-
-async function executarAutomacao(automacao) {
-  try {
-    const { tipo_automacao, cliente_id, agendamento_id, tenant_id, telefone_whatsapp, clientes, agendamentos } = automacao;
-    const cliente = clientes;
-    const agendamento = agendamentos;
-
-    let mensagem = '';
-
-    if (tipo_automacao === 'lembrete_dia') {
-      mensagem = `👋 Oi ${cliente.nome}!\n\n📅 Você tem agendamento HOJE em ${agendamento.servicos?.nome || 'seu serviço'}!\n\nNão se atrase! 😊`;
-    }
-    else if (tipo_automacao === 'pos_atendimento') {
-      mensagem = `✨ ${cliente.nome}, tudo bem?\n\nQueremos agradecer sua visita! 🙏\n\nVocê gostou?\n\nQualquer feedback, é só chamar! 💕`;
-    }
-    else if (tipo_automacao === 'reagendamento_15d') {
-      mensagem = `💅 Oi ${cliente.nome}!\n\nJá faz 15 dias que nos vimos.\n\nQue tal agendar novamente? 📅\n\nResponda "agendar" se quiser marcar!`;
-    }
-    else if (tipo_automacao === 'retencao_45d') {
-      mensagem = `🌟 ${cliente.nome}, sentimos sua falta!\n\n🎁 Temos uma promoção exclusiva para você:\n\n*10% DE DESCONTO* em seu próximo agendamento!\n\nResponda "agendar" para aproveitar! ✨`;
-    }
-
-    if (mensagem && telefone_whatsapp && conexoesWhatsApp[tenant_id]) {
-      const sock = conexoesWhatsApp[tenant_id];
-      await sock.sendMessage(telefone_whatsapp + '@s.whatsapp.net', { text: mensagem });
-
-      await supabase
-        .from('automacoes_agendadas')
-        .update({ executada: true, data_envio: new Date().toISOString() })
-        .eq('id', automacao.id);
-
-      console.log(`✅ Automação ${tipo_automacao} enviada para ${cliente.nome}`);
-    }
-  } catch (error) {
-    console.error(`❌ Erro ao executar automação:`, error.message);
+    logger.error({ tenantId, error }, 'Erro ao conectar WhatsApp');
+    throw error;
   }
 }
 
-function extrairNome(texto) {
-  const primeiraPalavra = texto.split(' ')[0];
-  return primeiraPalavra.charAt(0).toUpperCase() + primeiraPalavra.slice(1).toLowerCase();
-}
-
-function verificarIntencao(textoLower, palavrasChave) {
-  return palavrasChave.some(palavra => textoLower.includes(palavra));
-}
-
-function extrairNumeroOpcao(texto) {
-  if (!texto) return null;
-  const numero = parseInt(texto.toString().split(' ')[0]);
-  return isNaN(numero) ? null : numero;
-}
-
-function determinarProximaEtapa(etapaAtual, etapas) {
-  const index = etapas.indexOf(etapaAtual);
-  return index + 1 < etapas.length ? etapas[index + 1] : etapas[0];
-}
-
-function obterDiaSemana(data) {
-  const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-  return dias[data.getDay()];
-}
-
-async function buscarOuCriarCliente(phoneNumber, tenantId) {
-  let { data: cliente, error } = await supabase
-    .from('clientes')
-    .select('*')
-    .eq('telefone', phoneNumber)
-    .eq('tenant_id', tenantId)
-    .single();
-
-  if (error || !cliente) {
-    const { data: clienteCriado } = await supabase
-      .from('clientes')
-      .insert({
-        telefone: phoneNumber,
-        tenant_id: tenantId,
-        primeiro_atendimento: true,
-        cadastro_completo: false
-      })
-      .select()
-      .single();
-
-    return clienteCriado;
-  }
-
-  return cliente;
-}
-
-async function criarSessaoAgendamento(cliente_id, tenant_id) {
-  const { data: sessao } = await supabase
-    .from('sessoes_agendamento')
-    .insert({
-      cliente_id,
-      tenant_id,
-      etapa: 'coleta_nome',
-      dados_coletados: {}
-    })
-    .select()
-    .single();
-
-  return sessao;
-}
-
-async function buscarSessaoAgendamento(cliente_id) {
-  const { data: sessao } = await supabase
-    .from('sessoes_agendamento')
-    .select('*')
-    .eq('cliente_id', cliente_id)
-    .maybeSingle();
-
-  return sessao;
-}
-
-async function buscarHistoricoConversas(cliente_id, limite = 10) {
-  const { data: historico } = await supabase
-    .from('conversas_whatsapp')
-    .select('*')
-    .eq('cliente_id', cliente_id)
-    .order('created_at', { ascending: false })
-    .limit(limite);
-
-  return historico || [];
-}
-
-async function buscarContextoSalao(tenant_id) {
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('*, servicos(*), profissionais(*), horarios_atendimento(*)')
-    .eq('id', tenant_id)
-    .single();
-
-  return tenant || {};
-}
-
-async function buscarAgendamentosCliente(cliente_id) {
-  const { data: agendamentos } = await supabase
-    .from('agendamentos')
-    .select('*')
-    .eq('cliente_id', cliente_id)
-    .in('status', ['confirmado', 'pendente'])
-    .order('data_hora', { ascending: false })
-    .limit(10);
-
-  return agendamentos || [];
-}
-
-async function buscarHorariosDisponiveis(profissional_id, data, contextoSalao) {
-  const horarios = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
-
-  const { data: agendamentos } = await supabase
-    .from('agendamentos')
-    .select('data_hora')
-    .eq('profissional_id', profissional_id)
-    .gte('data_hora', data.toISOString())
-    .lt('data_hora', new Date(data.getTime() + 86400000).toISOString());
-
-  const horariosOcupados = agendamentos?.map(a => new Date(a.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })) || [];
-
-  return horarios.filter(h => !horariosOcupados.includes(h));
-}
-
-async function registrarConversa(cliente_id, tenant_id, entrada, saida, tipo) {
-  await supabase.from('conversas_whatsapp').insert({
-    cliente_id,
-    tenant_id,
-    mensagem_entrada: entrada,
-    mensagem_saida: saida,
-    tipo_interacao: tipo,
-    created_at: new Date().toISOString()
-  });
-}
-
-async function verificarClienteRecorrente(cliente_id) {
-  const { data: agendamentos } = await supabase
-    .from('agendamentos')
-    .select('id')
-    .eq('cliente_id', cliente_id)
-    .eq('status', 'realizado');
-
-  return (agendamentos?.length || 0) >= 2;
-}
+// ============================================
+// API ENDPOINTS
+// ============================================
 
 app.post('/api/whatsapp/connect/:tenantId', async (req, res) => {
   try {
     const { tenantId } = req.params;
 
-    const sock = await conectarWhatsAppTenant(tenantId);
-
-    let qrCode = null;
-    let tentativas = 0;
-    while (!qrCode && tentativas < 30) {
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('whatsapp_qrcode')
-        .eq('id', tenantId)
-        .single();
-
-      qrCode = tenant?.whatsapp_qrcode;
-      if (!qrCode) {
-        await new Promise(r => setTimeout(r, 1000));
-        tentativas++;
-      }
+    if (conexoesWhatsApp[tenantId]) {
+      return res.status(400).json({ error: 'WhatsApp já está conectado para este tenant' });
     }
 
-    if (qrCode) {
-      res.json({ status: 'qr_generated', qrCode });
-    } else {
-      res.json({ status: 'waiting_qr', message: 'Escaneie o QR code no terminal' });
-    }
+    const socket = await conectarWhatsApp(tenantId);
+    res.json({ success: true, message: 'WhatsApp conectando...' });
   } catch (error) {
+    logger.error({ error }, 'Erro no endpoint /api/whatsapp/connect');
     res.status(500).json({ error: error.message });
   }
 });
@@ -836,36 +445,57 @@ app.post('/api/whatsapp/connect/:tenantId', async (req, res) => {
 app.get('/api/whatsapp/status/:tenantId', async (req, res) => {
   try {
     const { tenantId } = req.params;
+    const tenant = await buscarTenant(tenantId);
 
-    const { data: tenant } = await supabase
-      .from('tenants')
-      .select('whatsapp_conectado, whatsapp_conectado_em')
-      .eq('id', tenantId)
-      .single();
+    if (!tenant) {
+      return res.status(404).json({ error: 'Tenant não encontrado' });
+    }
+
+    const isConnected = !!conexoesWhatsApp[tenantId];
 
     res.json({
-      connected: tenant?.whatsapp_conectado || false,
-      connectedAt: tenant?.whatsapp_conectado_em || null
+      tenantId,
+      isConnected,
+      status: tenant.conexao_status,
+      qrCode: tenant.whatsapp_qrcode
     });
   } catch (error) {
+    logger.error({ error }, 'Erro no endpoint /api/whatsapp/status');
     res.status(500).json({ error: error.message });
   }
 });
 
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'Servidor rodando! ✅',
-    timestamp: new Date().toISOString(),
-    whatsappConnections: Object.keys(conexoesWhatsApp).length
-  });
+// ============================================
+// CRON JOBS
+// ============================================
+cron.schedule('*/5 * * * *', async () => {
+  logger.info('⏰ Executando verificação de agendamentos...');
+  try {
+    const { data: automacoes } = await supabase
+      .from('automacoes_agendadas')
+      .select('*')
+      .eq('ativo', true);
+
+    for (const automacao of automacoes || []) {
+      // Lógica de automação aqui
+      logger.debug({ automacao }, 'Automação executada');
+    }
+  } catch (error) {
+    logger.error({ error }, 'Erro no cron job');
+  }
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Servidor WhatsApp IA rodando na porta ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  console.log(`📱 Conectar WhatsApp: POST /api/whatsapp/connect/:tenantId`);
-  console.log(`✅ Status WhatsApp: GET /api/whatsapp/status/:tenantId`);
-  console.log(`🌐 CORS habilitado para todas as origens`);
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  logger.info(`🚀 Servidor WhatsApp IA rodando na porta ${PORT}`);
+  logger.info(`📍 Health check: http://localhost:${PORT}/health`);
+  logger.info(`📱 Conectar WhatsApp: POST /api/whatsapp/connect/:tenantId`);
+  logger.info(`✅ Status WhatsApp: GET /api/whatsapp/status/:tenantId`);
+  logger.info(`🌐 CORS habilitado para todas as origens`);
 });
 
 export default app;
