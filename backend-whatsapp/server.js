@@ -10,11 +10,8 @@ import pino from 'pino';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { makeWASocket, 
-  useMultiFileAuthState, 
-  DisconnectReason,
-  isJidBroadcast 
-} from '@whiskeysockets/baileys';
+import BaileysMD from '@whiskeysockets/baileys';
+const { makeWASocket, useMultiFileAuthState, DisconnectReason, isJidBroadcast } = BaileysMD.default || BaileysMD;
 import qrcodeTerminal from 'qrcode-terminal';
 import Levenshtein from 'js-levenshtein';
 import cors from 'cors';
