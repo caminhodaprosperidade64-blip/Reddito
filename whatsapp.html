@@ -188,7 +188,7 @@
 
                             <button
                               class="pro-btn pro-btn-primary pro-btn-lg"
-                              onclick="conectarWhatsApp()"
+                              id="btnConectarWhatsApp"
                               style="background: #25d366; border-color: #25d366"
                             >
                                 <i class="fab fa-whatsapp"></i> Conectar WhatsApp
@@ -435,7 +435,7 @@
                         </div>
                         <button
                           class="pro-btn pro-btn-primary"
-                          onclick="enviarMensagemManual()"
+                          id="btnEnviarManual"
                           style="background: #25d366; border-color: #25d366"
                         >
                             <i class="fab fa-whatsapp"></i> Enviar Mensagem
@@ -499,21 +499,29 @@
             if (!perfilAtual) return;
 
             const letra = (perfilAtual.nome || perfilAtual.email || "U")[0].toUpperCase();
-            document.getElementById("userAvatar").textContent = letra;
-            document.getElementById("userName").textContent = perfilAtual.nome || perfilAtual.email;
-            document.getElementById("userRole").textContent =
-                perfilAtual.role === "dono" ? "Proprietário" : "Profissional";
+            const userAvatar = document.getElementById("userAvatar");
+            const userName = document.getElementById("userName");
+            const userRole = document.getElementById("userRole");
+            const secaoDono = document.getElementById("secaoDono");
+            const avisoAcessoRestrito = document.getElementById("avisoAcessoRestrito");
+            const tenantName = document.getElementById("tenantName");
+
+            if (userAvatar) userAvatar.textContent = letra;
+            if (userName) userName.textContent = perfilAtual.nome || perfilAtual.email;
+            if (userRole) userRole.textContent = perfilAtual.role === "dono" ? "Proprietário" : "Profissional";
 
             if (perfilAtual.role !== "dono") {
-                document.getElementById("secaoDono").style.display = "none";
-                document.getElementById("avisoAcessoRestrito").style.display = "block";
+                if (secaoDono) secaoDono.style.display = "none";
+                if (avisoAcessoRestrito) avisoAcessoRestrito.style.display = "block";
             } else {
+                if (secaoDono) secaoDono.style.display = "block";
+                if (avisoAcessoRestrito) avisoAcessoRestrito.style.display = "none";
                 carregarConfiguracoes();
             }
 
             try {
                 const cfg = JSON.parse(localStorage.getItem("sispro_config") || "{}");
-                if (cfg.nome) document.getElementById("tenantName").textContent = cfg.nome;
+                if (cfg.nome && tenantName) tenantName.textContent = cfg.nome;
             } catch (_) {}
         });
 
@@ -600,7 +608,8 @@
             }
         });
 
-        async function conectarWhatsApp() {
+        // Corrigido para receber o evento e usar event.target
+        async function conectarWhatsApp(event) {
             const btn = event.target;
 
             btn.disabled = true;
@@ -849,6 +858,19 @@
         window.addEventListener("storage", (e) => {
             if (e.key === "sispro_theme") {
                 location.reload();
+            }
+        });
+
+        // Adiciona listener para o botão Conectar WhatsApp
+        window.addEventListener("DOMContentLoaded", () => {
+            const btnConectar = document.getElementById("btnConectarWhatsApp");
+            if (btnConectar) {
+                btnConectar.addEventListener("click", conectarWhatsApp);
+            }
+
+            const btnEnviarManual = document.getElementById("btnEnviarManual");
+            if (btnEnviarManual) {
+                btnEnviarManual.addEventListener("click", enviarMensagemManual);
             }
         });
     </script>
