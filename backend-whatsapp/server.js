@@ -949,18 +949,23 @@ app.get('/api/whatsapp/status/:tenantId', async (req, res) => {
   try {
     const { tenantId } = req.params;
 
-    const { data: tenant } = await supabase
+    const { data: tenant, error } = await supabase
       .from('tenants')
-      .select('whatsapp_conectado, whatsapp_conectado_em')
+      .select('whatsapp_conectado, whatsapp_conectado_em, whatsapp_qrcode')
       .eq('id', tenantId)
       .single();
 
-    res.json({
+    if (error) {
+      return res.status(500).json({ error: error.message || 'Erro ao buscar tenant' });
+    }
+
+    return res.json({
       connected: tenant?.whatsapp_conectado || false,
-      connectedAt: tenant?.whatsapp_conectado_em || null
+      connectedAt: tenant?.whatsapp_conectado_em || null,
+      qrCode: tenant?.whatsapp_qrcode || null
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
