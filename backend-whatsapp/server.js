@@ -112,17 +112,21 @@ async function conectarWhatsAppTenant(tenantId) {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        console.log(`\n📱 QR Code para ${tenantId}:\n`);
+        console.log(`\n📱 QR Code para ${tenantId} recebido no evento connection.update`);
         qrcodeTerminal.generate(qr, { small: true });
 
-        // Gerar QR em base64 para o painel
-        const qrBase64 = await QRCode.toDataURL(qr);
-        await supabase
-          .from('tenants')
-          .update({ whatsapp_qrcode: qrBase64 })
-          .eq('id', tenantId);
+        try {
+          // Gerar QR em base64 para o painel
+          const qrBase64 = await QRCode.toDataURL(qr);
+          await supabase
+            .from('tenants')
+            .update({ whatsapp_qrcode: qrBase64 })
+            .eq('id', tenantId);
 
-        console.log(`✅ QR code salvo no banco para ${tenantId}`);
+          console.log(`✅ QR code salvo no banco para ${tenantId}`);
+        } catch (e) {
+          console.error(`❌ Erro ao converter/salvar QR code para ${tenantId}:`, e);
+        }
       }
 
       if (connection === 'open') {
@@ -915,20 +919,32 @@ app.post('/api/whatsapp/connect/:tenantId', async (req, res) => {
   try {
     const { tenantId } = req.params;
 
-    // Conectar WhatsApp
-    const sock = await conectarWhatsAppTenant(tenantId);
+    // Inicia/garante a conexão Baileys para esse tenant
+    await conectarWhatsAppTenant(tenantId);
 
-    // Aguardar QR code (máx 30 segundos)
+    // Tenta buscar QR code imediatamente
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('whatsapp_qrcode')
+      .eq('id', tenantId)
+      .single();
+
+    if (tenant?.whatsapp_qrcode) {
+      return res.json({ status: 'qr_generated', qrCode: tenant.whatsapp_qrcode });
+    }
+
+    // Se não tiver, aguarda até ~30s (ou menos) para o QR ser gerado e salvo
     let qrCode = null;
     let tentativas = 0;
-    while (!qrCode && tentativas < 30) {
-      const { data: tenant } = await supabase
+    const maxTentativas = 30;
+    while (!qrCode && tentativas < maxTentativas) {
+      const { data: tenant2 } = await supabase
         .from('tenants')
         .select('whatsapp_qrcode')
         .eq('id', tenantId)
         .single();
 
-      qrCode = tenant?.whatsapp_qrcode;
+      qrCode = tenant2?.whatsapp_qrcode;
       if (!qrCode) {
         await new Promise(r => setTimeout(r, 1000));
         tentativas++;
@@ -936,12 +952,13 @@ app.post('/api/whatsapp/connect/:tenantId', async (req, res) => {
     }
 
     if (qrCode) {
-      res.json({ status: 'qr_generated', qrCode });
+      return res.json({ status: 'qr_generated', qrCode });
     } else {
-      res.json({ status: 'waiting_qr', message: 'Escaneie o QR code no terminal' });
+      return res.json({ status: 'waiting_qr', message: 'Gerando/aguardando QR (verifique logs do servidor)' });
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Erro /api/whatsapp/connect/:tenantId', error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
