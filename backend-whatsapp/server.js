@@ -10,7 +10,7 @@ import pino from 'pino';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import * as baileys from 'baileys';
+import * as baileys from '@adiwajshing/baileys';
 
 const makeWASocket = baileys.default?.default || baileys.default || baileys.makeWASocket;
 const useMultiFileAuthState = baileys.useMultiFileAuthState;
