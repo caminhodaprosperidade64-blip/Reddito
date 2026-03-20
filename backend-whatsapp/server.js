@@ -10,7 +10,12 @@ import pino from 'pino';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import { makeWASocket, useMultiFileAuthState, DisconnectReason, isJidBroadcast } from 'baileys';
+import * as baileys from 'baileys';
+
+const makeWASocket = baileys.default?.default || baileys.default || baileys.makeWASocket;
+const useMultiFileAuthState = baileys.useMultiFileAuthState;
+const DisconnectReason = baileys.DisconnectReason;
+const isJidBroadcast = baileys.isJidBroadcast;
 import qrcodeTerminal from 'qrcode-terminal';
 import Levenshtein from 'js-levenshtein';
 import cors from 'cors';
