@@ -10,7 +10,7 @@ import pino from 'pino';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import makeWASocket, { 
+import { makeWASocket, 
   useMultiFileAuthState, 
   DisconnectReason,
   isJidBroadcast 
