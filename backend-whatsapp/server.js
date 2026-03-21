@@ -33,6 +33,16 @@ console.log('ENV CHECK: CLAUDE_API_KEY', !!process.env.CLAUDE_API_KEY ? 'SET' : 
 console.log('ENV CHECK: EVOLUTION_URL', !!process.env.EVOLUTION_URL ? 'SET' : 'EMPTY');
 console.log('ENV CHECK: EVOLUTION_API_KEY', !!process.env.EVOLUTION_API_KEY ? 'SET' : 'EMPTY');
 
+// Log dos valores reais (com máscara para segurança)
+if (process.env.EVOLUTION_URL) {
+  console.log('EVOLUTION_URL VALUE:', process.env.EVOLUTION_URL);
+}
+if (process.env.EVOLUTION_API_KEY) {
+  const key = process.env.EVOLUTION_API_KEY;
+  const masked = key.substring(0, 8) + '...' + key.substring(key.length - 8);
+  console.log('EVOLUTION_API_KEY MASKED:', masked);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -411,18 +421,9 @@ async function processarMensagemWhatsApp(tenantId, phoneNumber, conteudo, sock) 
   }
 }
 
-// (Implementações das funções auxiliares seguem inalteradas a partir daqui no seu arquivo original)
-// [Mantive todas as funções do arquivo original fornecido pelo usuário e NÃO as repeti aqui
-//  para evitar duplicação no texto da resposta, mas o arquivo final que disponibilizei anteriormente
-//  inclui a totalidade do seu código modificado.]
-// Observação: se você desejar que eu incorpore abaixo novamente todas as funções auxiliares
-// (buscarOuCriarCliente, buscarContextoSalao, buscarHistoricoConversas, etc.) exatamente como
-// no seu arquivo original, me diga que eu as incluirei inteiras aqui. Por ora, assumi que o
-// restante do seu código original permanece no arquivo do servidor (conforme você enviou).
-
-// --------------------------------------------
-// ENDPOINTS REST (mantive e adicionei proxies Evolution)
-// --------------------------------------------
+// ============================================
+// ENDPOINTS REST
+// ============================================
 
 app.post('/api/whatsapp/connect/:tenantId', async (req, res) => {
   try {
@@ -513,12 +514,9 @@ app.get('/api/whatsapp/status/:tenantId', async (req, res) => {
   }
 });
 
-// ------------------------------
-// Evolution API proxy endpoints
-// ------------------------------
-// These endpoints forward requests from the frontend (or your backend UI) to the Evolution API
-// The EVOLUTION_URL and EVOLUTION_API_KEY must be set as environment variables in Railway for your backend service.
-// These proxies keep the API key on the server (never expose it in browser).
+// ============================================
+// EVOLUTION API PROXY ENDPOINTS (CORRIGIDO)
+// ============================================
 
 // Utility: normalize EVOLUTION_URL (ensure has protocol)
 function normalizedEvolutionBase() {
@@ -533,91 +531,156 @@ function normalizedEvolutionBase() {
   return url;
 }
 
+/**
+ * POST /api/evolution/instance/create
+ * 
+ * Frontend envia: { instanceName: "xxx" }
+ * Server transforma em: { name: "xxx" }
+ * Server envia para Evolution com apikey header
+ */
 app.post('/api/evolution/instance/create', async (req, res) => {
   try {
+    console.log('📥 POST /api/evolution/instance/create recebido');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+
     if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
-      return res.status(500).json({ error: 'evolution_not_configured', message: 'EVOLUTION_URL or EVOLUTION_API_KEY missing on the server.' });
+      console.error('❌ EVOLUTION_URL ou EVOLUTION_API_KEY não configurado');
+      return res.status(500).json({ 
+        error: 'evolution_not_configured', 
+        message: 'EVOLUTION_URL ou EVOLUTION_API_KEY ausente no servidor.' 
+      });
     }
 
     const body = req.body || {};
-    // Body expected: { instanceName, token, qrcode, ... } — pass-through to Evolution API
+    
+    // CORREÇÃO CRÍTICA: transformar instanceName em name
+    const payload = {
+      name: body.instanceName || body.name || 'reddito',
+      // remover campos que podem causar "Invalid integration"
+      qrcode: true  // Manter apenas campos válidos
+    };
+
+    console.log('📤 Payload transformado para Evolution:', JSON.stringify(payload, null, 2));
+
     const base = normalizedEvolutionBase();
     if (!base) {
-      return res.status(500).json({ error: 'invalid_evolution_url', message: 'EVOLUTION_URL invalid or empty.' });
+      console.error('❌ EVOLUTION_URL inválido ou vazio');
+      return res.status(500).json({ 
+        error: 'invalid_evolution_url', 
+        message: 'EVOLUTION_URL inválido ou vazio.' 
+      });
     }
+
     const url = `${base}/instance/create`;
+    console.log('🌐 URL completa Evolution:', url);
 
     let r;
     try {
-      r = await axios.post(url, body, {
+      console.log('📡 Enviando POST para Evolution API...');
+      r = await axios.post(url, payload, {
         headers: {
           'Content-Type': 'application/json',
-          'apikey': EVOLUTION_API_KEY
+          'apikey': EVOLUTION_API_KEY,
+          'Accept': 'application/json'
         },
         timeout: 30000,
         validateStatus: () => true // we'll forward status back
       });
+
+      console.log('✅ Resposta Evolution recebida, status:', r.status);
+      console.log('📥 Response data:', JSON.stringify(r.data, null, 2));
     } catch (axiosErr) {
-      console.error('❌ ERR axios proxy create (network):', axiosErr?.message || axiosErr);
-      return res.status(502).json({ error: 'proxy_network_error', detail: axiosErr?.message || String(axiosErr) });
+      console.error('❌ Erro na requisição axios:', axiosErr?.message || axiosErr);
+      console.error('Detalhes do erro:', axiosErr);
+      return res.status(502).json({ 
+        error: 'proxy_network_error', 
+        detail: axiosErr?.message || String(axiosErr) 
+      });
     }
 
     // If the evolution returns non-JSON, attempt to forward text
     const respData = r.data !== undefined ? r.data : { raw: r.statusText || '' };
+    
+    console.log(`📊 Reenviando para client: status=${r.status || 200}`);
     return res.status(r.status || 200).json(respData);
   } catch (err) {
-    console.error('❌ ERR proxy /api/evolution/instance/create:', err?.response?.data || err?.message || err);
+    console.error('❌ Erro em /api/evolution/instance/create:', err);
     const status = err?.response?.status || 500;
     const data = err?.response?.data || { error: 'proxy_error', detail: String(err?.message || err) };
     return res.status(status).json(data);
   }
 });
 
+/**
+ * GET /api/evolution/instance/connect/:id
+ * 
+ * Busca status da instância e QR code da Evolution API
+ */
 app.get('/api/evolution/instance/connect/:id', async (req, res) => {
   try {
+    const id = req.params.id;
+    console.log(`📥 GET /api/evolution/instance/connect/${id} recebido`);
+
     if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
-      return res.status(500).json({ error: 'evolution_not_configured', message: 'EVOLUTION_URL or EVOLUTION_API_KEY missing on the server.' });
+      console.error('❌ EVOLUTION_URL ou EVOLUTION_API_KEY não configurado');
+      return res.status(500).json({ 
+        error: 'evolution_not_configured', 
+        message: 'EVOLUTION_URL ou EVOLUTION_API_KEY ausente no servidor.' 
+      });
     }
 
-    const id = req.params.id;
     const base = normalizedEvolutionBase();
     if (!base) {
-      return res.status(500).json({ error: 'invalid_evolution_url', message: 'EVOLUTION_URL invalid or empty.' });
+      console.error('❌ EVOLUTION_URL inválido ou vazio');
+      return res.status(500).json({ 
+        error: 'invalid_evolution_url', 
+        message: 'EVOLUTION_URL inválido ou vazio.' 
+      });
     }
+
     const url = `${base}/instance/connect/${encodeURIComponent(id)}`;
+    console.log('🌐 URL completa Evolution:', url);
 
     let r;
     try {
+      console.log('📡 Enviando GET para Evolution API...');
       r = await axios.get(url, {
-        headers: { 'apikey': EVOLUTION_API_KEY },
+        headers: { 
+          'apikey': EVOLUTION_API_KEY,
+          'Accept': 'application/json'
+        },
         timeout: 20000,
         validateStatus: () => true
       });
+
+      console.log('✅ Resposta Evolution recebida, status:', r.status);
+      console.log('📥 Response data:', JSON.stringify(r.data, null, 2));
     } catch (axiosErr) {
-      console.error('❌ ERR axios proxy connect (network):', axiosErr?.message || axiosErr);
-      return res.status(502).json({ error: 'proxy_network_error', detail: axiosErr?.message || String(axiosErr) });
+      console.error('❌ Erro na requisição axios:', axiosErr?.message || axiosErr);
+      return res.status(502).json({ 
+        error: 'proxy_network_error', 
+        detail: axiosErr?.message || String(axiosErr) 
+      });
     }
 
     const respData = r.data !== undefined ? r.data : { raw: r.statusText || '' };
+    
+    console.log(`📊 Reenviando para client: status=${r.status || 200}`);
     return res.status(r.status || 200).json(respData);
   } catch (err) {
-    console.error('❌ ERR proxy /api/evolution/instance/connect/:id', err?.response?.data || err?.message || err);
+    console.error('❌ Erro em /api/evolution/instance/connect/:id:', err);
     const status = err?.response?.status || 500;
     const data = err?.response?.data || { error: 'proxy_error', detail: String(err?.message || err) };
     return res.status(status).json(data);
   }
 });
-
-// Optional: other useful Evolution proxies (list instances, send message) can be added similarly.
-// Example: POST /api/evolution/message/send  (not implemented by default; add when needed)
-
-// --------------------------------------------
 
 app.get('/health', (req, res) => {
   res.json({
     status: 'Servidor rodando! ✅',
     timestamp: new Date().toISOString(),
-    whatsappConnections: Object.keys(conexoesWhatsApp).length
+    whatsappConnections: Object.keys(conexoesWhatsApp).length,
+    evolutionConfigured: !!EVOLUTION_URL && !!EVOLUTION_API_KEY
   });
 });
 
@@ -632,6 +695,9 @@ const server = app.listen(PORT, () => {
   console.log(`✅ Status WhatsApp: GET /api/whatsapp/status/:tenantId`);
   console.log(`🔁 Evolution proxy: POST /api/evolution/instance/create`);
   console.log(`🔁 Evolution proxy: GET  /api/evolution/instance/connect/:id`);
+  console.log(`\n🔑 Evolution API Status:`);
+  console.log(`   EVOLUTION_URL: ${EVOLUTION_URL ? '✅ Configurado' : '❌ Não configurado'}`);
+  console.log(`   EVOLUTION_API_KEY: ${EVOLUTION_API_KEY ? '✅ Configurado' : '❌ Não configurado'}`);
 });
 
 export default app;
