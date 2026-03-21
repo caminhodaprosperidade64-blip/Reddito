@@ -382,7 +382,6 @@ async function conectarWhatsAppTenant(tenantId) {
 
 // ============================================
 // PROCESSAR MENSAGEM WHATSAPP
-// (o resto do código mantém a lógica original — não alterei a implementação das funções já existentes)
 // ============================================
 
 async function processarMensagemWhatsApp(tenantId, phoneNumber, conteudo, sock) {
@@ -540,8 +539,19 @@ function normalizedEvolutionBase() {
  */
 app.post('/api/evolution/instance/create', async (req, res) => {
   try {
+    console.log('\n========================================');
     console.log('📥 POST /api/evolution/instance/create recebido');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('========================================');
+    
+    // Log DETALHADO do que foi recebido
+    console.log('📦 Body recebido (raw):', req.body);
+    console.log('📦 Body recebido (stringified):', JSON.stringify(req.body, null, 2));
+    
+    // Extrair e validar o instanceName
+    let instanceName = req.body?.instanceName;
+    console.log('🔍 instanceName extraído:', instanceName);
+    console.log('🔍 Tipo de instanceName:', typeof instanceName);
+    console.log('🔍 instanceName é falsy?', !instanceName);
 
     if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
       console.error('❌ EVOLUTION_URL ou EVOLUTION_API_KEY não configurado');
@@ -551,16 +561,23 @@ app.post('/api/evolution/instance/create', async (req, res) => {
       });
     }
 
-    const body = req.body || {};
-    
-    // CORREÇÃO CRÍTICA: transformar instanceName em name
+    // CORREÇÃO CRÍTICA: validar e transformar instanceName
+    if (!instanceName || instanceName === 'undefined' || typeof instanceName !== 'string') {
+      console.error('❌ instanceName inválido ou não recebido:', instanceName);
+      return res.status(400).json({
+        error: 'invalid_instanceName',
+        message: 'O campo instanceName é obrigatório e deve ser uma string',
+        received: instanceName
+      });
+    }
+
+    // Criar o payload CORRETO
     const payload = {
-      name: body.instanceName || body.name || 'reddito',
-      // remover campos que podem causar "Invalid integration"
-      qrcode: true  // Manter apenas campos válidos
+      name: instanceName.trim(),
+      qrcode: true
     };
 
-    console.log('📤 Payload transformado para Evolution:', JSON.stringify(payload, null, 2));
+    console.log('✅ Payload validado e criado:', JSON.stringify(payload, null, 2));
 
     const base = normalizedEvolutionBase();
     if (!base) {
@@ -572,7 +589,8 @@ app.post('/api/evolution/instance/create', async (req, res) => {
     }
 
     const url = `${base}/instance/create`;
-    console.log('🌐 URL completa Evolution:', url);
+    console.log('🌐 URL Evolution completa:', url);
+    console.log('🔑 Enviando com apikey');
 
     let r;
     try {
@@ -587,11 +605,12 @@ app.post('/api/evolution/instance/create', async (req, res) => {
         validateStatus: () => true // we'll forward status back
       });
 
-      console.log('✅ Resposta Evolution recebida, status:', r.status);
+      console.log('✅ Resposta Evolution recebida');
+      console.log('📊 Status HTTP:', r.status);
       console.log('📥 Response data:', JSON.stringify(r.data, null, 2));
     } catch (axiosErr) {
       console.error('❌ Erro na requisição axios:', axiosErr?.message || axiosErr);
-      console.error('Detalhes do erro:', axiosErr);
+      console.error('Detalhes completos:', axiosErr);
       return res.status(502).json({ 
         error: 'proxy_network_error', 
         detail: axiosErr?.message || String(axiosErr) 
@@ -601,10 +620,12 @@ app.post('/api/evolution/instance/create', async (req, res) => {
     // If the evolution returns non-JSON, attempt to forward text
     const respData = r.data !== undefined ? r.data : { raw: r.statusText || '' };
     
-    console.log(`📊 Reenviando para client: status=${r.status || 200}`);
+    console.log(`📊 Reenviando para client: HTTP ${r.status || 200}`);
+    console.log('========================================\n');
     return res.status(r.status || 200).json(respData);
   } catch (err) {
     console.error('❌ Erro em /api/evolution/instance/create:', err);
+    console.error('Stack:', err?.stack);
     const status = err?.response?.status || 500;
     const data = err?.response?.data || { error: 'proxy_error', detail: String(err?.message || err) };
     return res.status(status).json(data);
@@ -619,7 +640,7 @@ app.post('/api/evolution/instance/create', async (req, res) => {
 app.get('/api/evolution/instance/connect/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    console.log(`📥 GET /api/evolution/instance/connect/${id} recebido`);
+    console.log(`\n📥 GET /api/evolution/instance/connect/${id} recebido`);
 
     if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
       console.error('❌ EVOLUTION_URL ou EVOLUTION_API_KEY não configurado');
@@ -639,7 +660,7 @@ app.get('/api/evolution/instance/connect/:id', async (req, res) => {
     }
 
     const url = `${base}/instance/connect/${encodeURIComponent(id)}`;
-    console.log('🌐 URL completa Evolution:', url);
+    console.log('🌐 URL Evolution completa:', url);
 
     let r;
     try {
@@ -653,8 +674,11 @@ app.get('/api/evolution/instance/connect/:id', async (req, res) => {
         validateStatus: () => true
       });
 
-      console.log('✅ Resposta Evolution recebida, status:', r.status);
-      console.log('📥 Response data:', JSON.stringify(r.data, null, 2));
+      console.log('✅ Resposta recebida, status:', r.status);
+      if (r.data?.qrcode || r.data?.base64) {
+        console.log('✅ QR Code encontrado na resposta');
+      }
+      console.log('📥 Response (primeiros 200 chars):', JSON.stringify(r.data, null, 2).substring(0, 200) + '...');
     } catch (axiosErr) {
       console.error('❌ Erro na requisição axios:', axiosErr?.message || axiosErr);
       return res.status(502).json({ 
@@ -665,7 +689,7 @@ app.get('/api/evolution/instance/connect/:id', async (req, res) => {
 
     const respData = r.data !== undefined ? r.data : { raw: r.statusText || '' };
     
-    console.log(`📊 Reenviando para client: status=${r.status || 200}`);
+    console.log(`📊 Reenviando para client: HTTP ${r.status || 200}\n`);
     return res.status(r.status || 200).json(respData);
   } catch (err) {
     console.error('❌ Erro em /api/evolution/instance/connect/:id:', err);
