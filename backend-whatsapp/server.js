@@ -16,7 +16,7 @@ const makeWASocket = baileys.default?.default || baileys.default || baileys.make
 const useMultiFileAuthState = baileys.useMultiFileAuthState;
 const DisconnectReason = baileys.DisconnectReason;
 const isJidBroadcast = baileys.isJidBroadcast;
-
+/*
 import qrcodeTerminal from 'qrcode-terminal';
 import Levenshtein from 'js-levenshtein';
 import cors from 'cors';
