@@ -10,12 +10,12 @@ import pino from 'pino';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import * as baileys from '@whiskeysockets/baileys';
-
-const makeWASocket = baileys.default?.default || baileys.default || baileys.makeWASocket;
-const useMultiFileAuthState = baileys.useMultiFileAuthState;
-const DisconnectReason = baileys.DisconnectReason;
-const isJidBroadcast = baileys.isJidBroadcast;
+import {
+  makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason,
+  isJidBroadcast
+} from '@whiskeysockets/baileys';
 
 import qrcodeTerminal from 'qrcode-terminal';
 import Levenshtein from 'js-levenshtein';
@@ -36,7 +36,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-/
+/**
  * CORS - permitir apenas os domínios de frontend necessários.
  * Ajuste a lista `origin` conforme os domínios reais do seu frontend.
  */
@@ -474,7 +474,7 @@ async function iniciarFluxoAgendamento(tenantId, phoneNumber, cliente, contextoS
   }
 
   const etapas = ['escolha_servico', 'escolha_profissional', 'escolha_data', 'escolha_horario', 'confirmacao'];
-  const proximaEtapa = determinarProximaEtapa(sessao.etapa || 'escolha_servico', fases = etapas);
+  const proximaEtapa = determinarProximaEtapa(sessao.etapa || 'escolha_servico', etapas);
 
   let resposta = '';
   let dadosColetados = sessao.dados_coletados || {};
@@ -644,7 +644,7 @@ async function responderDuvidasServicos(tenantId, phoneNumber, cliente, contexto
   let mensagem = `Claro, ${cliente.nome}! 😊\n\nAqui estão nossos serviços:\n\n`;
 
   contextoSalao.servicos?.forEach(s => {
-    mensagem += `💅 *${s.nome}\n`;
+    mensagem += `💅 *${s.nome}*\n`;
     mensagem += `   Valor: R$ ${s.preco}\n`;
     mensagem += `   Duração: ${s.duracao_minutos || 'Consulte'} minutos\n\n`;
   });
