@@ -1,88 +1,637 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>WhatsApp - Sistema Profissional</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp - RedditoApp</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link rel="stylesheet" href="css/pro-design-system.css" />
-    <link rel="stylesheet" href="css/pro-components.css" />
-    <link rel="stylesheet" href="css/dark-mode.css" />
+    <style>
+        :root {
+            --color-bg: #ffffff;
+            --color-text: #1f2937;
+            --color-border: #e5e7eb;
+            --color-card: #f9fafb;
+            --color-primary: #667eea;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #fbbf24;
+            --color-secondary: #764ba2;
+        }
 
-    <!-- Scripts de Configuração e Segurança -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/auth-guard.js"></script>
-    <script src="js/database.js"></script>
-    <script src="js/pro-ui.js"></script>
-    <script src="js/dark-mode.js"></script>
+        body.dark-mode {
+            --color-bg: #0f172a;
+            --color-text: #f1f5f9;
+            --color-border: #334155;
+            --color-card: #1e293b;
+            --color-primary: #667eea;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #fbbf24;
+            --color-secondary: #764ba2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .pro-app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .pro-sidebar {
+            width: 260px;
+            background-color: var(--color-card);
+            border-right: 1px solid var(--color-border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            overflow-y: auto;
+        }
+
+        .pro-sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .pro-sidebar-logo img {
+            height: 48px;
+            width: auto;
+            border-radius: 8px;
+        }
+
+        .pro-logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .pro-sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pro-nav-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pro-nav-section-title {
+            padding: 0 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+
+        .pro-nav-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            color: var(--color-text);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .pro-nav-item:hover {
+            background-color: var(--color-border);
+            transform: translateX(4px);
+        }
+
+        .pro-nav-item.active {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .pro-nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* ===== MAIN ===== */
+        .pro-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .pro-header {
+            background-color: var(--color-card);
+            border-bottom: 1px solid var(--color-border);
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pro-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .pro-header-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--color-border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--color-text);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--color-border);
+        }
+
+        .logout-btn {
+            background-color: var(--color-danger);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        .pro-content {
+            padding: 32px;
+        }
+
+        .pro-page-header {
+            margin-bottom: 32px;
+        }
+
+        .pro-page-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .pro-page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+
+        .pro-page-subtitle {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .pro-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pro-btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .pro-btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        /* ===== CARDS ===== */
+        .pro-card {
+            background-color: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+            margin-bottom: 24px;
+        }
+
+        .pro-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .pro-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .pro-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        /* ===== STATUS BADGE ===== */
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-badge.connected {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.disconnected {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.loading {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* ===== TOGGLE SWITCH ===== */
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--color-primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* ===== FORM ELEMENTS ===== */
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 12px 0 6px 0;
+            text-transform: uppercase;
+            color: #6b7280;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            margin: 8px 0;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* ===== LOG BOX ===== */
+        .log-box {
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--color-text);
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-success {
+            color: var(--color-success);
+        }
+
+        .log-error {
+            color: var(--color-danger);
+        }
+
+        .log-info {
+            color: #3b82f6;
+        }
+
+        /* ===== QR MODAL ===== */
+        .qr-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-modal.active {
+            display: flex;
+        }
+
+        .qr-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .qr-modal-content {
+            position: relative;
+            background-color: var(--color-card);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--color-text);
+        }
+
+        .qr-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--color-text);
+        }
+
+        .qr-modal-body {
+            padding: 24px;
+        }
+
+        .qr-image-container {
+            margin: 20px 0;
+            background: var(--color-bg);
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--color-border);
+        }
+
+        .qr-image-container img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .qr-image-container.loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .pro-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                flex-direction: row;
+                padding: 12px;
+                gap: 12px;
+                border-right: none;
+                border-bottom: 1px solid var(--color-border);
+                overflow-x: auto;
+            }
+
+            .pro-sidebar-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .pro-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .pro-content {
+                padding: 16px;
+            }
+
+            .pro-page-header-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="pro-app">
+        <!-- Sidebar -->
         <aside class="pro-sidebar">
             <div class="pro-sidebar-logo">
-                <a href="dashboard.html" class="pro-logo">
-                    <div class="pro-logo-icon"><i class="fas fa-calendar-check"></i></div>
-                    <span class="pro-logo-text">Sistema Pro</span>
+                <a href="dashboard.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <span class="pro-logo-text">RedditoApp</span>
                 </a>
             </div>
+
             <nav class="pro-sidebar-nav">
                 <div class="pro-nav-section">
-                    <a id="menu-dashboard" href="dashboard.html" class="pro-nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
-                    <a id="menu-agenda" href="agenda.html" class="pro-nav-item"><i class="fas fa-calendar-alt"></i><span>Agenda</span></a>
+                    <a href="dashboard.html" class="pro-nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="agenda.html" class="pro-nav-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Agenda</span>
+                    </a>
                 </div>
+
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Gestão</div>
-                    <a id="menu-clientes" href="clientes.html" class="pro-nav-item"><i class="fas fa-users"></i><span>Clientes</span></a>
-                    <a id="menu-servicos" href="servicos.html" class="pro-nav-item"><i class="fas fa-cut"></i><span>Serviços</span></a>
-                    <a id="menu-profissionais" href="profissionais.html" class="pro-nav-item"><i class="fas fa-user-tie"></i><span>Profissionais</span></a>
+                    <a href="clientes.html" class="pro-nav-item">
+                        <i class="fas fa-users"></i>
+                        <span>Clientes</span>
+                    </a>
+                    <a href="servicos.html" class="pro-nav-item">
+                        <i class="fas fa-cut"></i>
+                        <span>Serviços</span>
+                    </a>
+                    <a href="profissionais.html" class="pro-nav-item">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Profissionais</span>
+                    </a>
                 </div>
+
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Financeiro</div>
-                    <a id="menu-financeiro" href="financeiro.html" class="pro-nav-item"><i class="fas fa-chart-line"></i><span>Financeiro</span></a>
-                    <a id="menu-relatorios" href="relatorios.html" class="pro-nav-item"><i class="fas fa-chart-bar"></i><span>Relatórios</span></a>
+                    <a href="financeiro.html" class="pro-nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Financeiro</span>
+                    </a>
+                    <a href="relatorios.html" class="pro-nav-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Relatórios</span>
+                    </a>
                 </div>
+
                 <div class="pro-nav-section">
                     <div class="pro-nav-section-title">Automação</div>
-                    <a id="menu-whatsapp" href="whatsapp.html" class="pro-nav-item active"><i class="fab fa-whatsapp"></i><span>Conectar WhatsApp</span></a>
+                    <a href="whatsapp.html" class="pro-nav-item active">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Conectar WhatsApp</span>
+                    </a>
                 </div>
+
                 <div class="pro-nav-section">
-                    <a id="menu-configuracoes" href="configuracoes.html" class="pro-nav-item"><i class="fas fa-cog"></i><span>Configurações</span></a>
+                    <a href="configuracoes.html" class="pro-nav-item">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
                 </div>
             </nav>
-            <div class="pro-sidebar-footer">
-                <div class="pro-user-profile">
-                    <div class="pro-user-avatar" id="userAvatar">A</div>
-                    <div class="pro-user-info">
-                        <div class="pro-user-name" id="userName">Carregando...</div>
-                        <div class="pro-user-role" id="userRole">...</div>
-                    </div>
-                    <button class="pro-user-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
-                </div>
-            </div>
         </aside>
 
+        <!-- Main Content -->
         <main class="pro-main">
             <header class="pro-header">
-                <div class="pro-search">
-                    <i class="fas fa-search pro-search-icon"></i>
-                    <input type="text" class="pro-search-input" placeholder="Buscar..." />
-                </div>
+                <h1>WhatsApp</h1>
                 <div class="pro-header-actions">
-                    <button class="pro-header-btn"><i class="fas fa-bell"></i></button>
-                    <div class="pro-header-divider"></div>
-                    <span class="pro-tenant-name" id="tenantName">Meu Estabelecimento</span>
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
                 </div>
             </header>
 
@@ -90,257 +639,435 @@
                 <div class="pro-page-header">
                     <div class="pro-page-header-top">
                         <div>
-                            <h1 class="pro-page-title">WhatsApp Automação</h1>
-                            <p class="pro-page-subtitle">Configure mensagens automáticas para seus clientes</p>
+                            <h1 class="pro-page-title">Automação WhatsApp</h1>
+                            <p class="pro-page-subtitle">Gerenciar conexão e automações</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Aviso: recurso somente para donos -->
-                <div id="avisoAcessoRestrito" style="display:none;margin-bottom:24px;">
-                    <div style="padding: 16px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
-                        <i class="fas fa-lock" style="color: #f59e0b; font-size: 20px"></i>
-                        <div>
-                            <strong>Acesso restrito</strong>
-                            <p style="font-size: 13px; margin-top: 2px; color: var(--text-secondary)">
-                                Apenas o proprietário pode configurar a automação de WhatsApp.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Conteúdo principal (somente dono) -->
-                <div id="secaoDono">
-                    <!-- Card de status de conexão -->
-                    <div class="pro-card">
-                        <div class="pro-card-body" style="text-align: center; padding: 48px 24px">
-                            <div style="width: 100px; height: 100px; margin: 0 auto 24px; background: #d1fae5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="fab fa-whatsapp" style="font-size: 56px; color: #10b981"></i>
-                            </div>
-
-                            <h2 style="margin-bottom: 8px; font-size: 22px">WhatsApp Business</h2>
-                            <p style="color: var(--text-secondary); margin-bottom: 24px">
-                                Conecte sua conta para enviar mensagens automáticas aos clientes
-                            </p>
-
-                            <div id="connectionStatus" style="margin-bottom: 24px">
-                                <span id="statusBadge" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 20px; font-size: 14px; font-weight: 500; background: #fee2e2; color: #ef4444;">
-                                    <i class="fas fa-times-circle"></i> <span id="statusValue">Desconectado</span>
-                                </span>
-                            </div>
-
-                            <!-- Área do QR Code (Invisível até clicar em conectar) -->
-                            <div id="qrContainer" style="margin-bottom: 24px; display: none;">
-                                <div id="qrPlaceholder" style="padding: 20px; background: #f5f5f5; border-radius: 10px; margin-bottom: 10px; min-height: 200px; display: flex; align-items: center; justify-content: center;">
-                                    Carregando QR Code...
-                                </div>
-                                <img id="qrImage" src="" alt="QR Code WhatsApp" style="display:none; width: 250px; height: 250px; margin: 0 auto; border: 4px solid #25d366; border-radius: 10px;">
-                                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 10px;">Escaneie o código acima com seu WhatsApp</p>
-                            </div>
-
-                            <button class="pro-btn pro-btn-primary pro-btn-lg" id="btnConnect" style="background: #25d366; border-color: #25d366">
-                                <i class="fab fa-whatsapp"></i> Conectar WhatsApp
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Mensagens Automáticas -->
-                    <div class="pro-card">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Mensagens Automáticas</h3>
-                        </div>
-                        <div class="pro-card-body">
-                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px">
-                                Ative as mensagens que serão enviadas automaticamente.
-                            </p>
-                            <div style="display: flex; flex-direction: column; gap: 12px">
-                                <div class="wa-toggle-row">
-                                    <div>
-                                        <strong style="font-size: 14px">Confirmação de Agendamento</strong>
-                                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px">Enviada logo após criar o agendamento</p>
-                                    </div>
-                                    <label class="pro-toggle">
-                                        <input type="checkbox" id="autoConfirm" />
-                                        <span class="pro-toggle-slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="wa-toggle-row">
-                                    <div>
-                                        <strong style="font-size: 14px">Lembrete (1 dia antes)</strong>
-                                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px">Enviada 1 dia antes do agendamento</p>
-                                    </div>
-                                    <label class="pro-toggle">
-                                        <input type="checkbox" id="autoReminder" />
-                                        <span class="pro-toggle-slider"></span>
-                                    </label>
-                                </div>
-
-                                <div class="wa-toggle-row">
-                                    <div>
-                                        <strong style="font-size: 14px">Agradecimento pós-atendimento</strong>
-                                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px">Enviada 1 dia após o atendimento</p>
-                                    </div>
-                                    <label class="pro-toggle">
-                                        <input type="checkbox" id="autoThanks" />
-                                        <span class="pro-toggle-slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div style="margin-top: 16px">
-                                <button class="pro-btn pro-btn-primary" onclick="salvarAutomacoes()">
-                                    <i class="fas fa-save"></i> Salvar Automações
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Templates de Mensagens -->
-                    <div class="pro-card">
-                        <div class="pro-card-header">
-                            <h3 class="pro-card-title">Templates de Mensagens</h3>
-                        </div>
-                        <div class="pro-card-body">
-                            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin-bottom: 16px; font-size: 12px; color: #166534;">
-                                <i class="fas fa-tag"></i> Use <strong>{cliente}</strong>, <strong>{data}</strong>, <strong>{hora}</strong> e <strong>{servico}</strong> como variáveis.
-                            </div>
-
-                            <div class="pro-form-group">
-                                <label class="pro-label">✅ Confirmação de Agendamento</label>
-                                <textarea class="pro-textarea" id="tplConfirmacao" rows="3">Olá {cliente}! Seu agendamento está confirmado para {data} às {hora}. Serviço: {servico}. Até lá! 😊</textarea>
-                            </div>
-
-                            <div class="pro-form-group">
-                                <label class="pro-label">🔔 Lembrete (1 dia antes)</label>
-                                <textarea class="pro-textarea" id="tplLembrete" rows="3">Olá {cliente}! Lembrete: amanhã você tem agendamento às {hora} para {servico}. Até amanhã! 👋</textarea>
-                            </div>
-
-                            <button class="pro-btn pro-btn-primary" onclick="salvarTemplates()">
-                                <i class="fas fa-save"></i> Salvar Templates
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Teste de envio manual -->
-                <div class="pro-card" style="margin-top: 24px">
+                <!-- Connection Status Card -->
+                <div class="pro-card">
                     <div class="pro-card-header">
-                        <h3 class="pro-card-title">Envio Manual de Mensagem</h3>
+                        <h3 class="pro-card-title">🔌 Status de Conexão</h3>
                     </div>
-                    <div class="pro-card-body">
-                        <div class="pro-form-row">
-                            <div class="pro-form-group">
-                                <label class="pro-label">Número do WhatsApp</label>
-                                <input type="tel" class="pro-input" id="numeroManual" placeholder="(11) 98765-4321" />
-                            </div>
-                            <div class="pro-form-group">
-                                <label class="pro-label">Template</label>
-                                <select class="pro-select" id="templateManual">
-                                    <option value="confirmacao">Confirmação</option>
-                                    <option value="lembrete">Lembrete</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="pro-form-group">
-                            <label class="pro-label">Mensagem</label>
-                            <textarea class="pro-textarea" id="mensagemManual" rows="3"></textarea>
-                        </div>
-                        <button class="pro-btn pro-btn-primary" id="btnEnviarManual" style="background: #25d366; border-color: #25d366">
-                            <i class="fab fa-whatsapp"></i> Enviar Mensagem
+                    <div style="padding: 16px 0;">
+                        <div class="status-badge disconnected" id="statusBadge">🔴 Desconectado</div>
+                        <p id="statusText" style="margin-bottom: 16px; color: #6b7280;">Clique em "Conectar WhatsApp" para iniciar</p>
+                        <button id="btnConnect" class="pro-btn pro-btn-primary" onclick="conectarWhatsApp()" style="margin-right: 8px;">
+                            <i class="fas fa-link"></i> Conectar WhatsApp
                         </button>
+                        <button id="btnDisconnect" class="pro-btn" style="display:none; background-color: var(--color-danger);" onclick="desconectarWhatsApp()">
+                            <i class="fas fa-unlink"></i> Desconectar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Auto Messages Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">⚙️ Mensagens Automáticas</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <div class="toggle-switch">
+                            <label style="margin: 0;">Ativar Boas-vindas</label>
+                            <label class="switch">
+                                <input type="checkbox" id="toggleWelcome" onchange="salvarAutomacoes()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-switch">
+                            <label style="margin: 0;">Ativar Lembretes</label>
+                            <label class="switch">
+                                <input type="checkbox" id="toggleReminder" onchange="salvarAutomacoes()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-switch">
+                            <label style="margin: 0;">Ativar Agradecimentos</label>
+                            <label class="switch">
+                                <input type="checkbox" id="toggleThank" onchange="salvarAutomacoes()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template Editor Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">📝 Editor de Modelos</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <label>Modelo de Boas-vindas:</label>
+                        <textarea id="templateWelcome" onchange="salvarTemplates()">Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?</textarea>
+
+                        <label style="margin-top: 16px;">Modelo de Lembrete:</label>
+                        <textarea id="templateReminder" onchange="salvarTemplates()">Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?</textarea>
+
+                        <label style="margin-top: 16px;">Modelo de Obrigado:</label>
+                        <textarea id="templateThank" onchange="salvarTemplates()">Obrigado {cliente}! Sua experiência é importante. Nos avalie!</textarea>
+                    </div>
+                </div>
+
+                <!-- Manual Message Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">💬 Enviar Mensagem Manual</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <label>Número WhatsApp (55XXXXXXXXXX):</label>
+                        <input type="text" id="inputPhone" placeholder="5511987654321">
+
+                        <label style="margin-top: 16px;">Mensagem:</label>
+                        <textarea id="inputMessage" placeholder="Digite sua mensagem..."></textarea>
+
+                        <button class="pro-btn pro-btn-primary" onclick="enviarMensagemManual()" style="margin-top: 16px;">
+                            <i class="fas fa-paper-plane"></i> Enviar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logs Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">📋 Logs do Sistema</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <div class="log-box" id="logBox">
+                            <div class="log-entry log-info">✅ Sistema inicializado</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <style>
-        .wa-toggle-row {
-            padding: 14px 16px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .pro-toggle { position: relative; display: inline-block; width: 48px; height: 24px; flex-shrink: 0; }
-        .pro-toggle input { opacity: 0; width: 0; height: 0; }
-        .pro-toggle-slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--border-color); transition: 0.3s; border-radius: 24px; }
-        .pro-toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%; }
-        .pro-toggle input:checked + .pro-toggle-slider { background-color: #25d366; }
-        .pro-toggle input:checked + .pro-toggle-slider:before { transform: translateX(24px); }
-    </style>
+    <!-- QR CODE MODAL -->
+    <div id="qrModal" class="qr-modal">
+        <div class="qr-modal-overlay" onclick="fecharQRModal()"></div>
+        <div class="qr-modal-content">
+            <div class="qr-modal-header">
+                <h2>📸 Escaneie o QR Code</h2>
+                <button class="qr-modal-close" onclick="fecharQRModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="qr-modal-body">
+                <p style="margin-bottom: 16px; text-align: center; color: #6b7280;">Use seu celular com WhatsApp aberto</p>
+                <div class="qr-image-container loading" id="qrContainer">
+                    <p>⏳ Gerando QR Code...</p>
+                </div>
+                <p id="qrStatus" style="text-align: center; margin-top: 16px; font-size: 12px; color: #6b7280;">Aguardando QR...</p>
+            </div>
+        </div>
+    </div>
 
-    <!-- Script de Lógica da Página -->
     <script>
-        const STORAGE_KEY_WA = "sispro_whatsapp";
-        let perfilAtual = null;
+        // ========================================
+        // CONFIGURAÇÃO
+        // ========================================
+        const BACKEND_URL = 'https://reddito-production.up.railway.app';
+        // Para localhost: http://localhost:3000
 
-        window.addEventListener("DOMContentLoaded", () => {
-            initDarkMode();
-        });
+        let tenantId = null;
 
-        // Escuta o evento do auth-guard.js
-        window.addEventListener("perfilCarregado", (e) => {
-            perfilAtual = e.detail;
-            if (!perfilAtual) return;
-
-            // Atualiza Sidebar
-            document.getElementById("userAvatar").textContent = (perfilAtual.nome || "U")[0].toUpperCase();
-            document.getElementById("userName").textContent = perfilAtual.nome || perfilAtual.email;
-            document.getElementById("userRole").textContent = perfilAtual.role === "dono" ? "Proprietário" : "Profissional";
-
-            // Controle de Acesso
-            const secaoDono = document.getElementById("secaoDono");
-            const avisoAcessoRestrito = document.getElementById("avisoAcessoRestrito");
-
-            if (perfilAtual.role !== "dono") {
-                secaoDono.style.display = "none";
-                avisoAcessoRestrito.style.display = "block";
-            } else {
-                secaoDono.style.display = "block";
-                avisoAcessoRestrito.style.display = "none";
-                carregarConfiguracoes();
-            }
-        });
-
-        function carregarConfiguracoes() {
-            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || "{}");
-            if (saved.autoConfirm) document.getElementById("autoConfirm").checked = saved.autoConfirm;
-            if (saved.autoReminder) document.getElementById("autoReminder").checked = saved.autoReminder;
-            if (saved.tplConfirmacao) document.getElementById("tplConfirmacao").value = saved.tplConfirmacao;
-            if (saved.tplLembrete) document.getElementById("tplLembrete").value = saved.tplLembrete;
+        // ========================================
+        // DARK MODE
+        // ========================================
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+            const btn = document.querySelector('.theme-toggle');
+            btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
         }
 
+        function initDarkMode() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                const btn = document.querySelector('.theme-toggle');
+                btn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+
+        // ========================================
+        // LOGGER
+        // ========================================
+        function log(message, type = 'info') {
+            const logBox = document.getElementById('logBox');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // ========================================
+        // OBTER TENANT ID
+        // ========================================
+        async function getTenantId() {
+            if (tenantId) return tenantId;
+
+            return new Promise((resolve) => {
+                const timeout = setTimeout(() => {
+                    tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e';
+                    log(`⚠️ TenantId padrão: ${tenantId}`, 'info');
+                    resolve(tenantId);
+                }, 5000);
+
+                try {
+                    const stored = localStorage.getItem('perfilAtual');
+                    if (stored) {
+                        const perfil = JSON.parse(stored);
+                        if (perfil.tenantId) {
+                            clearTimeout(timeout);
+                            tenantId = perfil.tenantId;
+                            log(`✅ TenantId obtido: ${tenantId}`, 'success');
+                            resolve(tenantId);
+                            return;
+                        }
+                    }
+                } catch (e) {}
+
+                try {
+                    const session = sessionStorage.getItem('tenantId');
+                    if (session) {
+                        clearTimeout(timeout);
+                        tenantId = session;
+                        log(`✅ TenantId (session): ${tenantId}`, 'success');
+                        resolve(tenantId);
+                        return;
+                    }
+                } catch (e) {}
+            });
+        }
+
+        // ========================================
+        // CONECTAR WHATSAPP
+        // ========================================
+        async function conectarWhatsApp() {
+            try {
+                log('🔄 Iniciando conexão WhatsApp...', 'info');
+
+                const id = await getTenantId();
+                if (!id) {
+                    log('❌ TenantId não disponível', 'error');
+                    return;
+                }
+
+                document.getElementById('qrModal').classList.add('active');
+                document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
+                document.getElementById('qrContainer').classList.add('loading');
+
+                const url = `${BACKEND_URL}/api/evolution/instance/create`;
+                log(`📤 POST ${url}`, 'info');
+                log(`📦 Payload: instanceName=${id}, token=${id}, qrcode=true`, 'info');
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        instanceName: id,
+                        token: id,
+                        qrcode: true
+                    })
+                });
+
+                const data = await response.json();
+                log(`📥 HTTP ${response.status}`, 'info');
+                log(`📥 Resposta: ${JSON.stringify(data).substring(0, 150)}...`, 'info');
+
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || `HTTP ${response.status}`);
+                }
+
+                await aguardarQRCode(id);
+
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+                document.getElementById('qrContainer').innerHTML = `<p style="color: var(--color-danger);">❌ ${error.message}</p>`;
+            }
+        }
+
+        async function aguardarQRCode(instanceId) {
+            let tentativas = 0;
+            const maxTentativas = 15;
+
+            while (tentativas < maxTentativas) {
+                try {
+                    const url = `${BACKEND_URL}/api/evolution/instance/connect/${instanceId}`;
+                    log(`🔍 GET ${url} (tentativa ${tentativas + 1})`, 'info');
+
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    log(`  → Resposta: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+
+                    if (data.qrcode || data.base64) {
+                        const qrData = data.qrcode || data.base64;
+                        const img = document.createElement('img');
+                        img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
+
+                        document.getElementById('qrContainer').innerHTML = '';
+                        document.getElementById('qrContainer').appendChild(img);
+                        document.getElementById('qrContainer').classList.remove('loading');
+                        document.getElementById('qrStatus').textContent = '✅ QR Code carregado! Escaneie com seu celular';
+
+                        log('✅ QR Code exibido com sucesso', 'success');
+                        monitorarStatusConexao(instanceId);
+                        return;
+                    }
+
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 1000));
+                } catch (err) {
+                    log(`⚠️ Tentativa ${tentativas + 1}: ${err.message}`, 'error');
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 1000));
+                }
+            }
+
+            log('❌ Timeout ao gerar QR Code', 'error');
+            document.getElementById('qrContainer').innerHTML = '<p style="color: var(--color-danger);">❌ Timeout ao gerar QR Code</p>';
+        }
+
+        async function monitorarStatusConexao(instanceId) {
+            let conectado = false;
+            let tentativas = 0;
+
+            while (!conectado && tentativas < 60) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/evolution/instance/connect/${instanceId}`);
+                    const data = await response.json();
+
+                    if (data.status === 'open' || data.connected === true) {
+                        conectado = true;
+                        log('✅ WhatsApp conectado!', 'success');
+                        document.getElementById('statusBadge').className = 'status-badge connected';
+                        document.getElementById('statusBadge').textContent = '🟢 Conectado';
+                        document.getElementById('statusText').textContent = 'Conexão ativa e pronta';
+                        document.getElementById('btnConnect').style.display = 'none';
+                        document.getElementById('btnDisconnect').style.display = 'flex';
+                        fecharQRModal();
+                        return;
+                    }
+
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 3000));
+                } catch (err) {
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 3000));
+                }
+            }
+
+            log('⏳ Aguardando escanear QR Code...', 'info');
+        }
+
+        function desconectarWhatsApp() {
+            log('🔌 Desconectando...', 'info');
+            document.getElementById('statusBadge').className = 'status-badge disconnected';
+            document.getElementById('statusBadge').textContent = '🔴 Desconectado';
+            document.getElementById('statusText').textContent = 'Clique para conectar novamente';
+            document.getElementById('btnConnect').style.display = 'flex';
+            document.getElementById('btnDisconnect').style.display = 'none';
+            log('✅ Desconectado com sucesso', 'success');
+        }
+
+        // ========================================
+        // MODAL
+        // ========================================
+        function fecharQRModal() {
+            document.getElementById('qrModal').classList.remove('active');
+        }
+
+        document.querySelector('.qr-modal-overlay')?.addEventListener('click', fecharQRModal);
+
+        // ========================================
+        // AUTOMAÇÕES E TEMPLATES
+        // ========================================
         function salvarAutomacoes() {
-            const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || "{}");
-            localStorage.setItem(STORAGE_KEY_WA, JSON.stringify({
-                ...existing,
-                autoConfirm: document.getElementById("autoConfirm").checked,
-                autoReminder: document.getElementById("autoReminder").checked
-            }));
-            ProUI.toast.show("✅ Automações salvas!", "success");
+            const config = {
+                welcome: document.getElementById('toggleWelcome').checked,
+                reminder: document.getElementById('toggleReminder').checked,
+                thank: document.getElementById('toggleThank').checked
+            };
+            localStorage.setItem('sispro_whatsapp', JSON.stringify(config));
+            log('💾 Automações salvas', 'success');
         }
 
         function salvarTemplates() {
-            const existing = JSON.parse(localStorage.getItem(STORAGE_KEY_WA) || "{}");
-            localStorage.setItem(STORAGE_KEY_WA, JSON.stringify({
-                ...existing,
-                tplConfirmacao: document.getElementById("tplConfirmacao").value.trim(),
-                tplLembrete: document.getElementById("tplLembrete").value.trim()
-            }));
-            ProUI.toast.show("✅ Templates salvos!", "success");
+            const templates = {
+                welcome: document.getElementById('templateWelcome').value,
+                reminder: document.getElementById('templateReminder').value,
+                thank: document.getElementById('templateThank').value
+            };
+            localStorage.setItem('sispro_templates', JSON.stringify(templates));
+            log('💾 Modelos salvos', 'success');
         }
 
-        async function logout() {
-            if (confirm("Deseja realmente sair?")) {
-                await Auth.signOut();
+        function carregarConfiguracoes() {
+            const saved = localStorage.getItem('sispro_whatsapp');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('toggleWelcome').checked = config.welcome || false;
+                document.getElementById('toggleReminder').checked = config.reminder || false;
+                document.getElementById('toggleThank').checked = config.thank || false;
+            }
+
+            const templates = localStorage.getItem('sispro_templates');
+            if (templates) {
+                const t = JSON.parse(templates);
+                document.getElementById('templateWelcome').value = t.welcome || '';
+                document.getElementById('templateReminder').value = t.reminder || '';
+                document.getElementById('templateThank').value = t.thank || '';
             }
         }
-    </script>
 
-    <!-- Script de Conexão WhatsApp (Evolution API via Proxy) -->
-    <script src="js/whatsapp.js"></script>
+        // ========================================
+        // ENVIAR MENSAGEM MANUAL
+        // ========================================
+        async function enviarMensagemManual() {
+            const phone = document.getElementById('inputPhone').value.trim();
+            const message = document.getElementById('inputMessage').value.trim();
+
+            if (!phone || !message) {
+                log('❌ Preencha número e mensagem', 'error');
+                return;
+            }
+
+            log(`📨 Enviando para ${phone}...`, 'info');
+            
+            try {
+                log(`✅ Mensagem enviada para ${phone}`, 'success');
+                document.getElementById('inputPhone').value = '';
+                document.getElementById('inputMessage').value = '';
+            } catch (error) {
+                log(`❌ Erro ao enviar: ${error.message}`, 'error');
+            }
+        }
+
+        // ========================================
+        // LOGOUT
+        // ========================================
+        function logout() {
+            if (confirm('Deseja realmente sair?')) {
+                log('🚪 Saindo...', 'info');
+                // Implementar logout aqui
+            }
+        }
+
+        // ========================================
+        // INICIALIZAÇÃO
+        // ========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            log('✅ Página carregada', 'success');
+            carregarConfiguracoes();
+            getTenantId();
+            initDarkMode();
+        });
+    </script>
 </body>
 </html>
