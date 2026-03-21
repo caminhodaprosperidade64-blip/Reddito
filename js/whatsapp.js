@@ -6,6 +6,10 @@
 const USE_DIRECT_EVOLUTION_FALLBACK = false; // deixar false em produção
 const DIRECT_EVOLUTION_URL = "https://evolution-api-production-692fd.up.railway.app"; // sua URL evolution (apenas teste)
 
+// === ALTERE AQUI SE MUDAR O HOST DO BACKEND (Railway) ===
+const PROXY_BASE = "https://reddito-production.up.railway.app";
+// =======================================================
+
 // utilitários DOM
 function $id(id){ return document.getElementById(id); }
 
@@ -137,7 +141,7 @@ async function startConnectFlow() {
 
     // 1) Tenta usar o proxy backend seguro (recomendado)
     try {
-      const proxyCreate = await fetchJson(`/api/evolution/instance/create`, {
+      const proxyCreate = await fetchJson(`${PROXY_BASE}/api/evolution/instance/create`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ instanceName: tenantId, token: tenantId, qrcode: true })
@@ -152,14 +156,14 @@ async function startConnectFlow() {
       if (logText) logText.textContent = 'Instância solicitada ao proxy. Aguardando QR...';
 
       // permitir que o backend gere o QR e retorne (alguns backends geram async, então podemos tentar 2-3x)
-      let proxyConnect = await fetchJson(`/api/evolution/instance/connect/${tenantId}`, { method: 'GET' });
+      let proxyConnect = await fetchJson(`${PROXY_BASE}/api/evolution/instance/connect/${tenantId}`, { method: 'GET' });
 
       // se o proxy retornar um status indicando que ainda não tem QR, podemos fazer retry curto
       let retries = 0;
       while (retries < 4 && !(proxyConnect && (proxyConnect.base64 || proxyConnect.qrcode))) {
         retries++;
         await new Promise(r => setTimeout(r, 800)); // aguarda 800ms
-        proxyConnect = await fetchJson(`/api/evolution/instance/connect/${tenantId}`, { method: 'GET' });
+        proxyConnect = await fetchJson(`${PROXY_BASE}/api/evolution/instance/connect/${tenantId}`, { method: 'GET' });
       }
 
       const base64FromProxy = (proxyConnect && (proxyConnect.base64 || proxyConnect.qrcode)) ? (proxyConnect.base64 || proxyConnect.qrcode) : null;
