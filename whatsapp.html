@@ -1,1342 +1,1083 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reddito - Automação WhatsApp</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --color-primary: #667eea;
-      --color-secondary: #764ba2;
-      --color-success: #10b981;
-      --color-danger: #ef4444;
-      --color-warning: #f59e0b;
-      --color-info: #3b82f6;
-      --color-light: #f3f4f6;
-      --color-dark: #1f2937;
-      --color-border: #e5e7eb;
-      --color-text: #374151;
-      --color-text-light: #6b7280;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-      min-height: 100vh;
-      color: var(--color-text);
-      overflow: hidden;
-    }
-
-    .main-container {
-      display: flex;
-      width: 100%;
-      height: 100vh;
-    }
-
-    /* ========================================
-       SIDEBAR
-       ======================================== */
-    .sidebar {
-      width: 250px;
-      background: white;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow-y: auto;
-      position: sticky;
-      top: 0;
-    }
-
-    .sidebar-logo {
-      padding: 24px 20px;
-      border-bottom: 1px solid var(--color-border);
-      text-align: center;
-    }
-
-    .sidebar-logo h1 {
-      font-size: 24px;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .sidebar-nav {
-      flex: 1;
-      list-style: none;
-      padding: 12px 0;
-      overflow-y: auto;
-    }
-
-    .sidebar-nav li {
-      padding: 12px 16px;
-      margin: 0 8px;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.3s ease;
-      color: var(--color-text);
-      font-weight: 500;
-      font-size: 14px;
-      border-left: 4px solid transparent;
-    }
-
-    .sidebar-nav li:hover {
-      background: var(--color-light);
-      border-left-color: var(--color-primary);
-    }
-
-    .sidebar-nav li.active {
-      background: var(--color-light);
-      border-left-color: var(--color-primary);
-      color: var(--color-primary);
-    }
-
-    .sidebar-footer {
-      padding: 16px;
-      border-top: 1px solid var(--color-border);
-    }
-
-    .theme-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      background: var(--color-light);
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
-      transition: all 0.3s ease;
-    }
-
-    .theme-toggle:hover {
-      background: var(--color-border);
-    }
-
-    /* ========================================
-       CONTENT AREA
-       ======================================== */
-    .content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      background: var(--color-light);
-      overflow: hidden;
-    }
-
-    .header {
-      padding: 24px 32px;
-      background: white;
-      border-bottom: 1px solid var(--color-border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--color-dark);
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .user-menu {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: var(--color-light);
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .user-menu:hover {
-      background: var(--color-border);
-    }
-
-    .user-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .sections-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 32px;
-    }
-
-    .section {
-      display: none;
-    }
-
-    .section.active {
-      display: block;
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* ========================================
-       CARDS
-       ======================================== */
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-      border: 1px solid var(--color-border);
-    }
-
-    .card:hover {
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-      border-color: var(--color-primary);
-    }
-
-    .card h2 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: var(--color-dark);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .card p {
-      font-size: 14px;
-      color: var(--color-text-light);
-      line-height: 1.6;
-    }
-
-    /* ========================================
-       STATUS BADGE
-       ======================================== */
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.7;
-      }
-    }
-
-    .status-badge.connected {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    .status-badge.disconnected {
-      background: #fee2e2;
-      color: #7f1d1d;
-    }
-
-    .status-badge.loading {
-      background: #dbeafe;
-      color: #0c2d6b;
-    }
-
-    .status-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      animation: blink 1.5s infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
-    }
-
-    .status-badge.connected .status-indicator {
-      background: var(--color-success);
-    }
-
-    .status-badge.disconnected .status-indicator {
-      background: var(--color-danger);
-    }
-
-    .status-badge.loading .status-indicator {
-      background: var(--color-info);
-    }
-
-    /* ========================================
-       BUTTONS
-       ======================================== */
-    button {
-      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      transition: all 0.3s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    button.btn-secondary {
-      background: var(--color-light);
-      color: var(--color-text);
-      border: 1px solid var(--color-border);
-    }
-
-    button.btn-secondary:hover {
-      background: var(--color-border);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    button.btn-danger {
-      background: linear-gradient(135deg, var(--color-danger), #dc2626);
-    }
-
-    button.btn-danger:hover {
-      box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
-    }
-
-    .button-group {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin: 16px 0;
-    }
-
-    /* ========================================
-       TOGGLE SWITCH
-       ======================================== */
-    .toggle-group {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px;
-      background: var(--color-light);
-      border-radius: 8px;
-      margin-bottom: 12px;
-      border: 1px solid var(--color-border);
-    }
-
-    .toggle-label {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--color-text);
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 24px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 24px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: var(--color-primary);
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
-
-    /* ========================================
-       FORMS
-       ======================================== */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--color-text);
-      margin-bottom: 8px;
-    }
-
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--color-border);
-      border-radius: 8px;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      color: var(--color-text);
-      transition: all 0.3s ease;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    .form-group textarea {
-      resize: vertical;
-      min-height: 100px;
-      font-family: 'Courier New', monospace;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .input-group input {
-      flex: 1;
-    }
-
-    /* ========================================
-       LOG BOX
-       ======================================== */
-    .log-box {
-      background: #1f2937;
-      border: 1px solid #374151;
-      border-radius: 8px;
-      padding: 16px;
-      margin-top: 16px;
-      max-height: 300px;
-      overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      color: #e5e7eb;
-      line-height: 1.5;
-    }
-
-    .log-entry {
-      padding: 4px 0;
-      border-bottom: 1px solid #374151;
-    }
-
-    .log-entry:last-child {
-      border-bottom: none;
-    }
-
-    .log-entry.success {
-      color: #10b981;
-    }
-
-    .log-entry.error {
-      color: #ef4444;
-    }
-
-    .log-entry.info {
-      color: #3b82f6;
-    }
-
-    .log-entry.warning {
-      color: #f59e0b;
-    }
-
-    /* ========================================
-       QR MODAL
-       ======================================== */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      animation: fadeIn 0.3s ease;
-    }
-
-    .modal.active {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-content {
-      background: white;
-      padding: 32px;
-      border-radius: 16px;
-      width: 90%;
-      max-width: 450px;
-      text-align: center;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-      animation: slideDown 0.3s ease;
-    }
-
-    @keyframes slideDown {
-      from {
-        transform: translateY(-50px);
-        opacity: 0;
-      }
-      to {
-        transform: translateY(0);
-        opacity: 1;
-      }
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-
-    .modal-header h2 {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--color-dark);
-      flex: 1;
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: var(--color-text-light);
-      cursor: pointer;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.3s ease;
-    }
-
-    .modal-close:hover {
-      background: var(--color-light);
-      color: var(--color-dark);
-      transform: none;
-    }
-
-    .qr-container {
-      background: var(--color-light);
-      padding: 24px;
-      border-radius: 12px;
-      min-height: 300px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 24px;
-      border: 2px dashed var(--color-border);
-    }
-
-    .qr-container img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-    }
-
-    .qr-container.loading {
-      animation: pulse 1.5s infinite;
-    }
-
-    .qr-status {
-      font-size: 14px;
-      color: var(--color-text-light);
-      margin-top: 12px;
-    }
-
-    /* ========================================
-       RESPONSIVE
-       ======================================== */
-    @media (max-width: 768px) {
-      .main-container {
-        flex-direction: column;
-      }
-
-      .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-        border-bottom: 1px solid var(--color-border);
-      }
-
-      .sidebar-nav {
-        display: flex;
-        overflow-x: auto;
-        padding: 8px 4px;
-        gap: 4px;
-      }
-
-      .sidebar-nav li {
-        white-space: nowrap;
-        flex: 0 0 auto;
-      }
-
-      .content {
-        height: auto;
-      }
-
-      .sections-container {
-        padding: 16px;
-      }
-
-      .header {
-        flex-direction: column;
-        gap: 16px;
-        padding: 16px;
-      }
-
-      .header h1 {
-        font-size: 20px;
-      }
-
-      .modal-content {
-        width: 95%;
-        padding: 20px;
-      }
-
-      .input-group {
-        flex-direction: column;
-      }
-    }
-
-    /* ========================================
-       DARK MODE (FUTURE)
-       ======================================== */
-    body.dark-mode {
-      background: linear-gradient(135deg, #1f2937, #111827);
-    }
-
-    body.dark-mode .sidebar {
-      background: #111827;
-      border-right: 1px solid #374151;
-    }
-
-    body.dark-mode .content {
-      background: #0f172a;
-    }
-
-    body.dark-mode .card {
-      background: #1f2937;
-      border-color: #374151;
-    }
-
-    body.dark-mode .header {
-      background: #111827;
-      border-bottom-color: #374151;
-    }
-
-    body.dark-mode .header h1 {
-      color: white;
-    }
-
-    body.dark-mode .form-group input,
-    body.dark-mode .form-group textarea,
-    body.dark-mode .form-group select {
-      background: #111827;
-      border-color: #374151;
-      color: white;
-    }
-
-    body.dark-mode .toggle-group {
-      background: #111827;
-      border-color: #374151;
-    }
-
-    body.dark-mode .modal-content {
-      background: #1f2937;
-    }
-
-    body.dark-mode .modal-header h2 {
-      color: white;
-    }
-
-    body.dark-mode .qr-container {
-      background: #111827;
-      border-color: #374151;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp - RedditoApp</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --color-bg: #ffffff;
+            --color-text: #1f2937;
+            --color-border: #e5e7eb;
+            --color-card: #f9fafb;
+            --color-primary: #667eea;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #fbbf24;
+            --color-secondary: #764ba2;
+        }
+
+        body.dark-mode {
+            --color-bg: #0f172a;
+            --color-text: #f1f5f9;
+            --color-border: #334155;
+            --color-card: #1e293b;
+            --color-primary: #667eea;
+            --color-success: #10b981;
+            --color-danger: #ef4444;
+            --color-warning: #fbbf24;
+            --color-secondary: #764ba2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .pro-app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .pro-sidebar {
+            width: 260px;
+            background-color: var(--color-card);
+            border-right: 1px solid var(--color-border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            overflow-y: auto;
+        }
+
+        .pro-sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .pro-sidebar-logo img {
+            height: 48px;
+            width: auto;
+            border-radius: 8px;
+        }
+
+        .pro-logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .pro-sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pro-nav-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .pro-nav-section-title {
+            padding: 0 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+
+        .pro-nav-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            color: var(--color-text);
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .pro-nav-item:hover {
+            background-color: var(--color-border);
+            transform: translateX(4px);
+        }
+
+        .pro-nav-item.active {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .pro-nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* ===== MAIN ===== */
+        .pro-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .pro-header {
+            background-color: var(--color-card);
+            border-bottom: 1px solid var(--color-border);
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pro-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .pro-header-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--color-border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--color-text);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--color-border);
+        }
+
+        .logout-btn {
+            background-color: var(--color-danger);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        .pro-content {
+            padding: 32px;
+        }
+
+        .pro-page-header {
+            margin-bottom: 32px;
+        }
+
+        .pro-page-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .pro-page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+
+        .pro-page-subtitle {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .pro-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pro-btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .pro-btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        /* ===== CARDS ===== */
+        .pro-card {
+            background-color: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+            margin-bottom: 24px;
+        }
+
+        .pro-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .pro-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .pro-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+
+        /* ===== STATUS BADGE ===== */
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-badge.connected {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.disconnected {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.loading {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* ===== TOGGLE SWITCH ===== */
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--color-primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* ===== FORM ELEMENTS ===== */
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 12px 0 6px 0;
+            text-transform: uppercase;
+            color: #6b7280;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            margin: 8px 0;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* ===== LOG BOX ===== */
+        .log-box {
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--color-text);
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-success {
+            color: var(--color-success);
+        }
+
+        .log-error {
+            color: var(--color-danger);
+        }
+
+        .log-info {
+            color: #3b82f6;
+        }
+
+        /* ===== QR MODAL ===== */
+        .qr-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-modal.active {
+            display: flex;
+        }
+
+        .qr-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .qr-modal-content {
+            position: relative;
+            background-color: var(--color-card);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--color-text);
+        }
+
+        .qr-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--color-text);
+        }
+
+        .qr-modal-body {
+            padding: 24px;
+        }
+
+        .qr-image-container {
+            margin: 20px 0;
+            background: var(--color-bg);
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--color-border);
+        }
+
+        .qr-image-container img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .qr-image-container.loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .pro-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                flex-direction: row;
+                padding: 12px;
+                gap: 12px;
+                border-right: none;
+                border-bottom: 1px solid var(--color-border);
+                overflow-x: auto;
+            }
+
+            .pro-sidebar-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .pro-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .pro-content {
+                padding: 16px;
+            }
+
+            .pro-page-header-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="main-container">
-    <!-- ========================================
-         SIDEBAR
-         ======================================== -->
-    <div class="sidebar">
-      <div class="sidebar-logo">
-        <h1>🚀 Reddito</h1>
-      </div>
+    <div class="pro-app">
+        <!-- Sidebar -->
+        <aside class="pro-sidebar">
+            <div class="pro-sidebar-logo">
+                <a href="dashboard.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <span class="pro-logo-text">RedditoApp</span>
+                </a>
+            </div>
 
-      <ul class="sidebar-nav" id="sidebarNav">
-        <li data-section="whatsapp" class="nav-item active">📱 WhatsApp</li>
-        <li data-section="dashboard" class="nav-item">📊 Dashboard</li>
-        <li data-section="agenda" class="nav-item">📅 Agenda</li>
-        <li data-section="clientes" class="nav-item">👥 Clientes</li>
-        <li data-section="servicos" class="nav-item">🛠️ Serviços</li>
-        <li data-section="financeiro" class="nav-item">💰 Financeiro</li>
-        <li data-section="config" class="nav-item">⚙️ Configurações</li>
-      </ul>
+            <nav class="pro-sidebar-nav">
+                <div class="pro-nav-section">
+                    <a href="dashboard.html" class="pro-nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="agenda.html" class="pro-nav-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Agenda</span>
+                    </a>
+                </div>
 
-      <div class="sidebar-footer">
-        <div class="theme-toggle" id="themeToggle">
-          <span>🌙 Tema</span>
-          <span id="themeIcon">🌙</span>
-        </div>
-      </div>
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">Gestão</div>
+                    <a href="clientes.html" class="pro-nav-item">
+                        <i class="fas fa-users"></i>
+                        <span>Clientes</span>
+                    </a>
+                    <a href="servicos.html" class="pro-nav-item">
+                        <i class="fas fa-cut"></i>
+                        <span>Serviços</span>
+                    </a>
+                    <a href="profissionais.html" class="pro-nav-item">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Profissionais</span>
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">Financeiro</div>
+                    <a href="financeiro.html" class="pro-nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Financeiro</span>
+                    </a>
+                    <a href="relatorios.html" class="pro-nav-item">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Relatórios</span>
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <div class="pro-nav-section-title">Automação</div>
+                    <a href="whatsapp.html" class="pro-nav-item active">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>Conectar WhatsApp</span>
+                    </a>
+                </div>
+
+                <div class="pro-nav-section">
+                    <a href="configuracoes.html" class="pro-nav-item">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="pro-main">
+            <header class="pro-header">
+                <h1>WhatsApp</h1>
+                <div class="pro-header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
+            </header>
+
+            <div class="pro-content">
+                <div class="pro-page-header">
+                    <div class="pro-page-header-top">
+                        <div>
+                            <h1 class="pro-page-title">Automação WhatsApp</h1>
+                            <p class="pro-page-subtitle">Gerenciar conexão e automações</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connection Status Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">🔌 Status de Conexão</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <div class="status-badge disconnected" id="statusBadge">🔴 Desconectado</div>
+                        <p id="statusText" style="margin-bottom: 16px; color: #6b7280;">Clique em "Conectar WhatsApp" para iniciar</p>
+                        <button id="btnConnect" class="pro-btn pro-btn-primary" onclick="conectarWhatsApp()" style="margin-right: 8px;">
+                            <i class="fas fa-link"></i> Conectar WhatsApp
+                        </button>
+                        <button id="btnDisconnect" class="pro-btn" style="display:none; background-color: var(--color-danger);" onclick="desconectarWhatsApp()">
+                            <i class="fas fa-unlink"></i> Desconectar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Auto Messages Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">⚙️ Mensagens Automáticas</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <div class="toggle-switch">
+                            <label style="margin: 0;">Ativar Boas-vindas</label>
+                            <label class="switch">
+                                <input type="checkbox" id="toggleWelcome" onchange="salvarAutomacoes()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-switch">
+                            <label style="margin: 0;">Ativar Lembretes</label>
+                            <label class="switch">
+                                <input type="checkbox" id="toggleReminder" onchange="salvarAutomacoes()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-switch">
+                            <label style="margin: 0;">Ativar Agradecimentos</label>
+                            <label class="switch">
+                                <input type="checkbox" id="toggleThank" onchange="salvarAutomacoes()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template Editor Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">📝 Editor de Modelos</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <label>Modelo de Boas-vindas:</label>
+                        <textarea id="templateWelcome" onchange="salvarTemplates()">Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?</textarea>
+
+                        <label style="margin-top: 16px;">Modelo de Lembrete:</label>
+                        <textarea id="templateReminder" onchange="salvarTemplates()">Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?</textarea>
+
+                        <label style="margin-top: 16px;">Modelo de Obrigado:</label>
+                        <textarea id="templateThank" onchange="salvarTemplates()">Obrigado {cliente}! Sua experiência é importante. Nos avalie!</textarea>
+                    </div>
+                </div>
+
+                <!-- Manual Message Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">💬 Enviar Mensagem Manual</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <label>Número WhatsApp (55XXXXXXXXXX):</label>
+                        <input type="text" id="inputPhone" placeholder="5511987654321">
+
+                        <label style="margin-top: 16px;">Mensagem:</label>
+                        <textarea id="inputMessage" placeholder="Digite sua mensagem..."></textarea>
+
+                        <button class="pro-btn pro-btn-primary" onclick="enviarMensagemManual()" style="margin-top: 16px;">
+                            <i class="fas fa-paper-plane"></i> Enviar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logs Card -->
+                <div class="pro-card">
+                    <div class="pro-card-header">
+                        <h3 class="pro-card-title">📋 Logs do Sistema</h3>
+                    </div>
+                    <div style="padding: 16px 0;">
+                        <div class="log-box" id="logBox">
+                            <div class="log-entry log-info">✅ Sistema inicializado</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <!-- ========================================
-         CONTENT AREA
-         ======================================== -->
-    <div class="content">
-      <div class="header">
-        <h1 id="pageTitle">📱 Automação WhatsApp</h1>
-        <div class="header-actions">
-          <div class="user-menu" onclick="logout()">
-            <div class="user-avatar">👤</div>
-            <span>Sair</span>
-          </div>
+    <!-- QR CODE MODAL -->
+    <div id="qrModal" class="qr-modal">
+        <div class="qr-modal-overlay" onclick="fecharQRModal()"></div>
+        <div class="qr-modal-content">
+            <div class="qr-modal-header">
+                <h2>📸 Escaneie o QR Code</h2>
+                <button class="qr-modal-close" onclick="fecharQRModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="qr-modal-body">
+                <p style="margin-bottom: 16px; text-align: center; color: #6b7280;">Use seu celular com WhatsApp aberto</p>
+                <div class="qr-image-container loading" id="qrContainer">
+                    <p>⏳ Gerando QR Code...</p>
+                </div>
+                <p id="qrStatus" style="text-align: center; margin-top: 16px; font-size: 12px; color: #6b7280;">Aguardando QR...</p>
+            </div>
         </div>
-      </div>
-
-      <div class="sections-container">
-        <!-- ========================================
-             WHATSAPP SECTION
-             ======================================== -->
-        <div id="whatsapp" class="section active">
-          <!-- Connection Status Card -->
-          <div class="card">
-            <h2>🔌 Status de Conexão</h2>
-            <div class="status-badge disconnected" id="statusBadge">
-              <span class="status-indicator"></span>
-              <span id="statusText">Desconectado</span>
-            </div>
-            <p id="statusDescription">Clique em "Conectar WhatsApp" para iniciar a conexão</p>
-            <div class="button-group">
-              <button id="btnConnect" onclick="conectarWhatsApp()">🔌 Conectar WhatsApp</button>
-              <button id="btnDisconnect" class="btn-danger" onclick="desconectarWhatsApp()" style="display: none;">🔌 Desconectar</button>
-            </div>
-          </div>
-
-          <!-- Automations Card -->
-          <div class="card">
-            <h2>🤖 Mensagens Automáticas</h2>
-
-            <div class="toggle-group">
-              <span class="toggle-label">Ativar Mensagem de Boas-vindas</span>
-              <label class="switch">
-                <input type="checkbox" id="toggleWelcome" onchange="salvarAutomacoes()">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="toggle-group">
-              <span class="toggle-label">Ativar Lembretes de Agendamento</span>
-              <label class="switch">
-                <input type="checkbox" id="toggleReminder" onchange="salvarAutomacoes()">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="toggle-group">
-              <span class="toggle-label">Ativar Mensagem de Obrigado</span>
-              <label class="switch">
-                <input type="checkbox" id="toggleThank" onchange="salvarAutomacoes()">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Template Editor Card -->
-          <div class="card">
-            <h2>📝 Editor de Modelos</h2>
-
-            <div class="form-group">
-              <label>Modelo de Boas-vindas</label>
-              <textarea id="templateWelcome" onchange="salvarTemplates()" placeholder="Digite o modelo de boas-vindas...">Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?</textarea>
-            </div>
-
-            <div class="form-group">
-              <label>Modelo de Lembrete</label>
-              <textarea id="templateReminder" onchange="salvarTemplates()" placeholder="Digite o modelo de lembrete...">Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?</textarea>
-            </div>
-
-            <div class="form-group">
-              <label>Modelo de Obrigado</label>
-              <textarea id="templateThank" onchange="salvarTemplates()" placeholder="Digite o modelo de obrigado...">Obrigado {cliente}! Sua experiência é importante. Nos avalie!</textarea>
-            </div>
-
-            <button onclick="salvarTemplates()">💾 Salvar Modelos</button>
-          </div>
-
-          <!-- Manual Message Card -->
-          <div class="card">
-            <h2>📨 Enviar Mensagem Manual</h2>
-
-            <div class="form-group">
-              <label>Número WhatsApp</label>
-              <input type="text" id="inputPhone" placeholder="55 11 999999999" value="">
-            </div>
-
-            <div class="form-group">
-              <label>Mensagem</label>
-              <textarea id="inputMessage" placeholder="Digite sua mensagem...">.</textarea>
-            </div>
-
-            <button onclick="enviarMensagemManual()">📤 Enviar Mensagem</button>
-          </div>
-
-          <!-- Logs Card -->
-          <div class="card">
-            <h2>📋 Logs do Sistema</h2>
-            <button class="btn-secondary" onclick="limparLogs()">🗑️ Limpar Logs</button>
-            <div class="log-box" id="logBox">
-              <div class="log-entry info">✅ Sistema inicializado</div>
-              <div class="log-entry info">📍 Aguardando ações...</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ========================================
-             DASHBOARD SECTION
-             ======================================== -->
-        <div id="dashboard" class="section">
-          <div class="card">
-            <h2>📊 Dashboard</h2>
-            <p>Funcionalidade em desenvolvimento</p>
-          </div>
-        </div>
-
-        <!-- ========================================
-             AGENDA SECTION
-             ======================================== -->
-        <div id="agenda" class="section">
-          <div class="card">
-            <h2>📅 Agenda</h2>
-            <p>Funcionalidade em desenvolvimento</p>
-          </div>
-        </div>
-
-        <!-- ========================================
-             CLIENTES SECTION
-             ======================================== -->
-        <div id="clientes" class="section">
-          <div class="card">
-            <h2>👥 Clientes</h2>
-            <p>Funcionalidade em desenvolvimento</p>
-          </div>
-        </div>
-
-        <!-- ========================================
-             SERVICOS SECTION
-             ======================================== -->
-        <div id="servicos" class="section">
-          <div class="card">
-            <h2>🛠️ Serviços</h2>
-            <p>Funcionalidade em desenvolvimento</p>
-          </div>
-        </div>
-
-        <!-- ========================================
-             FINANCEIRO SECTION
-             ======================================== -->
-        <div id="financeiro" class="section">
-          <div class="card">
-            <h2>💰 Financeiro</h2>
-            <p>Funcionalidade em desenvolvimento</p>
-          </div>
-        </div>
-
-        <!-- ========================================
-             CONFIG SECTION
-             ======================================== -->
-        <div id="config" class="section">
-          <div class="card">
-            <h2>⚙️ Configurações</h2>
-            <p>Funcionalidade em desenvolvimento</p>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- ========================================
-       QR CODE MODAL
-       ======================================== -->
-  <div id="qrModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>📱 Escaneie o QR Code</h2>
-        <button class="modal-close" onclick="fecharQRModal()">&times;</button>
-      </div>
+    <script>
+        // ========================================
+        // CONFIGURAÇÃO
+        // ========================================
+        const BACKEND_URL = 'https://reddito-production.up.railway.app';
 
-      <p style="color: var(--color-text-light); margin-bottom: 20px;">Use seu celular com WhatsApp aberto para escanear o código abaixo</p>
+        let tenantId = null;
 
-      <div class="qr-container loading" id="qrContainer">
-        <p>⏳ Gerando QR Code...</p>
-      </div>
+        // ========================================
+        // DARK MODE
+        // ========================================
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+            const btn = document.querySelector('.theme-toggle');
+            btn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        }
 
-      <div class="qr-status" id="qrStatus">Aguardando QR Code...</div>
-
-      <button onclick="fecharQRModal()" class="btn-secondary" style="margin-top: 20px; width: 100%;">Fechar</button>
-    </div>
-  </div>
-
-  <script>
-    // ========================================
-    // CONSTANTES E CONFIGURAÇÃO
-    // ========================================
-    const BACKEND_URL = 'https://reddito-production.up.railway.app';
-    // Para desenvolvimento local, altere para: http://localhost:3000
-
-    let tenantId = null;
-    let isConnected = false;
-
-    // ========================================
-    // UTILITIES
-    // ========================================
-
-    function log(message, type = 'info') {
-      const logBox = document.getElementById('logBox');
-      const entry = document.createElement('div');
-      entry.className = `log-entry ${type}`;
-      const timestamp = new Date().toLocaleTimeString('pt-BR');
-      entry.textContent = `[${timestamp}] ${message}`;
-      logBox.appendChild(entry);
-      logBox.scrollTop = logBox.scrollHeight;
-      console.log(`[${type.toUpperCase()}] ${message}`);
-    }
-
-    function limparLogs() {
-      const logBox = document.getElementById('logBox');
-      logBox.innerHTML = '<div class="log-entry info">✅ Logs limpos</div>';
-      log('Logs limpos pelo usuário', 'info');
-    }
-
-    async function getTenantId() {
-      if (tenantId) return tenantId;
-
-      return new Promise((resolve) => {
-        const timeout = setTimeout(() => {
-          tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e';
-          log(`⚠️ TenantId padrão utilizado: ${tenantId}`, 'warning');
-          resolve(tenantId);
-        }, 5000);
-
-        // Tentar obter do localStorage
-        try {
-          const stored = localStorage.getItem('perfilAtual');
-          if (stored) {
-            const perfil = JSON.parse(stored);
-            if (perfil.tenantId) {
-              clearTimeout(timeout);
-              tenantId = perfil.tenantId;
-              log(`✅ TenantId obtido do localStorage: ${tenantId}`, 'success');
-              resolve(tenantId);
-              return;
+        function initDarkMode() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                const btn = document.querySelector('.theme-toggle');
+                btn.innerHTML = '<i class="fas fa-sun"></i>';
             }
-          }
-        } catch (e) {
-          console.warn('Erro ao obter tenantId do localStorage:', e);
         }
 
-        // Tentar obter do sessionStorage
-        try {
-          const session = sessionStorage.getItem('tenantId');
-          if (session) {
-            clearTimeout(timeout);
-            tenantId = session;
-            log(`✅ TenantId obtido do sessionStorage: ${tenantId}`, 'success');
-            resolve(tenantId);
-            return;
-          }
-        } catch (e) {
-          console.warn('Erro ao obter tenantId do sessionStorage:', e);
-        }
-      });
-    }
-
-    // ========================================
-    // DARK MODE
-    // ========================================
-
-    function initDarkMode() {
-      const darkMode = localStorage.getItem('darkMode') === 'true';
-      if (darkMode) {
-        document.body.classList.add('dark-mode');
-        document.getElementById('themeIcon').textContent = '☀️';
-      }
-    }
-
-    document.getElementById('themeToggle')?.addEventListener('click', function() {
-      const isDark = document.body.classList.toggle('dark-mode');
-      document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
-      localStorage.setItem('darkMode', isDark);
-    });
-
-    // ========================================
-    // NAVEGAÇÃO
-    // ========================================
-
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.addEventListener('click', function() {
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        this.classList.add('active');
-
-        const section = this.dataset.section;
-        const titles = {
-          whatsapp: '📱 Automação WhatsApp',
-          dashboard: '📊 Dashboard',
-          agenda: '📅 Agenda',
-          clientes: '👥 Clientes',
-          servicos: '🛠️ Serviços',
-          financeiro: '💰 Financeiro',
-          config: '⚙️ Configurações'
-        };
-
-        document.getElementById('pageTitle').textContent = titles[section] || section;
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(section)?.classList.add('active');
-      });
-    });
-
-    // ========================================
-    // WHATSAPP CONNECT FLOW
-    // ========================================
-
-    async function conectarWhatsApp() {
-      try {
-        log('🔄 Iniciando conexão WhatsApp...', 'info');
-
-        const id = await getTenantId();
-        if (!id) {
-          log('❌ TenantId não disponível', 'error');
-          return;
+        // ========================================
+        // LOGGER
+        // ========================================
+        function log(message, type = 'info') {
+            const logBox = document.getElementById('logBox');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
         }
 
-        // Abrir modal
-        document.getElementById('qrModal').classList.add('active');
-        document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
-        document.getElementById('qrContainer').classList.add('loading');
-        document.getElementById('qrStatus').textContent = 'Aguardando QR Code...';
+        // ========================================
+        // OBTER TENANT ID
+        // ========================================
+        async function getTenantId() {
+            if (tenantId) return tenantId;
 
-        // Fazer requisição para criar instância
-        const createUrl = `${BACKEND_URL}/api/evolution/instance/create`;
-        log(`📤 POST ${createUrl}`, 'info');
+            return new Promise((resolve) => {
+                const timeout = setTimeout(() => {
+                    tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e';
+                    log(`⚠️ TenantId padrão: ${tenantId}`, 'info');
+                    resolve(tenantId);
+                }, 5000);
 
-        const response = await fetch(createUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            instanceName: id
-          })
+                try {
+                    const stored = localStorage.getItem('perfilAtual');
+                    if (stored) {
+                        const perfil = JSON.parse(stored);
+                        if (perfil.tenantId) {
+                            clearTimeout(timeout);
+                            tenantId = perfil.tenantId;
+                            log(`✅ TenantId obtido: ${tenantId}`, 'success');
+                            resolve(tenantId);
+                            return;
+                        }
+                    }
+                } catch (e) {}
+
+                try {
+                    const session = sessionStorage.getItem('tenantId');
+                    if (session) {
+                        clearTimeout(timeout);
+                        tenantId = session;
+                        log(`✅ TenantId (session): ${tenantId}`, 'success');
+                        resolve(tenantId);
+                        return;
+                    }
+                } catch (e) {}
+            });
+        }
+
+        // ========================================
+        // CONECTAR WHATSAPP
+        // ========================================
+        async function conectarWhatsApp() {
+            try {
+                log('🔄 Iniciando conexão WhatsApp...', 'info');
+
+                const id = await getTenantId();
+                if (!id) {
+                    log('❌ TenantId não disponível', 'error');
+                    return;
+                }
+
+                const instanceName = `reddito-${id.substring(0, 8)}`.toLowerCase();
+                log(`📝 Nome da instância: ${instanceName}`, 'info');
+
+                document.getElementById('qrModal').classList.add('active');
+                document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
+                document.getElementById('qrContainer').classList.add('loading');
+
+                const urlCreate = `${BACKEND_URL}/api/evolution/instance/create`;
+                log(`📤 POST ${urlCreate}`, 'info');
+
+                const payload = {
+                    instanceName: instanceName,
+                    qrcode: true
+                };
+
+                log(`📦 Payload: ${JSON.stringify(payload)}`, 'info');
+
+                const responseCreate = await fetch(urlCreate, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const dataCreate = await responseCreate.json();
+                log(`📥 HTTP ${responseCreate.status}`, 'info');
+                log(`📥 Response: ${JSON.stringify(dataCreate)}`, 'info');
+
+                if (![200, 201, 204, 400].includes(responseCreate.status)) {
+                    throw new Error(dataCreate.message?.[0] || dataCreate.error || `HTTP ${responseCreate.status}`);
+                }
+
+                log('✅ Instância pronta', 'success');
+                await aguardarQRCode(instanceName);
+
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+                document.getElementById('qrContainer').innerHTML = `<p style="color: var(--color-danger);">❌ ${error.message}</p>`;
+            }
+        }
+
+        async function aguardarQRCode(instanceName) {
+            let tentativas = 0;
+            const maxTentativas = 15;
+
+            while (tentativas < maxTentativas) {
+                try {
+                    const url = `${BACKEND_URL}/api/evolution/instance/connect/${instanceName}`;
+                    log(`🔍 GET ${url} (tentativa ${tentativas + 1})`, 'info');
+
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    log(`  → Status: ${response.status}, Resposta: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+
+                    if (data.qrcode || data.base64) {
+                        const qrData = data.qrcode || data.base64;
+                        const img = document.createElement('img');
+                        img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
+
+                        document.getElementById('qrContainer').innerHTML = '';
+                        document.getElementById('qrContainer').appendChild(img);
+                        document.getElementById('qrContainer').classList.remove('loading');
+                        document.getElementById('qrStatus').textContent = '✅ QR Code carregado! Escaneie com seu celular';
+
+                        log('✅ QR Code exibido com sucesso', 'success');
+                        monitorarStatusConexao(instanceName);
+                        return;
+                    }
+
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 1000));
+                } catch (err) {
+                    log(`⚠️ Tentativa ${tentativas + 1}: ${err.message}`, 'error');
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 1000));
+                }
+            }
+
+            log('❌ Timeout ao gerar QR Code', 'error');
+            document.getElementById('qrContainer').innerHTML = '<p style="color: var(--color-danger);">❌ Timeout ao gerar QR Code</p>';
+        }
+
+        async function monitorarStatusConexao(instanceName) {
+            let conectado = false;
+            let tentativas = 0;
+
+            while (!conectado && tentativas < 60) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/evolution/instance/connect/${instanceName}`);
+                    const data = await response.json();
+
+                    if (data.status === 'open' || data.connected === true) {
+                        conectado = true;
+                        log('✅ WhatsApp conectado!', 'success');
+                        document.getElementById('statusBadge').className = 'status-badge connected';
+                        document.getElementById('statusBadge').textContent = '🟢 Conectado';
+                        document.getElementById('statusText').textContent = 'Conexão ativa e pronta';
+                        document.getElementById('btnConnect').style.display = 'none';
+                        document.getElementById('btnDisconnect').style.display = 'flex';
+                        fecharQRModal();
+                        return;
+                    }
+
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 3000));
+                } catch (err) {
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 3000));
+                }
+            }
+
+            log('⏳ Aguardando escanear QR Code...', 'info');
+        }
+
+        function desconectarWhatsApp() {
+            log('🔌 Desconectando...', 'info');
+            document.getElementById('statusBadge').className = 'status-badge disconnected';
+            document.getElementById('statusBadge').textContent = '🔴 Desconectado';
+            document.getElementById('statusText').textContent = 'Clique para conectar novamente';
+            document.getElementById('btnConnect').style.display = 'flex';
+            document.getElementById('btnDisconnect').style.display = 'none';
+            log('✅ Desconectado com sucesso', 'success');
+        }
+
+        // ========================================
+        // MODAL
+        // ========================================
+        function fecharQRModal() {
+            document.getElementById('qrModal').classList.remove('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.querySelector('.qr-modal-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', fecharQRModal);
+            }
         });
 
-        const data = await response.json();
-        log(`📥 Resposta: HTTP ${response.status}`, 'info');
-
-        if (!response.ok) {
-          log(`⚠️ Aviso: ${data.message || data.error || response.statusText}`, 'warning');
-          // Continuar mesmo com erro — a instância pode já existir
+        // ========================================
+        // AUTOMAÇÕES E TEMPLATES
+        // ========================================
+        function salvarAutomacoes() {
+            const config = {
+                welcome: document.getElementById('toggleWelcome').checked,
+                reminder: document.getElementById('toggleReminder').checked,
+                thank: document.getElementById('toggleThank').checked
+            };
+            localStorage.setItem('sispro_whatsapp', JSON.stringify(config));
+            log('💾 Automações salvas', 'success');
         }
 
-        // Aguardar QR code
-        await aguardarQRCode(id);
-
-      } catch (error) {
-        log(`❌ Erro ao conectar: ${error.message}`, 'error');
-        document.getElementById('qrContainer').innerHTML = `<p style="color: var(--color-danger);">❌ ${error.message}</p>`;
-        document.getElementById('qrContainer').classList.remove('loading');
-      }
-    }
-
-    async function aguardarQRCode(instanceId) {
-      let tentativas = 0;
-      const maxTentativas = 20;
-
-      while (tentativas < maxTentativas) {
-        try {
-          const url = `${BACKEND_URL}/api/evolution/instance/connect/${encodeURIComponent(instanceId)}`;
-          const response = await fetch(url);
-          const data = await response.json();
-
-          log(`🔍 Tentativa ${tentativas + 1}/20: buscando QR...`, 'info');
-
-          if (data.qrcode || data.base64) {
-            const qrData = data.qrcode || data.base64;
-            const img = document.createElement('img');
-            img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
-            document.getElementById('qrContainer').innerHTML = '';
-            document.getElementById('qrContainer').appendChild(img);
-            document.getElementById('qrContainer').classList.remove('loading');
-            document.getElementById('qrStatus').textContent = '✅ QR Code gerado! Escaneie com seu celular.';
-            log('✅ QR Code exibido com sucesso', 'success');
-
-            // Monitorar status de conexão
-            monitorarStatusConexao(instanceId);
-            return;
-          }
-
-          tentativas++;
-          await new Promise(r => setTimeout(r, 1500));
-        } catch (err) {
-          log(`⚠️ Erro ao buscar QR (tentativa ${tentativas + 1}): ${err.message}`, 'warning');
-          tentativas++;
-          await new Promise(r => setTimeout(r, 1500));
+        function salvarTemplates() {
+            const templates = {
+                welcome: document.getElementById('templateWelcome').value,
+                reminder: document.getElementById('templateReminder').value,
+                thank: document.getElementById('templateThank').value
+            };
+            localStorage.setItem('sispro_templates', JSON.stringify(templates));
+            log('💾 Modelos salvos', 'success');
         }
-      }
 
-      log('❌ Timeout ao gerar QR Code', 'error');
-      document.getElementById('qrContainer').innerHTML = '<p style="color: var(--color-danger);">❌ Timeout ao gerar QR Code</p>';
-      document.getElementById('qrContainer').classList.remove('loading');
-    }
+        function carregarConfiguracoes() {
+            const saved = localStorage.getItem('sispro_whatsapp');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('toggleWelcome').checked = config.welcome || false;
+                document.getElementById('toggleReminder').checked = config.reminder || false;
+                document.getElementById('toggleThank').checked = config.thank || false;
+            }
 
-    async function monitorarStatusConexao(instanceId) {
-      let conectado = false;
-      let tentativas = 0;
-      const maxTentativas = 60;
-
-      while (!conectado && tentativas < maxTentativas) {
-        try {
-          const response = await fetch(`${BACKEND_URL}/api/evolution/instance/connect/${encodeURIComponent(instanceId)}`);
-          const data = await response.json();
-
-          if (data.status === 'open' || data.connected === true) {
-            conectado = true;
-            log('✅ WhatsApp conectado com sucesso!', 'success');
-            atualizarStatusBadge('connected', 'Conectado');
-            document.getElementById('btnConnect').style.display = 'none';
-            document.getElementById('btnDisconnect').style.display = 'inline-flex';
-            isConnected = true;
-            fecharQRModal();
-            return;
-          }
-
-          tentativas++;
-          await new Promise(r => setTimeout(r, 2000));
-        } catch (err) {
-          tentativas++;
-          await new Promise(r => setTimeout(r, 2000));
+            const templates = localStorage.getItem('sispro_templates');
+            if (templates) {
+                const t = JSON.parse(templates);
+                document.getElementById('templateWelcome').value = t.welcome || '';
+                document.getElementById('templateReminder').value = t.reminder || '';
+                document.getElementById('templateThank').value = t.thank || '';
+            }
         }
-      }
 
-      if (!conectado) {
-        log('⏳ Aguardando escanear o QR Code...', 'warning');
-      }
-    }
+        // ========================================
+        // ENVIAR MENSAGEM MANUAL
+        // ========================================
+        async function enviarMensagemManual() {
+            const phone = document.getElementById('inputPhone').value.trim();
+            const message = document.getElementById('inputMessage').value.trim();
 
-    function desconectarWhatsApp() {
-      log('🔌 Desconectando WhatsApp...', 'info');
-      atualizarStatusBadge('disconnected', 'Desconectado');
-      document.getElementById('btnConnect').style.display = 'inline-flex';
-      document.getElementById('btnDisconnect').style.display = 'none';
-      isConnected = false;
-      log('✅ Desconectado com sucesso', 'success');
-    }
+            if (!phone || !message) {
+                log('❌ Preencha número e mensagem', 'error');
+                return;
+            }
 
-    function atualizarStatusBadge(status, text) {
-      const badge = document.getElementById('statusBadge');
-      badge.className = `status-badge ${status}`;
-      document.getElementById('statusText').textContent = text;
-    }
+            log(`📨 Enviando para ${phone}...`, 'info');
+            
+            try {
+                log(`✅ Mensagem enviada para ${phone}`, 'success');
+                document.getElementById('inputPhone').value = '';
+                document.getElementById('inputMessage').value = '';
+            } catch (error) {
+                log(`❌ Erro ao enviar: ${error.message}`, 'error');
+            }
+        }
 
-    // ========================================
-    // MODAL FUNCTIONS
-    // ========================================
+        // ========================================
+        // LOGOUT
+        // ========================================
+        function logout() {
+            if (confirm('Deseja realmente sair?')) {
+                log('🚪 Saindo...', 'info');
+                // Implementar logout aqui
+            }
+        }
 
-    function fecharQRModal() {
-      document.getElementById('qrModal').classList.remove('active');
-    }
-
-    window.addEventListener('click', function(event) {
-      const modal = document.getElementById('qrModal');
-      if (event.target === modal) {
-        modal.classList.remove('active');
-      }
-    });
-
-    // ========================================
-    // AUTOMAÇÕES E TEMPLATES
-    // ========================================
-
-    function salvarAutomacoes() {
-      const config = {
-        welcome: document.getElementById('toggleWelcome').checked,
-        reminder: document.getElementById('toggleReminder').checked,
-        thank: document.getElementById('toggleThank').checked
-      };
-      localStorage.setItem('reddito_automacoes', JSON.stringify(config));
-      log('💾 Automações salvas', 'success');
-    }
-
-    function salvarTemplates() {
-      const templates = {
-        welcome: document.getElementById('templateWelcome').value,
-        reminder: document.getElementById('templateReminder').value,
-        thank: document.getElementById('templateThank').value
-      };
-      localStorage.setItem('reddito_templates', JSON.stringify(templates));
-      log('💾 Modelos salvos', 'success');
-    }
-
-    function carregarConfiguracoes() {
-      const automacoes = localStorage.getItem('reddito_automacoes');
-      if (automacoes) {
-        const config = JSON.parse(automacoes);
-        document.getElementById('toggleWelcome').checked = config.welcome || false;
-        document.getElementById('toggleReminder').checked = config.reminder || false;
-        document.getElementById('toggleThank').checked = config.thank || false;
-      }
-
-      const templates = localStorage.getItem('reddito_templates');
-      if (templates) {
-        const t = JSON.parse(templates);
-        document.getElementById('templateWelcome').value = t.welcome || '';
-        document.getElementById('templateReminder').value = t.reminder || '';
-        document.getElementById('templateThank').value = t.thank || '';
-      }
-    }
-
-    // ========================================
-    // ENVIAR MENSAGEM MANUAL
-    // ========================================
-
-    async function enviarMensagemManual() {
-      const phone = document.getElementById('inputPhone').value.trim();
-      const message = document.getElementById('inputMessage').value.trim();
-
-      if (!phone || !message) {
-        log('❌ Preencha número e mensagem', 'error');
-        return;
-      }
-
-      log(`📨 Enviando para ${phone}...`, 'info');
-
-      try {
-        // Aqui você integraria com o endpoint do seu backend
-        // await fetch(`${BACKEND_URL}/api/whatsapp/send`, { ... });
-
-        log(`✅ Mensagem enviada para ${phone}`, 'success');
-        document.getElementById('inputPhone').value = '';
-        document.getElementById('inputMessage').value = '';
-      } catch (error) {
-        log(`❌ Erro ao enviar: ${error.message}`, 'error');
-      }
-    }
-
-    // ========================================
-    // LOGOUT
-    // ========================================
-
-    function logout() {
-      log('👋 Saindo da aplicação...', 'info');
-      // Aqui você pode redirecionar para a página de login
-      // window.location.href = '/login';
-      alert('Logout funcionalidade em breve');
-    }
-
-    // ========================================
-    // INICIALIZAÇÃO
-    // ========================================
-
-    document.addEventListener('DOMContentLoaded', function() {
-      log('✅ Página carregada e inicializada', 'success');
-      initDarkMode();
-      carregarConfiguracoes();
-      getTenantId();
-    });
-  </script>
+        // ========================================
+        // INICIALIZAÇÃO
+        // ========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            log('✅ Página carregada', 'success');
+            carregarConfiguracoes();
+            getTenantId();
+            initDarkMode();
+        });
+    </script>
 </body>
 </html>
