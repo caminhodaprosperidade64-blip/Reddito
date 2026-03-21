@@ -858,33 +858,44 @@
                     return;
                 }
 
+                // Criar um nome simples para a instância (apenas os primeiros 8 caracteres)
+                const instanceName = `reddito-${id.substring(0, 8)}`.toLowerCase();
+                log(`📝 Nome da instância: ${instanceName}`, 'info');
+
                 document.getElementById('qrModal').classList.add('active');
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                const url = `${BACKEND_URL}/api/evolution/instance/create`;
-                log(`📤 POST ${url}`, 'info');
-                log(`📦 Payload: instanceName=${id}, token=${id}, qrcode=true`, 'info');
+                // Step 1: Tentar criar instância
+                const urlCreate = `${BACKEND_URL}/api/evolution/instance/create`;
+                log(`📤 POST ${urlCreate}`, 'info');
 
-                const response = await fetch(url, {
+                const payload = {
+                    instanceName: instanceName,
+                    qrcode: true
+                };
+
+                log(`📦 Payload: ${JSON.stringify(payload)}`, 'info');
+
+                const responseCreate = await fetch(urlCreate, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        instanceName: id,
-                        token: id,
-                        qrcode: true
-                    })
+                    body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
-                log(`📥 HTTP ${response.status}`, 'info');
-                log(`📥 Resposta: ${JSON.stringify(data).substring(0, 150)}...`, 'info');
+                const dataCreate = await responseCreate.json();
+                log(`📥 HTTP ${responseCreate.status}`, 'info');
+                log(`📥 Response: ${JSON.stringify(dataCreate)}`, 'info');
 
-                if (!response.ok) {
-                    throw new Error(data.message || data.error || `HTTP ${response.status}`);
+                // Aceitar 200, 201, 204, 400 (já existe)
+                if (![200, 201, 204, 400].includes(responseCreate.status)) {
+                    throw new Error(dataCreate.message?.[0] || dataCreate.error || `HTTP ${responseCreate.status}`);
                 }
 
-                await aguardarQRCode(id);
+                log('✅ Instância pronta', 'success');
+
+                // Step 2: Aguardar QR
+                await aguardarQRCode(instanceName);
 
             } catch (error) {
                 log(`❌ Erro: ${error.message}`, 'error');
@@ -892,19 +903,19 @@
             }
         }
 
-        async function aguardarQRCode(instanceId) {
+        async function aguardarQRCode(instanceName) {
             let tentativas = 0;
             const maxTentativas = 15;
 
             while (tentativas < maxTentativas) {
                 try {
-                    const url = `${BACKEND_URL}/api/evolution/instance/connect/${instanceId}`;
+                    const url = `${BACKEND_URL}/api/evolution/instance/connect/${instanceName}`;
                     log(`🔍 GET ${url} (tentativa ${tentativas + 1})`, 'info');
 
                     const response = await fetch(url);
                     const data = await response.json();
 
-                    log(`  → Resposta: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+                    log(`  → Status: ${response.status}, Resposta: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
 
                     if (data.qrcode || data.base64) {
                         const qrData = data.qrcode || data.base64;
@@ -917,7 +928,7 @@
                         document.getElementById('qrStatus').textContent = '✅ QR Code carregado! Escaneie com seu celular';
 
                         log('✅ QR Code exibido com sucesso', 'success');
-                        monitorarStatusConexao(instanceId);
+                        monitorarStatusConexao(instanceName);
                         return;
                     }
 
@@ -934,13 +945,13 @@
             document.getElementById('qrContainer').innerHTML = '<p style="color: var(--color-danger);">❌ Timeout ao gerar QR Code</p>';
         }
 
-        async function monitorarStatusConexao(instanceId) {
+        async function monitorarStatusConexao(instanceName) {
             let conectado = false;
             let tentativas = 0;
 
             while (!conectado && tentativas < 60) {
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/evolution/instance/connect/${instanceId}`);
+                    const response = await fetch(`${BACKEND_URL}/api/evolution/instance/connect/${instanceName}`);
                     const data = await response.json();
 
                     if (data.status === 'open' || data.connected === true) {
@@ -983,7 +994,12 @@
             document.getElementById('qrModal').classList.remove('active');
         }
 
-        document.querySelector('.qr-modal-overlay')?.addEventListener('click', fecharQRModal);
+        document.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.querySelector('.qr-modal-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', fecharQRModal);
+            }
+        });
 
         // ========================================
         // AUTOMAÇÕES E TEMPLATES
