@@ -858,8 +858,8 @@
                     return;
                 }
 
-                // Criar um nome simples para a instância (apenas os primeiros 8 caracteres)
-                const instanceName = `reddito-${id.substring(0, 8)}`.toLowerCase();
+                // Usar o tenantId diretamente como instanceName
+                const instanceName = id;
                 log(`📝 Nome da instância: ${instanceName}`, 'info');
 
                 document.getElementById('qrModal').classList.add('active');
@@ -894,7 +894,8 @@
 
                 log('✅ Instância pronta', 'success');
 
-                // Step 2: Aguardar QR
+                // Step 2: Aguardar QR com delay para garantir que a instância foi criada
+                await new Promise(r => setTimeout(r, 2000));
                 await aguardarQRCode(instanceName);
 
             } catch (error) {
@@ -903,21 +904,24 @@
             }
         }
 
+        // ========================================
+        // AGUARDAR QR CODE
+        // ========================================
         async function aguardarQRCode(instanceName) {
             let tentativas = 0;
-            const maxTentativas = 15;
+            const maxTentativas = 20;
 
             while (tentativas < maxTentativas) {
                 try {
                     const url = `${BACKEND_URL}/api/evolution/instance/connect/${instanceName}`;
-                    log(`🔍 GET ${url} (tentativa ${tentativas + 1})`, 'info');
+                    log(`🔍 GET ${url} (tentativa ${tentativas + 1}/${maxTentativas})`, 'info');
 
                     const response = await fetch(url);
                     const data = await response.json();
 
-                    log(`  → Status: ${response.status}, Resposta: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+                    log(`  → HTTP ${response.status}: ${JSON.stringify(data).substring(0, 80)}...`, 'info');
 
-                    if (data.qrcode || data.base64) {
+                    if (response.status === 200 && (data.qrcode || data.base64)) {
                         const qrData = data.qrcode || data.base64;
                         const img = document.createElement('img');
                         img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
@@ -932,29 +936,39 @@
                         return;
                     }
 
+                    if (response.status === 404) {
+                        log(`⚠️ Instância ainda não disponível, tentando novamente...`, 'info');
+                    }
+
                     tentativas++;
-                    await new Promise(r => setTimeout(r, 1000));
+                    await new Promise(r => setTimeout(r, 1500));
                 } catch (err) {
                     log(`⚠️ Tentativa ${tentativas + 1}: ${err.message}`, 'error');
                     tentativas++;
-                    await new Promise(r => setTimeout(r, 1000));
+                    await new Promise(r => setTimeout(r, 1500));
                 }
             }
 
-            log('❌ Timeout ao gerar QR Code', 'error');
+            log('❌ Timeout ao gerar QR Code após 20 tentativas', 'error');
             document.getElementById('qrContainer').innerHTML = '<p style="color: var(--color-danger);">❌ Timeout ao gerar QR Code</p>';
         }
 
+        // ========================================
+        // MONITORAR STATUS CONEXÃO
+        // ========================================
         async function monitorarStatusConexao(instanceName) {
             let conectado = false;
             let tentativas = 0;
 
             while (!conectado && tentativas < 60) {
                 try {
+                    log(`🔄 Monitorando status da conexão (tentativa ${tentativas + 1}/60)...`, 'info');
                     const response = await fetch(`${BACKEND_URL}/api/evolution/instance/connect/${instanceName}`);
                     const data = await response.json();
 
-                    if (data.status === 'open' || data.connected === true) {
+                    log(`  → Status da resposta: ${JSON.stringify(data).substring(0, 80)}...`, 'info');
+
+                    if (data.status === 'open' || data.connected === true || response.status === 200) {
                         conectado = true;
                         log('✅ WhatsApp conectado!', 'success');
                         document.getElementById('statusBadge').className = 'status-badge connected';
@@ -967,16 +981,20 @@
                     }
 
                     tentativas++;
-                    await new Promise(r => setTimeout(r, 3000));
+                    await new Promise(r => setTimeout(r, 2000));
                 } catch (err) {
+                    log(`⚠️ Erro ao monitorar: ${err.message}`, 'error');
                     tentativas++;
-                    await new Promise(r => setTimeout(r, 3000));
+                    await new Promise(r => setTimeout(r, 2000));
                 }
             }
 
-            log('⏳ Aguardando escanear QR Code...', 'info');
+            log('⏳ Conexão ainda em andamento. Escaneie o QR Code se ainda não fez.', 'info');
         }
 
+        // ========================================
+        // DESCONECTAR WHATSAPP
+        // ========================================
         function desconectarWhatsApp() {
             log('🔌 Desconectando...', 'info');
             document.getElementById('statusBadge').className = 'status-badge disconnected';
