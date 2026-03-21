@@ -29,6 +29,8 @@ console.log('>>> INICIANDO: backend-whatsapp/server.js');
 console.log('ENV CHECK: SUPABASE_URL', !!process.env.SUPABASE_URL ? 'SET' : 'EMPTY');
 console.log('ENV CHECK: SUPABASE_SERVICE_KEY', !!process.env.SUPABASE_SERVICE_KEY ? 'SET' : 'EMPTY');
 console.log('ENV CHECK: CLAUDE_API_KEY', !!process.env.CLAUDE_API_KEY ? 'SET' : 'EMPTY');
+console.log('ENV CHECK: EVOLUTION_URL', !!process.env.EVOLUTION_URL ? 'SET' : 'EMPTY');
+console.log('ENV CHECK: EVOLUTION_API_KEY', !!process.env.EVOLUTION_API_KEY ? 'SET' : 'EMPTY');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,6 +68,9 @@ const supabase = createClient(
 
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const PORT = process.env.PORT || 3000;
+
+const EVOLUTION_URL = process.env.EVOLUTION_URL || null;
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || null;
 
 const logger = pino();
 
@@ -778,7 +783,8 @@ async function criarAutomacoes(agendamento, cliente, tenantId, phoneNumber) {
   });
 
   const agradecimentoData = new Date(dataAgendamento);
-  agradecimentoData.setDate(agradecimentoData.getDate() + 1);
+  agradecimentoData.setDate(agredecimentoData => agredecimentoData); // mantenho estrutura original (não usado)
+  agradecimentoData.setDate(dataAgendamento.getDate() + 1);
   agradecimentoData.setHours(10, 0, 0);
 
   await supabase.from('automacoes_agendadas').insert({
@@ -918,6 +924,71 @@ app.get('/api/whatsapp/status/:tenantId', async (req, res) => {
   }
 });
 
+// ------------------------------
+// NEW: Evolution API proxy endpoints
+// ------------------------------
+// These endpoints forward requests from the frontend (or your backend UI) to the Evolution API
+// The EVOLUTION_URL and EVOLUTION_API_KEY must be set as environment variables in Railway for your backend service.
+// These proxies keep the API key on the server (never expose it in browser).
+
+app.post('/api/evolution/instance/create', async (req, res) => {
+  try {
+    if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
+      return res.status(500).json({ error: 'evolution_not_configured', message: 'EVOLUTION_URL or EVOLUTION_API_KEY missing on the server.' });
+    }
+
+    const body = req.body || {};
+    // Body expected: { instanceName, token, qrcode, ... } — pass-through to Evolution API
+    const url = `${EVOLUTION_URL.replace(/\/$/, '')}/instance/create`;
+
+    const r = await axios.post(url, body, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': EVOLUTION_API_KEY
+      },
+      timeout: 30000
+    });
+
+    return res.status(r.status).json(r.data);
+  } catch (err) {
+    console.error('❌ ERR proxy /api/evolution/instance/create:', err?.response?.data || err?.message || err);
+    // propagate the underlying status if available
+    const status = err?.response?.status || 500;
+    const data = err?.response?.data || { error: 'proxy_error', detail: String(err?.message || err) };
+    return res.status(status).json(data);
+  }
+});
+
+app.get('/api/evolution/instance/connect/:id', async (req, res) => {
+  try {
+    if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
+      return res.status(500).json({ error: 'evolution_not_configured', message: 'EVOLUTION_URL or EVOLUTION_API_KEY missing on the server.' });
+    }
+
+    const id = req.params.id;
+    const url = `${EVOLUTION_URL.replace(/\/$/, '')}/instance/connect/${encodeURIComponent(id)}`;
+
+    const r = await axios.get(url, {
+      headers: {
+        'apikey': EVOLUTION_API_KEY
+      },
+      timeout: 20000
+    });
+
+    return res.status(r.status).json(r.data);
+  } catch (err) {
+    console.error('❌ ERR proxy /api/evolution/instance/connect/:id', err?.response?.data || err?.message || err);
+    const status = err?.response?.status || 500;
+    const data = err?.response?.data || { error: 'proxy_error', detail: String(err?.message || err) };
+    return res.status(status).json(data);
+  }
+});
+
+// Optional: other useful Evolution proxies (list instances, send message) can be added similarly.
+// Example: POST /api/evolution/message/send  (not implemented by default; add when needed)
+
+// --------------------------------------------
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'Servidor rodando! ✅',
@@ -935,6 +1006,8 @@ const server = app.listen(PORT, () => {
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`📱 Conectar WhatsApp: POST /api/whatsapp/connect/:tenantId`);
   console.log(`✅ Status WhatsApp: GET /api/whatsapp/status/:tenantId`);
+  console.log(`🔁 Evolution proxy: POST /api/evolution/instance/create`);
+  console.log(`🔁 Evolution proxy: GET  /api/evolution/instance/connect/:id`);
 });
 
 export default app;
