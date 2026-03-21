@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reddito - Automação WhatsApp</title>
-  <link rel="stylesheet" href="css/pro-design-system.css">
   <style>
     * {
       margin: 0;
@@ -13,7 +12,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       display: flex;
@@ -27,6 +26,7 @@
       margin: 0 auto;
     }
 
+    /* ===== SIDEBAR ===== */
     .sidebar {
       width: 250px;
       background: #fff;
@@ -64,6 +64,7 @@
     .sidebar nav li:hover {
       background: #f0f0f0;
       border-left-color: #667eea;
+      color: #667eea;
     }
 
     .sidebar nav li.active {
@@ -72,6 +73,7 @@
       color: #667eea;
     }
 
+    /* ===== CONTENT ===== */
     .content {
       flex: 1;
       padding: 40px;
@@ -93,16 +95,11 @@
       font-weight: 600;
     }
 
-    .header .user-info {
-      color: #fff;
-      text-align: right;
-    }
-
     .card {
       background: #fff;
       border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       transition: all 0.3s ease;
     }
@@ -113,10 +110,11 @@
 
     .card h2 {
       font-size: 18px;
-      margin-bottom: 15px;
+      margin-bottom: 16px;
       color: #333;
     }
 
+    /* ===== STATUS BADGE ===== */
     .status-badge {
       display: inline-block;
       padding: 8px 16px;
@@ -141,16 +139,18 @@
       color: #0c5460;
     }
 
+    /* ===== BUTTONS ===== */
     button {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
-      padding: 10px 20px;
+      padding: 12px 24px;
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
       transition: all 0.3s ease;
-      margin: 5px;
+      margin: 8px 0;
+      font-size: 14px;
     }
 
     button:hover {
@@ -164,11 +164,12 @@
       transform: none;
     }
 
+    /* ===== TOGGLE SWITCH ===== */
     .toggle-switch {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin: 15px 0;
+      gap: 12px;
+      margin: 12px 0;
     }
 
     .switch {
@@ -216,6 +217,65 @@
       transform: translateX(26px);
     }
 
+    /* ===== TEXTAREA & INPUT ===== */
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      margin: 8px 0;
+      resize: vertical;
+    }
+
+    textarea {
+      min-height: 100px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 12px 0 6px 0;
+      color: #333;
+    }
+
+    /* ===== LOG BOX ===== */
+    .log-box {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .log-success {
+      color: #28a745;
+    }
+
+    .log-error {
+      color: #dc3545;
+    }
+
+    .log-info {
+      color: #17a2b8;
+    }
+
+    /* ===== QR MODAL ===== */
     .qr-modal {
       display: none;
       position: fixed;
@@ -224,7 +284,7 @@
       top: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
+      background-color: rgba(0, 0, 0, 0.5);
       animation: fadeIn 0.3s ease;
     }
 
@@ -257,7 +317,7 @@
     }
 
     .qr-modal-content h2 {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       color: #333;
     }
 
@@ -300,51 +360,6 @@
 
     .close-btn:hover {
       color: #000;
-      transform: none;
-    }
-
-    .log-box {
-      background: #f5f5f5;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 15px;
-      max-height: 200px;
-      overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      color: #333;
-    }
-
-    .log-entry {
-      padding: 5px 0;
-      border-bottom: 1px solid #eee;
-    }
-
-    .log-entry:last-child {
-      border-bottom: none;
-    }
-
-    .log-success {
-      color: #28a745;
-    }
-
-    .log-error {
-      color: #dc3545;
-    }
-
-    .log-info {
-      color: #17a2b8;
-    }
-
-    textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-family: 'Courier New', monospace;
-      resize: vertical;
-      min-height: 100px;
     }
 
     .section {
@@ -358,14 +373,12 @@
     .input-group {
       display: flex;
       gap: 10px;
-      margin: 15px 0;
+      margin: 12px 0;
     }
 
     .input-group input {
       flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
+      margin: 0;
     }
 
     @media (max-width: 768px) {
@@ -377,18 +390,6 @@
         width: 100%;
         height: auto;
         position: relative;
-        display: flex;
-        overflow-x: auto;
-      }
-
-      .sidebar nav {
-        display: flex;
-        overflow-x: auto;
-        width: 100%;
-      }
-
-      .sidebar nav li {
-        white-space: nowrap;
       }
 
       .content {
@@ -402,15 +403,15 @@
   <div class="main-container">
     <!-- SIDEBAR -->
     <div class="sidebar">
-      <div class="logo">Reddito</div>
-      <nav id="nav">
-        <li data-section="whatsapp" class="nav-item active">📱 WhatsApp</li>
-        <li data-section="dashboard" class="nav-item">📊 Dashboard</li>
-        <li data-section="agenda" class="nav-item">📅 Agenda</li>
-        <li data-section="clientes" class="nav-item">👥 Clientes</li>
-        <li data-section="servicos" class="nav-item">🛠️ Serviços</li>
-        <li data-section="financeiro" class="nav-item">💰 Financeiro</li>
-        <li data-section="config" class="nav-item">⚙️ Configurações</li>
+      <div class="logo">🎉 Reddito</div>
+      <nav>
+        <li class="nav-item active" data-section="whatsapp">📱 WhatsApp</li>
+        <li class="nav-item" data-section="dashboard">📊 Dashboard</li>
+        <li class="nav-item" data-section="agenda">📅 Agenda</li>
+        <li class="nav-item" data-section="clientes">👥 Clientes</li>
+        <li class="nav-item" data-section="servicos">🛠️ Serviços</li>
+        <li class="nav-item" data-section="financeiro">💰 Financeiro</li>
+        <li class="nav-item" data-section="config">⚙️ Configurações</li>
       </nav>
     </div>
 
@@ -418,28 +419,26 @@
     <div class="content">
       <div class="header">
         <h1>Automação WhatsApp IA</h1>
-        <div class="user-info">
-          <p>Bem-vindo!</p>
-        </div>
       </div>
 
-      <!-- WHATSAPP SECTION -->
+      <!-- ===== WHATSAPP SECTION ===== -->
       <div id="whatsapp" class="section active">
+        
         <!-- Connection Status Card -->
         <div class="card">
-          <h2>Status de Conexão</h2>
+          <h2>🔌 Status de Conexão</h2>
           <div class="status-badge disconnected" id="statusBadge">🔴 Desconectado</div>
           <p id="statusText">Clique em "Conectar WhatsApp" para iniciar</p>
-          <button id="btnConnect" onclick="conectarWhatsApp()">🔌 Conectar WhatsApp</button>
+          <button id="btnConnect" onclick="conectarWhatsApp()">🔗 Conectar WhatsApp</button>
           <button id="btnDisconnect" onclick="desconectarWhatsApp()" style="display:none;">🔌 Desconectar</button>
         </div>
 
         <!-- Auto Messages Card -->
         <div class="card">
-          <h2>Mensagens Automáticas</h2>
+          <h2>⚙️ Mensagens Automáticas</h2>
           
           <div class="toggle-switch">
-            <label>Ativar Mensagem de Boas-vindas</label>
+            <label>Ativar Boas-vindas</label>
             <label class="switch">
               <input type="checkbox" id="toggleWelcome" onchange="salvarAutomacoes()">
               <span class="slider"></span>
@@ -447,7 +446,7 @@
           </div>
 
           <div class="toggle-switch">
-            <label>Ativar Lembretes de Agendamento</label>
+            <label>Ativar Lembretes</label>
             <label class="switch">
               <input type="checkbox" id="toggleReminder" onchange="salvarAutomacoes()">
               <span class="slider"></span>
@@ -455,7 +454,7 @@
           </div>
 
           <div class="toggle-switch">
-            <label>Ativar Mensagem de Obrigado</label>
+            <label>Ativar Agradecimentos</label>
             <label class="switch">
               <input type="checkbox" id="toggleThank" onchange="salvarAutomacoes()">
               <span class="slider"></span>
@@ -465,25 +464,24 @@
 
         <!-- Template Editor Card -->
         <div class="card">
-          <h2>Editor de Modelos</h2>
+          <h2>📝 Editor de Modelos</h2>
           
           <label>Modelo de Boas-vindas:</label>
           <textarea id="templateWelcome" onchange="salvarTemplates()">Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?</textarea>
 
-          <label style="margin-top: 15px;">Modelo de Lembrete:</label>
+          <label>Modelo de Lembrete:</label>
           <textarea id="templateReminder" onchange="salvarTemplates()">Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?</textarea>
 
-          <label style="margin-top: 15px;">Modelo de Obrigado:</label>
+          <label>Modelo de Obrigado:</label>
           <textarea id="templateThank" onchange="salvarTemplates()">Obrigado {cliente}! Sua experiência é importante. Nos avalie!</textarea>
         </div>
 
         <!-- Manual Message Card -->
         <div class="card">
-          <h2>Enviar Mensagem Manual</h2>
+          <h2>💬 Enviar Mensagem Manual</h2>
           
-          <div class="input-group">
-            <input type="text" id="inputPhone" placeholder="Número WhatsApp (55xxxxxxxxxxxx)">
-          </div>
+          <label>Número WhatsApp (55XXXXXXXXXX):</label>
+          <input type="text" id="inputPhone" placeholder="5511987654321">
 
           <label>Mensagem:</label>
           <textarea id="inputMessage" placeholder="Digite sua mensagem..."></textarea>
@@ -493,14 +491,14 @@
 
         <!-- Logs Card -->
         <div class="card">
-          <h2>Logs do Sistema</h2>
+          <h2>📋 Logs do Sistema</h2>
           <div class="log-box" id="logBox">
-            <div class="log-entry log-info">Sistema inicializado</div>
+            <div class="log-entry log-info">✅ Sistema inicializado</div>
           </div>
         </div>
       </div>
 
-      <!-- DASHBOARD SECTION -->
+      <!-- ===== OTHER SECTIONS ===== -->
       <div id="dashboard" class="section">
         <div class="card">
           <h2>📊 Dashboard</h2>
@@ -508,7 +506,6 @@
         </div>
       </div>
 
-      <!-- AGENDA SECTION -->
       <div id="agenda" class="section">
         <div class="card">
           <h2>📅 Agenda</h2>
@@ -516,7 +513,6 @@
         </div>
       </div>
 
-      <!-- CLIENTES SECTION -->
       <div id="clientes" class="section">
         <div class="card">
           <h2>👥 Clientes</h2>
@@ -524,7 +520,6 @@
         </div>
       </div>
 
-      <!-- SERVICOS SECTION -->
       <div id="servicos" class="section">
         <div class="card">
           <h2>🛠️ Serviços</h2>
@@ -532,7 +527,6 @@
         </div>
       </div>
 
-      <!-- FINANCEIRO SECTION -->
       <div id="financeiro" class="section">
         <div class="card">
           <h2>💰 Financeiro</h2>
@@ -540,7 +534,6 @@
         </div>
       </div>
 
-      <!-- CONFIGURAÇÕES SECTION -->
       <div id="config" class="section">
         <div class="card">
           <h2>⚙️ Configurações</h2>
@@ -554,7 +547,7 @@
   <div id="qrModal" class="qr-modal">
     <div class="qr-modal-content">
       <button class="close-btn" onclick="fecharQRModal()">&times;</button>
-      <h2>Escaneie o QR Code</h2>
+      <h2>📸 Escaneie o QR Code</h2>
       <p>Use seu celular com WhatsApp aberto</p>
       <div class="qr-image-container loading" id="qrContainer">
         <p>⏳ Gerando QR Code...</p>
@@ -565,20 +558,16 @@
 
   <script>
     // ========================================
-    // CONSTANTES E CONFIGURAÇÃO
+    // CONFIGURAÇÃO
     // ========================================
-    const BACKEND_URL = 'https://reddito-production.up.railway.app'; // Produção
-    // Para desenvolvimento local, altere para: http://localhost:3000
-
-    const EVOLUTION_URL = 'https://evolution-api-production-692fd.up.railway.app';
-    const USE_DIRECT_EVOLUTION_FALLBACK = false; // NUNCA usar em produção
+    const BACKEND_URL = 'https://reddito-production.up.railway.app';
+    // Para localhost: http://localhost:3000
 
     let tenantId = null;
 
     // ========================================
-    // UTILITIES
+    // LOGGER
     // ========================================
-
     function log(message, type = 'info') {
       const logBox = document.getElementById('logBox');
       const entry = document.createElement('div');
@@ -590,17 +579,19 @@
       console.log(`[${type.toUpperCase()}] ${message}`);
     }
 
+    // ========================================
+    // OBTER TENANT ID
+    // ========================================
     async function getTenantId() {
       if (tenantId) return tenantId;
 
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
-          tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e'; // Default
-          log(`⚠️ TenantId padrão usado: ${tenantId}`, 'info');
+          tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e';
+          log(`⚠️ TenantId padrão: ${tenantId}`, 'info');
           resolve(tenantId);
         }, 5000);
 
-        // Tentar obter do localStorage
         try {
           const stored = localStorage.getItem('perfilAtual');
           if (stored) {
@@ -608,54 +599,52 @@
             if (perfil.tenantId) {
               clearTimeout(timeout);
               tenantId = perfil.tenantId;
-              log(`✅ TenantId obtido do localStorage: ${tenantId}`, 'success');
+              log(`✅ TenantId obtido: ${tenantId}`, 'success');
               resolve(tenantId);
               return;
             }
           }
         } catch (e) {
-          // Continuar
+          // continuar
         }
 
-        // Tentar obter do sessionStorage
         try {
           const session = sessionStorage.getItem('tenantId');
           if (session) {
             clearTimeout(timeout);
             tenantId = session;
-            log(`✅ TenantId obtido do sessionStorage: ${tenantId}`, 'success');
+            log(`✅ TenantId (session): ${tenantId}`, 'success');
             resolve(tenantId);
             return;
           }
         } catch (e) {
-          // Continuar
+          // continuar
         }
       });
     }
 
     // ========================================
-    // WHATSAPP CONNECT FLOW
+    // CONECTAR WHATSAPP
     // ========================================
-
     async function conectarWhatsApp() {
       try {
         log('🔄 Iniciando conexão WhatsApp...', 'info');
 
-        // Obter tenantId
         const id = await getTenantId();
         if (!id) {
           log('❌ TenantId não disponível', 'error');
           return;
         }
 
-        // Mostrar modal com QR
+        // Mostrar modal
         document.getElementById('qrModal').style.display = 'block';
         document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
         document.getElementById('qrContainer').classList.add('loading');
 
-        // Fazer requisição ao proxy
+        // Step 1: Criar instância
         const url = `${BACKEND_URL}/api/evolution/instance/create`;
-        log(`📤 POST para ${url}`, 'info');
+        log(`📤 POST ${url}`, 'info');
+        log(`📦 Payload: instanceName=${id}, token=${id}, qrcode=true`, 'info');
 
         const response = await fetch(url, {
           method: 'POST',
@@ -668,61 +657,62 @@
         });
 
         const data = await response.json();
-        log(`📥 Resposta: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+        log(`📥 HTTP ${response.status}`, 'info');
+        log(`📥 Resposta: ${JSON.stringify(data).substring(0, 150)}...`, 'info');
 
         if (!response.ok) {
-          log(`❌ Erro na criação: ${data.error || response.statusText}`, 'error');
-          document.getElementById('qrContainer').innerHTML = `<p>❌ Erro: ${data.message || 'Desconhecido'}</p>`;
-          return;
+          throw new Error(data.message || data.error || `HTTP ${response.status}`);
         }
 
-        // Tentar obter QR
+        // Step 2: Aguardar QR
         await aguardarQRCode(id);
 
       } catch (error) {
-        log(`❌ Erro ao conectar: ${error.message}`, 'error');
-        document.getElementById('qrContainer').innerHTML = `<p>❌ ${error.message}</p>`;
+        log(`❌ Erro: ${error.message}`, 'error');
+        document.getElementById('qrContainer').innerHTML = `<p style="color:red;">❌ ${error.message}</p>`;
       }
     }
 
     async function aguardarQRCode(instanceId) {
       let tentativas = 0;
-      const maxTentativas = 10;
+      const maxTentativas = 15;
 
       while (tentativas < maxTentativas) {
         try {
           const url = `${BACKEND_URL}/api/evolution/instance/connect/${instanceId}`;
+          log(`🔍 GET ${url} (tentativa ${tentativas + 1})`, 'info');
+
           const response = await fetch(url);
           const data = await response.json();
 
-          log(`🔍 Tentativa ${tentativas + 1}: ${JSON.stringify(data).substring(0, 80)}...`, 'info');
+          log(`  → Resposta: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
 
           if (data.qrcode || data.base64) {
             const qrData = data.qrcode || data.base64;
             const img = document.createElement('img');
             img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
+
             document.getElementById('qrContainer').innerHTML = '';
             document.getElementById('qrContainer').appendChild(img);
             document.getElementById('qrContainer').classList.remove('loading');
-            document.getElementById('qrStatus').textContent = '✅ QR Code carregado. Escaneie com seu celular!';
-            log('✅ QR Code exibido com sucesso', 'success');
+            document.getElementById('qrStatus').textContent = '✅ QR Code carregado! Escaneie com seu celular';
 
-            // Monitorar status a cada 3 segundos
+            log('✅ QR Code exibido com sucesso', 'success');
             monitorarStatusConexao(instanceId);
             return;
           }
 
           tentativas++;
-          await new Promise(r => setTimeout(r, 800));
+          await new Promise(r => setTimeout(r, 1000));
         } catch (err) {
-          log(`⚠️ Erro ao buscar QR: ${err.message}`, 'error');
+          log(`⚠️ Tentativa ${tentativas + 1}: ${err.message}`, 'error');
           tentativas++;
-          await new Promise(r => setTimeout(r, 800));
+          await new Promise(r => setTimeout(r, 1000));
         }
       }
 
       log('❌ Timeout ao gerar QR Code', 'error');
-      document.getElementById('qrContainer').innerHTML = '<p>❌ Timeout ao gerar QR Code</p>';
+      document.getElementById('qrContainer').innerHTML = '<p style="color:red;">❌ Timeout ao gerar QR Code</p>';
     }
 
     async function monitorarStatusConexao(instanceId) {
@@ -739,7 +729,7 @@
             log('✅ WhatsApp conectado!', 'success');
             document.getElementById('statusBadge').className = 'status-badge connected';
             document.getElementById('statusBadge').textContent = '🟢 Conectado';
-            document.getElementById('statusText').textContent = 'Conexão ativa';
+            document.getElementById('statusText').textContent = 'Conexão ativa e pronta';
             document.getElementById('btnConnect').style.display = 'none';
             document.getElementById('btnDisconnect').style.display = 'block';
             fecharQRModal();
@@ -754,24 +744,22 @@
         }
       }
 
-      if (!conectado) {
-        log('⚠️ Aguardando escanear o QR Code...', 'info');
-      }
+      log('⏳ Aguardando escanear QR Code...', 'info');
     }
 
     function desconectarWhatsApp() {
       log('🔌 Desconectando...', 'info');
       document.getElementById('statusBadge').className = 'status-badge disconnected';
       document.getElementById('statusBadge').textContent = '🔴 Desconectado';
+      document.getElementById('statusText').textContent = 'Clique para conectar novamente';
       document.getElementById('btnConnect').style.display = 'block';
       document.getElementById('btnDisconnect').style.display = 'none';
-      log('✅ Desconectado', 'success');
+      log('✅ Desconectado com sucesso', 'success');
     }
 
     // ========================================
-    // MODAL FUNCTIONS
+    // MODAL
     // ========================================
-
     function fecharQRModal() {
       document.getElementById('qrModal').style.display = 'none';
     }
@@ -786,7 +774,6 @@
     // ========================================
     // AUTOMAÇÕES E TEMPLATES
     // ========================================
-
     function salvarAutomacoes() {
       const config = {
         welcome: document.getElementById('toggleWelcome').checked,
@@ -828,7 +815,6 @@
     // ========================================
     // ENVIAR MENSAGEM MANUAL
     // ========================================
-
     async function enviarMensagemManual() {
       const phone = document.getElementById('inputPhone').value.trim();
       const message = document.getElementById('inputMessage').value.trim();
@@ -841,13 +827,7 @@
       log(`📨 Enviando para ${phone}...`, 'info');
       
       try {
-        // Aqui você integraria com o endpoint do seu backend para enviar mensagens
-        // await fetch(`${BACKEND_URL}/api/whatsapp/send`, {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ phone, message, tenantId })
-        // });
-
+        // TODO: Implementar endpoint no backend para enviar mensagens
         log(`✅ Mensagem enviada para ${phone}`, 'success');
         document.getElementById('inputPhone').value = '';
         document.getElementById('inputMessage').value = '';
@@ -859,7 +839,6 @@
     // ========================================
     // NAVEGAÇÃO
     // ========================================
-
     document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', function() {
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -874,7 +853,6 @@
     // ========================================
     // INICIALIZAÇÃO
     // ========================================
-
     document.addEventListener('DOMContentLoaded', function() {
       log('✅ Página carregada', 'success');
       carregarConfiguracoes();
