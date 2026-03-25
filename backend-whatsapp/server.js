@@ -2,38 +2,20 @@
 import express from 'express';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
-import cron from 'node-cron';
-import QRCode from 'qrcode';
-import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
-import { Boom } from '@hapi/boom';
-import pino from 'pino';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-import {
-  makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason,
-  isJidBroadcast
-} from '@whiskeysockets/baileys';
-
-import qrcodeTerminal from 'qrcode-terminal';
-import Levenshtein from 'js-levenshtein';
 import cors from 'cors';
 
 dotenv.config();
 
 console.log('>>> INICIANDO: backend-whatsapp/server.js');
 
-// Environment flags (não imprime chaves, apenas se estão setadas)
+// Environment flags
 console.log('ENV CHECK: SUPABASE_URL', !!process.env.SUPABASE_URL ? 'SET' : 'EMPTY');
 console.log('ENV CHECK: SUPABASE_SERVICE_KEY', !!process.env.SUPABASE_SERVICE_KEY ? 'SET' : 'EMPTY');
 console.log('ENV CHECK: CLAUDE_API_KEY', !!process.env.CLAUDE_API_KEY ? 'SET' : 'EMPTY');
 console.log('ENV CHECK: EVOLUTION_URL', !!process.env.EVOLUTION_URL ? 'SET' : 'EMPTY');
 console.log('ENV CHECK: EVOLUTION_API_KEY', !!process.env.EVOLUTION_API_KEY ? 'SET' : 'EMPTY');
 
-// Log dos valores reais (com máscara para segurança)
 if (process.env.EVOLUTION_URL) {
   console.log('EVOLUTION_URL VALUE:', process.env.EVOLUTION_URL);
 }
@@ -43,30 +25,23 @@ if (process.env.EVOLUTION_API_KEY) {
   console.log('EVOLUTION_API_KEY MASKED:', masked);
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
-// aumentar limite caso payloads maiores sejam enviados
 app.use(express.json({ limit: '1mb' }));
 
-/**
- * CORS - permitir apenas os domínios de frontend necessários.
- * Ajuste a lista `origin` conforme os domínios reais do seu frontend.
- * Em produção, substitua by-allowed list explicitamente.
- */
+// ============================================
+// CORS CONFIGURATION
+// ============================================
+
 const allowedOrigins = [
   'https://www.redditoapp.com',
   'https://redditoapp.com',
   'https://reddito-production.up.railway.app',
   'http://127.0.0.1:3000',
   'http://localhost:3000'
-  // adicione outros domínios de frontend aqui
 ];
 
 app.use(cors({
   origin: function(origin, callback){
-    // allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
@@ -82,7 +57,7 @@ app.use(cors({
 app.options('*', cors());
 
 // ============================================
-// CONFIGURAÇÕES
+// CONFIGURATION
 // ============================================
 
 const supabase = createClient(
@@ -92,466 +67,337 @@ const supabase = createClient(
 
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const PORT = process.env.PORT || 3000;
-
 const EVOLUTION_URL = process.env.EVOLUTION_URL || null;
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || null;
 
-const logger = pino();
-
-// Armazenar conexões WhatsApp por tenant
-const conexoesWhatsApp = {};
-
-// Pequeno helper para log seguro de objetos grandes
-function safeDump(obj, label = '') {
-  try {
-    console.log(`--- DUMP ${label} ---`);
-    console.log(JSON.stringify(obj, null, 2));
-  } catch (e) {
-    console.log(`--- DUMP ${label} (raw) ---`);
-    console.log(obj);
-  }
-}
-
-// captura erros não tratados para logs (ajuda em debug de produção)
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception thrown:', err);
-});
+// Store active instances in memory
+const instances = {};
 
 // ============================================
-// CONECTAR WHATSAPP BAILEYS MULTI-TENANT
+// UTILITY FUNCTIONS
 // ============================================
 
-async function conectarWhatsAppTenant(tenantId) {
-  try {
-    console.log(`🔔 conectarWhatsAppTenant chamado para tenantId=${tenantId}`);
-
-    // Se já existe conexão, retorna ela (evita múltiplas instâncias)
-    if (conexoesWhatsApp[tenantId]) {
-      console.log(`ℹ️  Já existe uma conexão ativa para tenant ${tenantId}. Retornando conexão existente.`);
-      return conexoesWhatsApp[tenantId];
-    }
-
-    const authDir = path.join(__dirname, 'auth_info', tenantId);
-
-    // Criar diretório auth_info/<tenantId> se não existir
-    try {
-      if (!fs.existsSync(authDir)) {
-        fs.mkdirSync(authDir, { recursive: true });
-        console.log(`✅ Diretório de auth criado: ${authDir}`);
-      } else {
-        console.log(`ℹ️  Diretório de auth já existe: ${authDir}`);
-      }
-    } catch (mkdirErr) {
-      console.error(`❌ Erro ao criar authDir ${authDir}:`, mkdirErr);
-      // Continuar mesmo assim (Baileys também tentará criar), mas logamos.
-    }
-
-    // Listar conteúdo do diretório antes de chamar useMultiFileAuthState (para debug)
-    try {
-      const parent = path.dirname(authDir);
-      if (fs.existsSync(parent)) {
-        const beforeList = fs.readdirSync(parent);
-        console.log('Conteúdo do diretório auth_info (pai):', beforeList);
-      }
-    } catch (e) {
-      // não crítico
-    }
-
-    if (typeof useMultiFileAuthState !== 'function') {
-      console.warn('⚠️ useMultiFileAuthState não é uma função — verifique a versão do baileys/da importação.');
-    }
-
-    let state, saveCreds;
-    try {
-      const result = await useMultiFileAuthState(authDir);
-      state = result.state;
-      saveCreds = result.saveCreds;
-      console.log(`✅ useMultiFileAuthState OK — authDir: ${authDir}`);
-      try {
-        const authFiles = fs.readdirSync(authDir);
-        console.log(`Conteúdo authDir ${authDir}:`, authFiles);
-      } catch (e) {
-        console.warn(`⚠️ Falha ao listar conteúdo de ${authDir}:`, e?.message || e);
-      }
-    } catch (err) {
-      console.error('❌ Erro em useMultiFileAuthState:', err && err.stack ? err.stack : err);
-      // Re-throw para ser tratado pelo chamador
-      throw err;
-    }
-
-    if (!makeWASocket || typeof makeWASocket !== 'function') {
-      console.warn('⚠️ makeWASocket parece indefinido — checar import do baileys. Valor:', makeWASocket);
-    }
-
-    // NOTE: coloquei printQRInTerminal: true para debugging local — remove/ajuste em produção
-    const sock = makeWASocket({
-      auth: state,
-      logger: pino({ level: 'silent' }),
-      printQRInTerminal: true,
-      defaultQueryTimeoutMs: undefined
-    });
-
-    // Salvar credenciais
-    try {
-      sock.ev.on('creds.update', saveCreds);
-    } catch (e) {
-      console.warn('⚠️ Não foi possível registrar handler de creds.update:', e?.message || e);
-    }
-
-    // Processar mensagens recebidas
-    sock.ev.on('messages.upsert', async (m) => {
-      try {
-        const message = m.messages[0];
-        if (!message || !message.message) return;
-        if (isJidBroadcast(message.key.remoteJid)) return;
-
-        const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
-        const conteudo = message.message.conversation ||
-                         message.message.extendedTextMessage?.text || '';
-
-        console.log(`📨 [${tenantId}] ${phoneNumber}: ${conteudo}`);
-
-        try {
-          await processarMensagemWhatsApp(tenantId, phoneNumber, conteudo, sock);
-        } catch (error) {
-          console.error(`❌ Erro ao processar mensagem:`, error?.message || error);
-        }
-      } catch (err) {
-        console.error('❌ Erro em messages.upsert handler:', err);
-      }
-    });
-
-    // Atualizar status de conexão
-    sock.ev.on('connection.update', async (update) => {
-      try {
-        // DUMP completo do evento para inspeção
-        try {
-          safeDump(update, `connection.update tenant=${tenantId}`);
-        } catch (e) {
-          console.warn('⚠️ Falha ao dumpar update:', e);
-        }
-
-        // Mantemos compatibilidade com as props usadas antes
-        const { connection, lastDisconnect, qr } = update;
-
-        if (qr) {
-          console.log(`\n📱 QR Code para tenant=${tenantId} recebido no evento connection.update`);
-          // Mostra no terminal (útil para debugging local)
-          try {
-            qrcodeTerminal.generate(qr, { small: true });
-          } catch (e) {
-            console.warn('⚠️ Não foi possível renderizar QR no terminal:', e?.message || e);
-          }
-
-          try {
-            // Gerar QR em base64 para o painel
-            const qrBase64 = await QRCode.toDataURL(qr);
-
-            console.log(`🔄 [DEBUG] Tentando salvar whatsapp_qrcode no Supabase para tenantId=${tenantId}...`);
-
-            // Retornar data/error para inspeção
-            const { data, error } = await supabase
-              .from('tenants')
-              .update({ whatsapp_qrcode: qrBase64 })
-              .eq('id', tenantId)
-              .select();
-
-            console.log('🔍 Supabase update result (whatsapp_qrcode):', { data, error });
-
-            if (error) {
-              console.error(`❌ [DEBUG] Erro do Supabase ao salvar whatsapp_qrcode:`, error);
-            } else if (!data || (Array.isArray(data) && data.length === 0)) {
-              console.warn(`⚠️ [DEBUG] Nenhuma linha atualizada na tabela 'tenants' para id=${tenantId}. Verifique se o tenantId existe no Supabase.`);
-              // Escreve um log extra para inspeção: buscar o tenant
-              try {
-                const { data: tenantRow, error: tenantErr } = await supabase
-                  .from('tenants')
-                  .select('id')
-                  .eq('id', tenantId)
-                  .single();
-
-                if (tenantErr) {
-                  console.error(`❌ [DEBUG] Erro ao buscar tenant (para debug):`, tenantErr);
-                } else {
-                  console.log(`ℹ️ [DEBUG] tenant encontrado para debug:`, tenantRow);
-                }
-              } catch (innerErr) {
-                console.error('❌ [DEBUG] Erro interno ao consultar tenant para debug:', innerErr);
-              }
-            } else {
-              console.log(`✅ [DEBUG] QR code salvo no banco para tenantId=${tenantId}.`);
-            }
-          } catch (e) {
-            console.error(`❌ [DEBUG] Erro ao converter/salvar QR code para ${tenantId}:`, e);
-          }
-        }
-
-        if (connection === 'open') {
-          console.log(`✅ WhatsApp conectado para tenant=${tenantId}`);
-          try {
-            const { data, error } = await supabase
-              .from('tenants')
-              .update({
-                whatsapp_conectado: true,
-                whatsapp_conectado_em: new Date().toISOString(),
-                whatsapp_qrcode: null
-              })
-              .eq('id', tenantId)
-              .select();
-
-            console.log('🔍 Supabase update result (connected=true):', { data, error });
-
-            if (error) {
-              console.error(`❌ Erro ao atualizar estado conectado no Supabase para ${tenantId}:`, error);
-            } else {
-              console.log(`✅ Atualizado estado conectado no Supabase para ${tenantId}`);
-            }
-          } catch (e) {
-            console.error('❌ Erro ao atualizar estado conectado (catch):', e);
-          }
-        }
-
-        if (connection === 'close') {
-          const shouldReconnect =
-            lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-
-          if (shouldReconnect) {
-            console.log(`🔄 Reconectando tenant=${tenantId} em 5s...`);
-            // aguarda um pouco e reconecta com backoff
-            setTimeout(() => conectarWhatsAppTenant(tenantId).catch(err => {
-              console.error(`❌ Erro ao tentar reconectar tenant ${tenantId}:`, err);
-            }), 5000);
-          } else {
-            console.log(`❌ tenant ${tenantId} desconectado (logged out). Atualizando estado no DB.`);
-            try {
-              const { data, error } = await supabase
-                .from('tenants')
-                .update({ whatsapp_conectado: false })
-                .eq('id', tenantId)
-                .select();
-
-              console.log('🔍 Supabase update result (connected=false):', { data, error });
-
-            } catch (e) {
-              console.error('❌ Erro ao atualizar estado desconectado no DB:', e);
-            }
-          }
-        }
-      } catch (handlerErr) {
-        console.error('❌ Erro no connection.update handler:', handlerErr);
-      }
-    });
-
-    conexoesWhatsApp[tenantId] = sock;
-    console.log(`ℹ️  Conexão Baileys criada para tenant=${tenantId} e armazenada em conexoesWhatsApp.`);
-
-    // Após criar socket, listar authDir (novamente) e permissões do arquivo (para debug)
-    try {
-      const files = fs.readdirSync(authDir);
-      console.log(`Conteúdo final authDir ${authDir}:`, files);
-      try {
-        files.forEach(f => {
-          const full = path.join(authDir, f);
-          const stat = fs.statSync(full);
-          console.log(` - ${f}: mode=${stat.mode.toString(8)}, size=${stat.size}`);
-        });
-      } catch (inner) {
-        // não crítico
-      }
-    } catch (e) {
-      console.warn('⚠️ Falha ao listar conteúdo de authDir após criar socket:', e?.message || e);
-    }
-
-    return sock;
-  } catch (error) {
-    console.error(`❌ Erro ao conectar WhatsApp para ${tenantId}:`, error && error.stack ? error.stack : error);
-    // Tentativa de limpar a conexão caso tenha sido parcialmente criada
-    if (conexoesWhatsApp[tenantId]) {
-      try {
-        delete conexoesWhatsApp[tenantId];
-      } catch (e) {
-        console.warn('⚠️ Erro ao deletar conexoesWhatsApp[tenantId] no catch:', e);
-      }
-    }
-    throw error;
-  }
-}
-
-// ============================================
-// PROCESSAR MENSAGEM WHATSAPP
-// ============================================
-
-async function processarMensagemWhatsApp(tenantId, phoneNumber, conteudo, sock) {
-  // Buscar ou criar cliente
-  const cliente = await buscarOuCriarCliente(phoneNumber, tenantId);
-
-  // Buscar contexto do salão
-  const contextoSalao = await buscarContextoSalao(tenantId);
-
-  // Se é primeiro atendimento, fazer cadastro
-  if (cliente.primeiro_atendimento) {
-    await processarPrimeiroAtendimento(tenantId, phoneNumber, conteudo, cliente, contextoSalao, sock);
-  } else {
-    // Análise inteligente da intenção
-    const historico = await buscarHistoricoConversas(cliente.id, 15);
-    const agendamentos = await buscarAgendamentosCliente(cliente.id);
-
-    const resposta = await gerarRespostaComClaude(
-      conteudo,
-      cliente,
-      historico,
-      contextoSalao,
-      agendamentos
-    );
-
-    // Enviar resposta
-    await sock.sendMessage(phoneNumber + '@s.whatsapp.net', {
-      text: resposta
-    });
-
-    // Registrar conversa
-    await registrarConversa(cliente.id, tenantId, conteudo, resposta, 'conversa_ia');
-
-    // Detectar intenções
-    await detectarIntencoes(tenantId, phoneNumber, conteudo, cliente, contextoSalao, sock);
-  }
-}
-
-// ============================================
-// ENDPOINTS REST
-// ============================================
-
-app.post('/api/whatsapp/connect/:tenantId', async (req, res) => {
-  try {
-    const { tenantId } = req.params;
-    console.log(`📥 POST /api/whatsapp/connect/${tenantId} recebido`);
-
-    // Inicia/garante a conexão Baileys para esse tenant
-    try {
-      await conectarWhatsAppTenant(tenantId);
-    } catch (connErr) {
-      console.error(`❌ Erro ao iniciar/conectar Baileys para tenant ${tenantId}:`, connErr && connErr.stack ? connErr.stack : connErr);
-      return res.status(500).json({ error: 'Erro ao iniciar conexão WhatsApp. Verifique logs do servidor.' });
-    }
-
-    // Tenta buscar QR code imediatamente
-    const { data: tenant, error } = await supabase
-      .from('tenants')
-      .select('whatsapp_qrcode')
-      .eq('id', tenantId)
-      .single();
-
-    if (error) {
-      console.error(`❌ Erro ao buscar whatsapp_qrcode no Supabase para ${tenantId}:`, error);
-      return res.status(500).json({ error: 'Erro ao buscar status no banco.' });
-    }
-
-    if (tenant?.whatsapp_qrcode) {
-      return res.json({ status: 'qr_generated', qrCode: tenant.whatsapp_qrcode });
-    }
-
-    // Se não tiver, aguarda até ~30s (ou menos) para o QR ser gerado e salvo
-    let qrCode = null;
-    let tentativas = 0;
-    const maxTentativas = 30;
-    while (!qrCode && tentativas < maxTentativas) {
-      const { data: tenant2, error: err2 } = await supabase
-        .from('tenants')
-        .select('whatsapp_qrcode')
-        .eq('id', tenantId)
-        .single();
-
-      if (err2) {
-        console.error(`❌ Erro ao buscar whatsapp_qrcode (tentativa ${tentativas}) para ${tenantId}:`, err2);
-      } else {
-        qrCode = tenant2?.whatsapp_qrcode;
-      }
-
-      if (!qrCode) {
-        await new Promise(r => setTimeout(r, 1000));
-        tentativas++;
-      }
-    }
-
-    if (qrCode) {
-      return res.json({ status: 'qr_generated', qrCode });
-    } else {
-      return res.json({ status: 'waiting_qr', message: 'Gerando/aguardando QR (verifique logs do servidor)' });
-    }
-  } catch (error) {
-    console.error('Erro /api/whatsapp/connect/:tenantId', error && error.stack ? error.stack : error);
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/whatsapp/status/:tenantId', async (req, res) => {
-  try {
-    const { tenantId } = req.params;
-
-    const { data: tenant, error } = await supabase
-      .from('tenants')
-      .select('whatsapp_conectado, whatsapp_conectado_em, whatsapp_qrcode')
-      .eq('id', tenantId)
-      .single();
-
-    if (error) {
-      console.error(`❌ Erro ao buscar status do tenant ${tenantId}:`, error);
-      return res.status(500).json({ error: error.message || 'Erro ao buscar tenant' });
-    }
-
-    return res.json({
-      connected: tenant?.whatsapp_conectado || false,
-      connectedAt: tenant?.whatsapp_conectado_em || null,
-      qrCode: tenant?.whatsapp_qrcode || null
-    });
-  } catch (error) {
-    console.error('❌ Erro GET /api/whatsapp/status/:tenantId', error && error.stack ? error.stack : error);
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-// ============================================
-// EVOLUTION API PROXY ENDPOINTS (CORRIGIDO)
-// ============================================
-
-// Utility: normalize EVOLUTION_URL (ensure has protocol)
 function normalizedEvolutionBase() {
   if (!EVOLUTION_URL) return null;
   let url = EVOLUTION_URL.trim();
-  // add https if missing
   if (!/^https?:\/\//i.test(url)) {
     url = 'https://' + url;
   }
-  // remove trailing slash
   url = url.replace(/\/$/, '');
   return url;
 }
 
-/**
- * POST /api/evolution/instance/create
- * 
- * Frontend envia: { instanceName: "xxx" }
- * Server transforma em: { name: "xxx" }
- * Server envia para Evolution com apikey header
- */
+async function getOrCreateTenant(tenantId) {
+  try {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('id', tenantId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error(`❌ Erro ao buscar tenant ${tenantId}:`, error);
+      return null;
+    }
+
+    if (data) {
+      return data;
+    }
+
+    // Create new tenant if doesn't exist
+    const { data: newTenant, error: createError } = await supabase
+      .from('tenants')
+      .insert([{
+        id: tenantId,
+        whatsapp_conectado: false,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (createError) {
+      console.error(`❌ Erro ao criar tenant ${tenantId}:`, createError);
+      return null;
+    }
+
+    return newTenant;
+  } catch (err) {
+    console.error(`❌ Erro em getOrCreateTenant:`, err);
+    return null;
+  }
+}
+
+async function updateTenantStatus(tenantId, status) {
+  try {
+    const { data, error } = await supabase
+      .from('tenants')
+      .update({
+        whatsapp_conectado: status,
+        whatsapp_conectado_em: new Date().toISOString()
+      })
+      .eq('id', tenantId)
+      .select();
+
+    if (error) {
+      console.error(`❌ Erro ao atualizar status do tenant ${tenantId}:`, error);
+    } else {
+      console.log(`✅ Status atualizado para tenant ${tenantId}:`, status);
+    }
+  } catch (err) {
+    console.error(`❌ Erro em updateTenantStatus:`, err);
+  }
+}
+
+async function buscarOuCriarCliente(phoneNumber, tenantId) {
+  try {
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('*')
+      .eq('telefone', phoneNumber)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error(`❌ Erro ao buscar cliente:`, error);
+      return null;
+    }
+
+    if (data) {
+      return { ...data, primeiro_atendimento: false };
+    }
+
+    // Create new client
+    const { data: newClient, error: createError } = await supabase
+      .from('clientes')
+      .insert([{
+        telefone: phoneNumber,
+        tenant_id: tenantId,
+        nome: `Cliente ${phoneNumber.substring(-4)}`,
+        primeiro_atendimento: true,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (createError) {
+      console.error(`❌ Erro ao criar cliente:`, createError);
+      return null;
+    }
+
+    return { ...newClient, primeiro_atendimento: true };
+  } catch (err) {
+    console.error(`❌ Erro em buscarOuCriarCliente:`, err);
+    return null;
+  }
+}
+
+async function buscarContextoSalao(tenantId) {
+  try {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('id', tenantId)
+      .single();
+
+    if (error) {
+      console.error(`❌ Erro ao buscar contexto do salão:`, error);
+      return { nome: 'Salão', servicos: [], profissionais: [] };
+    }
+
+    return data || { nome: 'Salão', servicos: [], profissionais: [] };
+  } catch (err) {
+    console.error(`❌ Erro em buscarContextoSalao:`, err);
+    return { nome: 'Salão', servicos: [], profissionais: [] };
+  }
+}
+
+async function buscarHistoricoConversas(clienteId, limit = 15) {
+  try {
+    const { data, error } = await supabase
+      .from('conversas')
+      .select('*')
+      .eq('cliente_id', clienteId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error(`❌ Erro ao buscar histórico:`, error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error(`❌ Erro em buscarHistoricoConversas:`, err);
+    return [];
+  }
+}
+
+async function buscarAgendamentosCliente(clienteId) {
+  try {
+    const { data, error } = await supabase
+      .from('agendamentos')
+      .select('*')
+      .eq('cliente_id', clienteId)
+      .eq('status', 'confirmado')
+      .order('data_hora', { ascending: true });
+
+    if (error) {
+      console.error(`❌ Erro ao buscar agendamentos:`, error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error(`❌ Erro em buscarAgendamentosCliente:`, err);
+    return [];
+  }
+}
+
+async function gerarRespostaComClaude(mensagem, cliente, historico, contextoSalao, agendamentos) {
+  try {
+    if (!CLAUDE_API_KEY) {
+      return `Olá ${cliente.nome}! Recebemos sua mensagem: "${mensagem}". Responderemos em breve!`;
+    }
+
+    const historicoFormatado = historico
+      .slice(0, 5)
+      .map(h => `Cliente: ${h.mensagem_entrada}\nAssistente: ${h.mensagem_saida}`)
+      .join('\n\n');
+
+    const agendamentosFormatado = agendamentos.length > 0
+      ? agendamentos.map(a => `- ${new Date(a.data_hora).toLocaleDateString('pt-BR')} às ${new Date(a.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`).join('\n')
+      : 'Nenhum agendamento confirmado';
+
+    const prompt = `Você é um assistente de atendimento para um salão de beleza chamado ${contextoSalao.nome || 'Salão'}.
+
+Cliente: ${cliente.nome}
+Telefone: ${cliente.telefone}
+
+Histórico recente:
+${historicoFormatado || 'Sem histórico anterior'}
+
+Agendamentos do cliente:
+${agendamentosFormatado}
+
+Mensagem do cliente: "${mensagem}"
+
+Responda de forma amigável, profissional e concisa (máximo 3 linhas). Se for uma pergunta sobre agendamentos, confirme os dados acima.`;
+
+    const response = await axios.post(
+      'https://api.anthropic.com/v1/messages',
+      {
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 300,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      },
+      {
+        headers: {
+          'x-api-key': CLAUDE_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
+
+    const resposta = response.data?.content?.[0]?.text || `Obrigado pela mensagem, ${cliente.nome}!`;
+    return resposta;
+  } catch (err) {
+    console.error(`❌ Erro ao gerar resposta com Claude:`, err.message);
+    return `Olá ${cliente.nome}! Recebemos sua mensagem e responderemos em breve.`;
+  }
+}
+
+async function registrarConversa(clienteId, tenantId, mensagemEntrada, mensagemSaida, tipo = 'conversa') {
+  try {
+    const { error } = await supabase
+      .from('conversas')
+      .insert([{
+        cliente_id: clienteId,
+        tenant_id: tenantId,
+        mensagem_entrada: mensagemEntrada,
+        mensagem_saida: mensagemSaida,
+        tipo: tipo,
+        created_at: new Date().toISOString()
+      }]);
+
+    if (error) {
+      console.error(`❌ Erro ao registrar conversa:`, error);
+    } else {
+      console.log(`✅ Conversa registrada para cliente ${clienteId}`);
+    }
+  } catch (err) {
+    console.error(`❌ Erro em registrarConversa:`, err);
+  }
+}
+
+async function enviarMensagemViaEvolution(instanceName, phoneNumber, message) {
+  try {
+    const base = normalizedEvolutionBase();
+    if (!base) {
+      console.error('❌ EVOLUTION_URL não configurado');
+      return false;
+    }
+
+    const url = `${base}/message/send`;
+    
+    const response = await axios.post(
+      url,
+      {
+        number: phoneNumber,
+        text: message,
+        instance: instanceName
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': EVOLUTION_API_KEY
+        },
+        timeout: 15000
+      }
+    );
+
+    console.log(`✅ Mensagem enviada para ${phoneNumber} via Evolution`);
+    return true;
+  } catch (err) {
+    console.error(`❌ Erro ao enviar mensagem via Evolution:`, err.message);
+    return false;
+  }
+}
+
+// ============================================
+// REST ENDPOINTS
+// ============================================
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'Servidor rodando! ✅',
+    timestamp: new Date().toISOString(),
+    activeInstances: Object.keys(instances).length,
+    evolutionConfigured: !!EVOLUTION_URL && !!EVOLUTION_API_KEY,
+    claudeConfigured: !!CLAUDE_API_KEY
+  });
+});
+
+// ============================================
+// EVOLUTION API PROXY ENDPOINTS
+// ============================================
+
 app.post('/api/evolution/instance/create', async (req, res) => {
   try {
     console.log('\n========================================');
     console.log('📥 POST /api/evolution/instance/create recebido');
     console.log('========================================');
     
-    // Log DETALHADO do que foi recebido
-    console.log('📦 Body recebido (raw):', req.body);
-    console.log('📦 Body recebido (stringified):', JSON.stringify(req.body, null, 2));
+    console.log('📦 Body recebido:', JSON.stringify(req.body, null, 2));
     
-    // Extrair e validar o instanceName
     let instanceName = req.body?.instanceName;
     console.log('🔍 instanceName extraído:', instanceName);
-    console.log('🔍 Tipo de instanceName:', typeof instanceName);
-    console.log('🔍 instanceName é falsy?', !instanceName);
 
     if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
       console.error('❌ EVOLUTION_URL ou EVOLUTION_API_KEY não configurado');
@@ -561,7 +407,6 @@ app.post('/api/evolution/instance/create', async (req, res) => {
       });
     }
 
-    // CORREÇÃO CRÍTICA: validar e transformar instanceName
     if (!instanceName || instanceName === 'undefined' || typeof instanceName !== 'string') {
       console.error('❌ instanceName inválido ou não recebido:', instanceName);
       return res.status(400).json({
@@ -571,13 +416,12 @@ app.post('/api/evolution/instance/create', async (req, res) => {
       });
     }
 
-    // Criar o payload CORRETO
     const payload = {
       name: instanceName.trim(),
       qrcode: true
     };
 
-    console.log('✅ Payload validado e criado:', JSON.stringify(payload, null, 2));
+    console.log('✅ Payload validado:', JSON.stringify(payload, null, 2));
 
     const base = normalizedEvolutionBase();
     if (!base) {
@@ -589,8 +433,7 @@ app.post('/api/evolution/instance/create', async (req, res) => {
     }
 
     const url = `${base}/instance/create`;
-    console.log('🌐 URL Evolution completa:', url);
-    console.log('🔑 Enviando com apikey');
+    console.log('🌐 URL Evolution:', url);
 
     let r;
     try {
@@ -602,41 +445,43 @@ app.post('/api/evolution/instance/create', async (req, res) => {
           'Accept': 'application/json'
         },
         timeout: 30000,
-        validateStatus: () => true // we'll forward status back
+        validateStatus: () => true
       });
 
-      console.log('✅ Resposta Evolution recebida');
-      console.log('📊 Status HTTP:', r.status);
+      console.log('✅ Resposta recebida, status:', r.status);
       console.log('📥 Response data:', JSON.stringify(r.data, null, 2));
     } catch (axiosErr) {
-      console.error('❌ Erro na requisição axios:', axiosErr?.message || axiosErr);
-      console.error('Detalhes completos:', axiosErr);
+      console.error('❌ Erro axios:', axiosErr?.message);
       return res.status(502).json({ 
         error: 'proxy_network_error', 
         detail: axiosErr?.message || String(axiosErr) 
       });
     }
 
-    // If the evolution returns non-JSON, attempt to forward text
     const respData = r.data !== undefined ? r.data : { raw: r.statusText || '' };
     
     console.log(`📊 Reenviando para client: HTTP ${r.status || 200}`);
     console.log('========================================\n');
+
+    // Store instance in memory
+    if ([200, 201, 204].includes(r.status)) {
+      instances[instanceName] = {
+        name: instanceName,
+        status: 'created',
+        createdAt: new Date().toISOString()
+      };
+      console.log(`✅ Instância ${instanceName} armazenada em memória`);
+    }
+
     return res.status(r.status || 200).json(respData);
   } catch (err) {
     console.error('❌ Erro em /api/evolution/instance/create:', err);
-    console.error('Stack:', err?.stack);
     const status = err?.response?.status || 500;
     const data = err?.response?.data || { error: 'proxy_error', detail: String(err?.message || err) };
     return res.status(status).json(data);
   }
 });
 
-/**
- * GET /api/evolution/instance/connect/:id
- * 
- * Busca status da instância e QR code da Evolution API
- */
 app.get('/api/evolution/instance/connect/:id', async (req, res) => {
   try {
     const id = req.params.id;
@@ -660,7 +505,7 @@ app.get('/api/evolution/instance/connect/:id', async (req, res) => {
     }
 
     const url = `${base}/instance/connect/${encodeURIComponent(id)}`;
-    console.log('🌐 URL Evolution completa:', url);
+    console.log('🌐 URL Evolution:', url);
 
     let r;
     try {
@@ -676,11 +521,11 @@ app.get('/api/evolution/instance/connect/:id', async (req, res) => {
 
       console.log('✅ Resposta recebida, status:', r.status);
       if (r.data?.qrcode || r.data?.base64) {
-        console.log('✅ QR Code encontrado na resposta');
+        console.log('✅ QR Code encontrado');
       }
-      console.log('📥 Response (primeiros 200 chars):', JSON.stringify(r.data, null, 2).substring(0, 200) + '...');
+      console.log('📥 Response (primeiros 150 chars):', JSON.stringify(r.data, null, 2).substring(0, 150) + '...');
     } catch (axiosErr) {
-      console.error('❌ Erro na requisição axios:', axiosErr?.message || axiosErr);
+      console.error('❌ Erro axios:', axiosErr?.message);
       return res.status(502).json({ 
         error: 'proxy_network_error', 
         detail: axiosErr?.message || String(axiosErr) 
@@ -699,29 +544,230 @@ app.get('/api/evolution/instance/connect/:id', async (req, res) => {
   }
 });
 
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'Servidor rodando! ✅',
-    timestamp: new Date().toISOString(),
-    whatsappConnections: Object.keys(conexoesWhatsApp).length,
-    evolutionConfigured: !!EVOLUTION_URL && !!EVOLUTION_API_KEY
-  });
+app.get('/api/evolution/instance/list', async (req, res) => {
+  try {
+    console.log('\n📥 GET /api/evolution/instance/list recebido');
+
+    if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
+      console.error('❌ EVOLUTION_URL ou EVOLUTION_API_KEY não configurado');
+      return res.status(500).json({ 
+        error: 'evolution_not_configured', 
+        message: 'EVOLUTION_URL ou EVOLUTION_API_KEY ausente no servidor.' 
+      });
+    }
+
+    const base = normalizedEvolutionBase();
+    if (!base) {
+      console.error('❌ EVOLUTION_URL inválido ou vazio');
+      return res.status(500).json({ 
+        error: 'invalid_evolution_url', 
+        message: 'EVOLUTION_URL inválido ou vazio.' 
+      });
+    }
+
+    const url = `${base}/instance/list`;
+    console.log('🌐 URL Evolution:', url);
+
+    let r;
+    try {
+      console.log('📡 Enviando GET para Evolution API...');
+      r = await axios.get(url, {
+        headers: { 
+          'apikey': EVOLUTION_API_KEY,
+          'Accept': 'application/json'
+        },
+        timeout: 20000,
+        validateStatus: () => true
+      });
+
+      console.log('✅ Resposta recebida, status:', r.status);
+    } catch (axiosErr) {
+      console.error('❌ Erro axios:', axiosErr?.message);
+      return res.status(502).json({ 
+        error: 'proxy_network_error', 
+        detail: axiosErr?.message || String(axiosErr) 
+      });
+    }
+
+    const respData = r.data !== undefined ? r.data : { raw: r.statusText || '' };
+    
+    console.log(`📊 Reenviando para client: HTTP ${r.status || 200}\n`);
+    return res.status(r.status || 200).json(respData);
+  } catch (err) {
+    console.error('❌ Erro em /api/evolution/instance/list:', err);
+    const status = err?.response?.status || 500;
+    const data = err?.response?.data || { error: 'proxy_error', detail: String(err?.message || err) };
+    return res.status(status).json(data);
+  }
+});
+
+app.post('/api/evolution/message/send', async (req, res) => {
+  try {
+    console.log('\n📥 POST /api/evolution/message/send recebido');
+    console.log('📦 Body:', JSON.stringify(req.body, null, 2));
+
+    if (!EVOLUTION_URL || !EVOLUTION_API_KEY) {
+      console.error('❌ EVOLUTION_URL ou EVOLUTION_API_KEY não configurado');
+      return res.status(500).json({ 
+        error: 'evolution_not_configured', 
+        message: 'EVOLUTION_URL ou EVOLUTION_API_KEY ausente no servidor.' 
+      });
+    }
+
+    const { number, text, instance } = req.body;
+
+    if (!number || !text || !instance) {
+      console.error('❌ Campos obrigatórios ausentes: number, text, instance');
+      return res.status(400).json({
+        error: 'missing_fields',
+        message: 'number, text e instance são obrigatórios'
+      });
+    }
+
+    const base = normalizedEvolutionBase();
+    if (!base) {
+      console.error('❌ EVOLUTION_URL inválido ou vazio');
+      return res.status(500).json({ 
+        error: 'invalid_evolution_url', 
+        message: 'EVOLUTION_URL inválido ou vazio.' 
+      });
+    }
+
+    const url = `${base}/message/send`;
+    console.log('🌐 URL Evolution:', url);
+
+    const payload = {
+      number: number,
+      text: text,
+      instance: instance
+    };
+
+    let r;
+    try {
+      console.log('📡 Enviando mensagem para Evolution API...');
+      r = await axios.post(url, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': EVOLUTION_API_KEY,
+          'Accept': 'application/json'
+        },
+        timeout: 30000,
+        validateStatus: () => true
+      });
+
+      console.log('✅ Resposta recebida, status:', r.status);
+    } catch (axiosErr) {
+      console.error('❌ Erro axios:', axiosErr?.message);
+      return res.status(502).json({ 
+        error: 'proxy_network_error', 
+        detail: axiosErr?.message || String(axiosErr) 
+      });
+    }
+
+    const respData = r.data !== undefined ? r.data : { raw: r.statusText || '' };
+    
+    console.log(`📊 Reenviando para client: HTTP ${r.status || 200}\n`);
+    return res.status(r.status || 200).json(respData);
+  } catch (err) {
+    console.error('❌ Erro em /api/evolution/message/send:', err);
+    const status = err?.response?.status || 500;
+    const data = err?.response?.data || { error: 'proxy_error', detail: String(err?.message || err) };
+    return res.status(status).json(data);
+  }
 });
 
 // ============================================
-// INICIAR SERVIDOR
+// WEBHOOK PARA RECEBER MENSAGENS DA EVOLUTION
+// ============================================
+
+app.post('/api/webhook/evolution/messages', async (req, res) => {
+  try {
+    console.log('\n📥 Webhook de mensagem recebido');
+    console.log('📦 Payload:', JSON.stringify(req.body, null, 2));
+
+    const { instance, data } = req.body;
+
+    if (!instance || !data) {
+      console.warn('⚠️ Webhook inválido: faltam instance ou data');
+      return res.status(400).json({ error: 'invalid_webhook' });
+    }
+
+    const phoneNumber = data.key?.remoteJid?.replace('@s.whatsapp.net', '') || data.sender;
+    const message = data.message?.conversation || data.body || '';
+    const tenantId = req.body.tenantId || 'default';
+
+    if (!phoneNumber || !message) {
+      console.warn('⚠️ Dados insuficientes para processar mensagem');
+      return res.status(400).json({ error: 'insufficient_data' });
+    }
+
+    console.log(`📨 Mensagem recebida de ${phoneNumber}: "${message}"`);
+
+    // Get or create tenant
+    const tenant = await getOrCreateTenant(tenantId);
+    if (!tenant) {
+      console.error('❌ Falha ao obter/criar tenant');
+      return res.status(500).json({ error: 'tenant_error' });
+    }
+
+    // Get or create client
+    const cliente = await buscarOuCriarCliente(phoneNumber, tenantId);
+    if (!cliente) {
+      console.error('❌ Falha ao obter/criar cliente');
+      return res.status(500).json({ error: 'client_error' });
+    }
+
+    // Get salon context
+    const contextoSalao = await buscarContextoSalao(tenantId);
+
+    // Get conversation history
+    const historico = await buscarHistoricoConversas(cliente.id, 10);
+
+    // Get client's appointments
+    const agendamentos = await buscarAgendamentosCliente(cliente.id);
+
+    // Generate response with Claude
+    const resposta = await gerarRespostaComClaude(
+      message,
+      cliente,
+      historico,
+      contextoSalao,
+      agendamentos
+    );
+
+    // Send response via Evolution
+    await enviarMensagemViaEvolution(instance, phoneNumber, resposta);
+
+    // Register conversation
+    await registrarConversa(cliente.id, tenantId, message, resposta, 'conversa_ia');
+
+    console.log('✅ Webhook processado com sucesso');
+
+    res.json({ success: true, message: 'Mensagem processada' });
+  } catch (err) {
+    console.error('❌ Erro em webhook/evolution/messages:', err);
+    res.status(500).json({ error: 'webhook_error', detail: err.message });
+  }
+});
+
+// ============================================
+// START SERVER
 // ============================================
 
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Servidor WhatsApp IA rodando na porta ${PORT}`);
+  console.log(`\n🚀 Servidor WhatsApp IA rodando na porta ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
-  console.log(`📱 Conectar WhatsApp: POST /api/whatsapp/connect/:tenantId`);
-  console.log(`✅ Status WhatsApp: GET /api/whatsapp/status/:tenantId`);
   console.log(`🔁 Evolution proxy: POST /api/evolution/instance/create`);
   console.log(`🔁 Evolution proxy: GET  /api/evolution/instance/connect/:id`);
-  console.log(`\n🔑 Evolution API Status:`);
+  console.log(`🔁 Evolution proxy: GET  /api/evolution/instance/list`);
+  console.log(`🔁 Evolution proxy: POST /api/evolution/message/send`);
+  console.log(`🔗 Webhook: POST /api/webhook/evolution/messages`);
+  console.log(`\n🔑 Configuration Status:`);
   console.log(`   EVOLUTION_URL: ${EVOLUTION_URL ? '✅ Configurado' : '❌ Não configurado'}`);
   console.log(`   EVOLUTION_API_KEY: ${EVOLUTION_API_KEY ? '✅ Configurado' : '❌ Não configurado'}`);
+  console.log(`   CLAUDE_API_KEY: ${CLAUDE_API_KEY ? '✅ Configurado' : '❌ Não configurado'}`);
+  console.log(`   SUPABASE: ${process.env.SUPABASE_URL ? '✅ Configurado' : '❌ Não configurado'}`);
+  console.log('\n========================================\n');
 });
 
 export default app;
