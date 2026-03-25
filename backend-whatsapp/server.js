@@ -29,7 +29,7 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 
 // ============================================
-// CORS CONFIGURATION
+// CORS CONFIGURATION (robusta, usando `cors`)
 // ============================================
 
 const allowedOrigins = [
@@ -40,23 +40,50 @@ const allowedOrigins = [
   'http://localhost:3000'
 ];
 
-// Middleware CORS com logging e headers explícitos
+// Delegator para opções dinâmicas do cors
+const corsOptionsDelegate = (req, callback) => {
+  const origin = req.header('Origin');
+  console.log(`[CORS] Requisição de origem: ${origin}`);
+
+  // Se não houver Origin (ex: chamadas internas de servidor ou cURL),
+  // permitimos com '*' para facilitar debugging. Não habilitamos credentials nesse caso.
+  if (!origin) {
+    return callback(null, {
+      origin: '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'apikey', 'x-api-key'],
+      exposedHeaders: ['Content-Length'],
+      maxAge: 86400,
+      credentials: false
+    });
+  }
+
+  // Se a origem estiver na lista de permitidas, refletimos a origem e habilitamos credentials
+  if (allowedOrigins.includes(origin)) {
+    return callback(null, {
+      origin: origin,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'apikey', 'x-api-key'],
+      exposedHeaders: ['Content-Length'],
+      maxAge: 86400,
+      credentials: true
+    });
+  }
+
+  // Origem não permitida
+  console.warn(`[CORS] Origem NÃO permitida: ${origin}`);
+  // Aqui retornamos origin: false -> o middleware CORS irá responder bloqueando.
+  return callback(null, { origin: false });
+};
+
+// Aplica o middleware CORS com a delegate
+app.use(cors(corsOptionsDelegate));
+// Garante que preflight OPTIONS em todas as rotas seja tratado
+app.options('*', cors(corsOptionsDelegate));
+
+// Middleware de logging simples de requisições (útil para debug no Railway)
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  console.log(`[CORS] Requisição de: ${origin}`);
-  
-  if (!origin || allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, apikey, x-api-key');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400');
-  }
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
+  console.log(`[REQUEST] ${req.method} ${req.originalUrl} - Origin: ${req.header('Origin')}`);
   next();
 });
 
