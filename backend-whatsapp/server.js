@@ -60,14 +60,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'apikey', 'x-api-key'],
-  credentials: true,
-  maxAge: 86400
-}));
-
 // ============================================
 // CONFIGURATION
 // ============================================
