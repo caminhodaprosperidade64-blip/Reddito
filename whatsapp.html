@@ -943,7 +943,7 @@
                     return;
                 }
 
-                const instanceName = `reddito-${id.substring(0, 8)}`.toLowerCase();
+                const instanceName = `reddito-${id.substring(0, 4)}-${Math.floor(Math.random() * 1000)}`.toLowerCase();
                 log(`📝 Nome da instância: ${instanceName}`, 'info');
 
                 document.getElementById('qrModal').classList.add('active');
