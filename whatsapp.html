@@ -950,12 +950,12 @@
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                // Payload atualizado para Evolution API v2
+                // Payload atualizado para teste: sem campo "integration"
                 const payload = {
                     instanceName: instanceName,
                     token: id,            // usando tenantId como token por enquanto
-                    qrcode: true,
-                    integration: "WHATSAPP-BAILEYS" // campo obrigatório na v2
+                    qrcode: true
+                    // intentionally removed 'integration' for test
                 };
 
                 log(`📦 Payload: ${JSON.stringify(payload)}`, 'info');
