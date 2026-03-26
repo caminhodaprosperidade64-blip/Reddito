@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>WhatsApp - RedditoApp</title>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -768,7 +768,11 @@
         // ========================================
         // CONFIGURAÇÃO
         // ========================================
+        // Escolhi o domínio que você indicou como padrão:
         const BACKEND_URL = 'https://reddito-production-52a3.up.railway.app';
+
+        // Alguns prefixes que a Evolution API pode usar — tentaremos com e sem o /api/evolution
+        const EV_PREFIXES = ['/api/evolution', ''];
 
         let tenantId = null;
 
@@ -802,6 +806,88 @@
             logBox.appendChild(entry);
             logBox.scrollTop = logBox.scrollHeight;
             console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // ========================================
+        // HELPER: Tenta POST/GET em múltiplos prefixes (fallback)
+        // ========================================
+        async function tryPost(path, body) {
+            let lastResponse = null;
+            let lastData = null;
+            for (const prefix of EV_PREFIXES) {
+                const url = `${BACKEND_URL}${prefix}${path}`;
+                log(`📤 Tentando POST ${url}`, 'info');
+
+                const headers = { 'Content-Type': 'application/json' };
+                const apiKey = localStorage.getItem('evolutionApiKey') || '';
+                if (apiKey) headers['apikey'] = apiKey;
+
+                try {
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify(body)
+                    });
+                    lastResponse = resp;
+                    try { lastData = await resp.json(); } catch (e) { lastData = null; }
+                    log(`  → HTTP ${resp.status} recebido de ${url}`, 'info');
+
+                    // Se sucesso (200/201/204) ou erro conhecido "instance exists (400)" consideramos OK
+                    if ([200, 201, 204].includes(resp.status)) {
+                        return { ok: true, response: resp, data: lastData, url };
+                    }
+                    if (resp.status === 400 && (lastData?.response?.message === "The instance already exists" || JSON.stringify(lastData).toLowerCase().includes('already exists'))) {
+                        return { ok: true, response: resp, data: lastData, url };
+                    }
+
+                    // Se 404 -> tentar próximo prefix
+                    if (resp.status === 404) {
+                        log(`⚠️ 404 em ${url}, tentando próximo prefix...`, 'info');
+                        continue;
+                    }
+
+                    // Para outros códigos, retornamos para tratamento
+                    return { ok: false, response: resp, data: lastData, url };
+                } catch (err) {
+                    log(`⚠️ Erro de rede ao acessar ${url}: ${err.message}`, 'error');
+                    // tentar próximo prefix
+                    continue;
+                }
+            }
+            return { ok: false, response: lastResponse, data: lastData, url: null };
+        }
+
+        async function tryGet(path) {
+            let lastResponse = null;
+            let lastData = null;
+            for (const prefix of EV_PREFIXES) {
+                const url = `${BACKEND_URL}${prefix}${path}`;
+                log(`🔍 Tentando GET ${url}`, 'info');
+
+                try {
+                    const resp = await fetch(url);
+                    lastResponse = resp;
+                    try { lastData = await resp.json(); } catch (e) { lastData = null; }
+                    log(`  → HTTP ${resp.status} recebido de ${url}`, 'info');
+
+                    if (resp.status === 200) {
+                        return { ok: true, response: resp, data: lastData, url };
+                    }
+
+                    // 404: tente próximo prefix
+                    if (resp.status === 404) {
+                        log(`⚠️ 404 em ${url}, tentando próximo prefix...`, 'info');
+                        continue;
+                    }
+
+                    // Alguns endpoints retornam 204/202/401/403 — devolvemos para o chamador decidir
+                    return { ok: false, response: resp, data: lastData, url };
+                } catch (err) {
+                    log(`⚠️ Erro de rede ao GET ${url}: ${err.message}`, 'error');
+                    continue;
+                }
+            }
+            return { ok: false, response: lastResponse, data: lastData, url: null };
         }
 
         // ========================================
@@ -864,31 +950,27 @@
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                const urlCreate = `${BACKEND_URL}/api/evolution/instance/create`;
-                log(`📤 POST ${urlCreate}`, 'info');
-
+                // Payload atualizado para Evolution API v2
                 const payload = {
                     instanceName: instanceName,
-                    qrcode: true
+                    token: id,            // usando tenantId como token por enquanto
+                    qrcode: true,
+                    integration: "WHATSAPP-BAILEYS" // campo obrigatório na v2
                 };
 
                 log(`📦 Payload: ${JSON.stringify(payload)}`, 'info');
 
-                const responseCreate = await fetch(urlCreate, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                // Tentamos criar a instância com fallback entre prefixos
+                const result = await tryPost('/instance/create', payload);
 
-                const dataCreate = await responseCreate.json();
-                log(`📥 HTTP ${responseCreate.status}`, 'info');
-                log(`📥 Response: ${JSON.stringify(dataCreate)}`, 'info');
-
-                if (![200, 201, 204, 400].includes(responseCreate.status)) {
-                    throw new Error(dataCreate.message?.[0] || dataCreate.error || `HTTP ${responseCreate.status}`);
+                if (!result.ok) {
+                    const dataMsg = result.data ? JSON.stringify(result.data) : `HTTP ${result.response?.status}`;
+                    throw new Error(dataMsg || 'Erro desconhecido ao criar instância');
                 }
 
-                log('✅ Instância pronta', 'success');
+                log(`✅ Instância criada (ou já existente). Endpoint: ${result.url}`, 'success');
+
+                // Aguardar e obter o QR Code
                 await aguardarQRCode(instanceName);
 
             } catch (error) {
@@ -897,33 +979,44 @@
             }
         }
 
+        // ========================================
+        // AGUARDAR QR CODE
+        // ========================================
         async function aguardarQRCode(instanceName) {
             let tentativas = 0;
             const maxTentativas = 15;
 
             while (tentativas < maxTentativas) {
                 try {
-                    const url = `${BACKEND_URL}/api/evolution/instance/connect/${instanceName}`;
-                    log(`🔍 GET ${url} (tentativa ${tentativas + 1})`, 'info');
+                    const result = await tryGet(`/instance/connect/${instanceName}`);
 
-                    const response = await fetch(url);
-                    const data = await response.json();
+                    if (!result.ok) {
+                        log(`⚠️ GET retornou ${result.response?.status} no endpoint ${result.url}`, 'info');
+                        // Se 404, vamos tentar novamente nas próximas iterações
+                    } else {
+                        const data = result.data || {};
+                        // a API pode devolver qrcode (base64) ou base64 diretamente
+                        if (data.qrcode || data.base64) {
+                            const qrData = data.qrcode || data.base64;
+                            const img = document.createElement('img');
+                            img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
 
-                    log(`  → Status: ${response.status}, Resposta: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+                            document.getElementById('qrContainer').innerHTML = '';
+                            document.getElementById('qrContainer').appendChild(img);
+                            document.getElementById('qrContainer').classList.remove('loading');
+                            document.getElementById('qrStatus').textContent = '✅ QR Code carregado! Escaneie com seu celular';
 
-                    if (data.qrcode || data.base64) {
-                        const qrData = data.qrcode || data.base64;
-                        const img = document.createElement('img');
-                        img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
-
-                        document.getElementById('qrContainer').innerHTML = '';
-                        document.getElementById('qrContainer').appendChild(img);
-                        document.getElementById('qrContainer').classList.remove('loading');
-                        document.getElementById('qrStatus').textContent = '✅ QR Code carregado! Escaneie com seu celular';
-
-                        log('✅ QR Code exibido com sucesso', 'success');
-                        monitorarStatusConexao(instanceName);
-                        return;
+                            log('✅ QR Code exibido com sucesso', 'success');
+                            monitorarStatusConexao(instanceName);
+                            return;
+                        } else if (data.status && (data.status === 'open' || data.connected === true)) {
+                            // Em alguns casos a instância já está aberta/connected e não retorna qrcode
+                            log('✅ Instância já está aberta/connected', 'success');
+                            monitorarStatusConexao(instanceName);
+                            return;
+                        } else {
+                            log(`ℹ️ Resposta recebida sem QR: ${JSON.stringify(data).substring(0,200)}`, 'info');
+                        }
                     }
 
                     tentativas++;
@@ -939,25 +1032,32 @@
             document.getElementById('qrContainer').innerHTML = '<p style="color: var(--color-danger);">❌ Timeout ao gerar QR Code</p>';
         }
 
+        // ========================================
+        // MONITORAR STATUS DE CONEXÃO
+        // ========================================
         async function monitorarStatusConexao(instanceName) {
             let conectado = false;
             let tentativas = 0;
 
             while (!conectado && tentativas < 60) {
                 try {
-                    const response = await fetch(`${BACKEND_URL}/api/evolution/instance/connect/${instanceName}`);
-                    const data = await response.json();
-
-                    if (data.status === 'open' || data.connected === true) {
-                        conectado = true;
-                        log('✅ WhatsApp conectado!', 'success');
-                        document.getElementById('statusBadge').className = 'status-badge connected';
-                        document.getElementById('statusBadge').textContent = '🟢 Conectado';
-                        document.getElementById('statusText').textContent = 'Conexão ativa e pronta';
-                        document.getElementById('btnConnect').style.display = 'none';
-                        document.getElementById('btnDisconnect').style.display = 'flex';
-                        fecharQRModal();
-                        return;
+                    const result = await tryGet(`/instance/connect/${instanceName}`);
+                    if (result.ok) {
+                        const data = result.data || {};
+                        if (data.status === 'open' || data.connected === true) {
+                            conectado = true;
+                            log('✅ WhatsApp conectado!', 'success');
+                            document.getElementById('statusBadge').className = 'status-badge connected';
+                            document.getElementById('statusBadge').textContent = '🟢 Conectado';
+                            document.getElementById('statusText').textContent = 'Conexão ativa e pronta';
+                            document.getElementById('btnConnect').style.display = 'none';
+                            document.getElementById('btnDisconnect').style.display = 'flex';
+                            fecharQRModal();
+                            return;
+                        }
+                        log(`ℹ️ Monitor: status atual ${JSON.stringify(data).substring(0,120)}`, 'info');
+                    } else {
+                        log(`⚠️ Monitor GET retornou ${result.response?.status} no endpoint ${result.url}`, 'info');
                     }
 
                     tentativas++;
@@ -1037,7 +1137,7 @@
         }
 
         // ========================================
-        // ENVIAR MENSAGEM MANUAL
+        // ENVIAR MENSAGEM MANUAL (EXEMPLO LOCAL)
         // ========================================
         async function enviarMensagemManual() {
             const phone = document.getElementById('inputPhone').value.trim();
@@ -1049,8 +1149,11 @@
             }
 
             log(`📨 Enviando para ${phone}...`, 'info');
-            
+
             try {
+                // Aqui você implementaria a chamada real ao backend para enviar mensagem.
+                // Exemplo:
+                // await fetch(`${BACKEND_URL}/api/.../send`, { method: 'POST', body: JSON.stringify({ phone, message }) });
                 log(`✅ Mensagem enviada para ${phone}`, 'success');
                 document.getElementById('inputPhone').value = '';
                 document.getElementById('inputMessage').value = '';
