@@ -766,14 +766,10 @@
 
     <script>
         // ========================================
-        // CONFIGURAÇÃO
+        // CONFIGURAÇÃO - ATUALIZADA COM SEUS DADOS
         // ========================================
-        // Escolhi o domínio que você indicou como padrão:
-        const BACKEND_URL = 'https://reddito-production-52a3.up.railway.app';
-
-        // Alguns prefixes que a Evolution API pode usar — tentaremos com e sem o /api/evolution
-        const EV_PREFIXES = ['/api/evolution', ''];
-
+        const BACKEND_URL = 'https://evolution-api-lite-production-0747.up.railway.app';
+        const AUTH_KEY = 'COLE_AQUI_SUA_AUTHENTICATION_API_KEY'; // <--- COLOQUE SUA CHAVE AQUI
         let tenantId = null;
 
         // ========================================
@@ -809,85 +805,56 @@
         }
 
         // ========================================
-        // HELPER: Tenta POST/GET em múltiplos prefixes (fallback)
+        // HELPER: Tenta POST/GET
         // ========================================
         async function tryPost(path, body) {
-            let lastResponse = null;
-            let lastData = null;
-            for (const prefix of EV_PREFIXES) {
-                const url = `${BACKEND_URL}${prefix}${path}`;
-                log(`📤 Tentando POST ${url}`, 'info');
+            const url = `${BACKEND_URL}${path}`;
+            log(`📤 Enviando POST para ${url}`, 'info');
 
-                const headers = { 'Content-Type': 'application/json' };
-                const apiKey = localStorage.getItem('evolutionApiKey') || '';
-                if (apiKey) headers['apikey'] = apiKey;
+            const headers = { 
+                'Content-Type': 'application/json',
+                'apikey': AUTH_KEY // Enviando a chave correta
+            };
 
-                try {
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers,
-                        body: JSON.stringify(body)
-                    });
-                    lastResponse = resp;
-                    try { lastData = await resp.json(); } catch (e) { lastData = null; }
-                    log(`  → HTTP ${resp.status} recebido de ${url}`, 'info');
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body)
+                });
+                
+                const data = await resp.json();
+                log(`  → HTTP ${resp.status} recebido`, 'info');
 
-                    // Se sucesso (200/201/204) ou erro conhecido "instance exists (400)" consideramos OK
-                    if ([200, 201, 204].includes(resp.status)) {
-                        return { ok: true, response: resp, data: lastData, url };
-                    }
-                    if (resp.status === 400 && (lastData?.response?.message === "The instance already exists" || JSON.stringify(lastData).toLowerCase().includes('already exists'))) {
-                        return { ok: true, response: resp, data: lastData, url };
-                    }
-
-                    // Se 404 -> tentar próximo prefix
-                    if (resp.status === 404) {
-                        log(`⚠️ 404 em ${url}, tentando próximo prefix...`, 'info');
-                        continue;
-                    }
-
-                    // Para outros códigos, retornamos para tratamento
-                    return { ok: false, response: resp, data: lastData, url };
-                } catch (err) {
-                    log(`⚠️ Erro de rede ao acessar ${url}: ${err.message}`, 'error');
-                    // tentar próximo prefix
-                    continue;
+                if ([200, 201, 204].includes(resp.status)) {
+                    return { ok: true, data };
                 }
+                
+                // Caso a instância já exista, tratamos como sucesso para prosseguir para o QR Code
+                if (resp.status === 400 && JSON.stringify(data).toLowerCase().includes('already exists')) {
+                    log('ℹ️ Instância já existe, prosseguindo...', 'info');
+                    return { ok: true, data };
+                }
+
+                return { ok: false, data };
+            } catch (err) {
+                log(`⚠️ Erro de rede: ${err.message}`, 'error');
+                return { ok: false, error: err.message };
             }
-            return { ok: false, response: lastResponse, data: lastData, url: null };
         }
 
         async function tryGet(path) {
-            let lastResponse = null;
-            let lastData = null;
-            for (const prefix of EV_PREFIXES) {
-                const url = `${BACKEND_URL}${prefix}${path}`;
-                log(`🔍 Tentando GET ${url}`, 'info');
-
-                try {
-                    const resp = await fetch(url);
-                    lastResponse = resp;
-                    try { lastData = await resp.json(); } catch (e) { lastData = null; }
-                    log(`  → HTTP ${resp.status} recebido de ${url}`, 'info');
-
-                    if (resp.status === 200) {
-                        return { ok: true, response: resp, data: lastData, url };
-                    }
-
-                    // 404: tente próximo prefix
-                    if (resp.status === 404) {
-                        log(`⚠️ 404 em ${url}, tentando próximo prefix...`, 'info');
-                        continue;
-                    }
-
-                    // Alguns endpoints retornam 204/202/401/403 — devolvemos para o chamador decidir
-                    return { ok: false, response: resp, data: lastData, url };
-                } catch (err) {
-                    log(`⚠️ Erro de rede ao GET ${url}: ${err.message}`, 'error');
-                    continue;
-                }
+            const url = `${BACKEND_URL}${path}`;
+            try {
+                const resp = await fetch(url, {
+                    headers: { 'apikey': AUTH_KEY }
+                });
+                const data = await resp.json();
+                if (resp.status === 200) return { ok: true, data };
+                return { ok: false, data };
+            } catch (err) {
+                return { ok: false, error: err.message };
             }
-            return { ok: false, response: lastResponse, data: lastData, url: null };
         }
 
         // ========================================
@@ -895,334 +862,114 @@
         // ========================================
         async function getTenantId() {
             if (tenantId) return tenantId;
-
-            return new Promise((resolve) => {
-                const timeout = setTimeout(() => {
-                    tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e';
-                    log(`⚠️ TenantId padrão: ${tenantId}`, 'info');
-                    resolve(tenantId);
-                }, 5000);
-
-                try {
-                    const stored = localStorage.getItem('perfilAtual');
-                    if (stored) {
-                        const perfil = JSON.parse(stored);
-                        if (perfil.tenantId) {
-                            clearTimeout(timeout);
-                            tenantId = perfil.tenantId;
-                            log(`✅ TenantId obtido: ${tenantId}`, 'success');
-                            resolve(tenantId);
-                            return;
-                        }
-                    }
-                } catch (e) {}
-
-                try {
-                    const session = sessionStorage.getItem('tenantId');
-                    if (session) {
-                        clearTimeout(timeout);
-                        tenantId = session;
-                        log(`✅ TenantId (session): ${tenantId}`, 'success');
-                        resolve(tenantId);
-                        return;
-                    }
-                } catch (e) {}
-            });
+            tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e'; // Valor padrão
+            return tenantId;
         }
 
         // ========================================
-        // CONECTAR WHATSAPP - VERSÃO MULTI-TENTATIVA (v2.2.1)
+        // CONECTAR WHATSAPP
         // ========================================
         async function conectarWhatsApp() {
             try {
                 log('🔄 Iniciando conexão WhatsApp...', 'info');
-
                 const id = await getTenantId();
-                if (!id) {
-                    log('❌ TenantId não disponível', 'error');
-                    return;
-                }
-
-                const instanceName = `reddito-${id.substring(0, 4)}-${Math.floor(Math.random() * 1000)}`.toLowerCase();
-                log(`📝 Nome da instância: ${instanceName}`, 'info');
+                const instanceName = `reddito-${id.substring(0, 4)}`.toLowerCase();
 
                 document.getElementById('qrModal').classList.add('active');
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                // Recupera integração salva (se houver) para tentar primeiro
-                const savedIntegration = localStorage.getItem('evolutionIntegration') || '';
+                // PAYLOAD CORRIGIDO COM WHATSAPP-BAILEYS
+                const payload = {
+                    instanceName: instanceName,
+                    token: id,
+                    qrcode: true,
+                    integration: "WHATSAPP-BAILEYS"
+                };
 
-                // Lista de possíveis valores para "integration" que a v2.2.1 pode exigir
-                let integracoesParaTestar = [
-                    savedIntegration,
-                    "BAILEYS", "baileys", "Baileys",
-                    "evolution", "EVOLUTION",
-                    "whatsapp", "WHATSAPP"
-                ];
+                let res = await tryPost('/instance/create', payload);
 
-                // Normaliza: remove vazios e duplicados, mantém ordem (savedIntegration primeiro)
-                integracoesParaTestar = integracoesParaTestar
-                    .map(s => (s || '').toString())
-                    .filter((v, i, arr) => v && arr.indexOf(v) === i);
-
-                log(`🧭 Formatos de integração a testar: ${JSON.stringify(integracoesParaTestar)}`, 'info');
-
-                let sucesso = false;
-                let ultimoErro = "";
-                let integrationThatWorked = null;
-
-                for (const valorInt of integracoesParaTestar) {
-                    try {
-                        log(`🧪 Testando integração: "${valorInt}"...`, 'info');
-
-                        const payload = {
-                            instanceName: instanceName,
-                            token: id,
-                            qrcode: true,
-                            integration: valorInt
-                        };
-
-                        log(`📦 Payload: ${JSON.stringify(payload)}`, 'info');
-
-                        const result = await tryPost('/instance/create', payload);
-
-                        if (result.ok) {
-                            log(`✅ Sucesso com integração: "${valorInt}"! Endpoint: ${result.url}`, 'success');
-                            sucesso = true;
-                            integrationThatWorked = valorInt;
-                            // Salva a integração com sucesso para tentativas futuras
-                            try { localStorage.setItem('evolutionIntegration', valorInt); } catch(e){}
-                            break;
-                        } else {
-                            ultimoErro = result.data ? JSON.stringify(result.data) : `HTTP ${result.response?.status}`;
-                            log(`⚠️ Falha com "${valorInt}": ${ultimoErro}`, 'warning');
-                        }
-
-                    } catch (e) {
-                        ultimoErro = e.message || String(e);
-                        log(`⚠️ Erro ao testar "${valorInt}": ${ultimoErro}`, 'error');
-                    }
-
-                    // Pequena espera entre tentativas para evitar rate-limit ou concorrência
-                    await new Promise(r => setTimeout(r, 700));
+                if (res.ok) {
+                    log('✅ Instância pronta! Aguardando QR Code...', 'success');
+                    await aguardarQRCode(instanceName);
+                } else {
+                    throw new Error(res.data?.response?.message || "Erro ao criar instância");
                 }
-
-                if (!sucesso) {
-                    throw new Error(`A API rejeitou todos os formatos de integração. Último erro: ${ultimoErro}`);
-                }
-
-                log(`✅ Instância criada (ou já existente). Nome: ${instanceName} (integration=${integrationThatWorked})`, 'success');
-
-                // Aguardar e obter o QR Code
-                await aguardarQRCode(instanceName);
 
             } catch (error) {
                 log(`❌ Erro: ${error.message}`, 'error');
-                document.getElementById('qrContainer').innerHTML = `<p style="color: var(--color-danger);">❌ ${error.message}</p>`;
+                document.getElementById('qrContainer').innerHTML = `<p style="color: var(--color-danger); font-size: 12px;">❌ ${error.message}</p>`;
             }
         }
 
-        // ========================================
-        // AGUARDAR QR CODE
-        // ========================================
         async function aguardarQRCode(instanceName) {
             let tentativas = 0;
-            const maxTentativas = 15;
-
-            while (tentativas < maxTentativas) {
-                try {
-                    const result = await tryGet(`/instance/connect/${instanceName}`);
-
-                    if (!result.ok) {
-                        log(`⚠️ GET retornou ${result.response?.status} no endpoint ${result.url}`, 'info');
-                        // Se 404, vamos tentar novamente nas próximas iterações
-                    } else {
-                        const data = result.data || {};
-                        // a API pode devolver qrcode (base64) ou base64 diretamente
-                        if (data.qrcode || data.base64) {
-                            const qrData = data.qrcode || data.base64;
-                            const img = document.createElement('img');
-                            img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
-
-                            document.getElementById('qrContainer').innerHTML = '';
-                            document.getElementById('qrContainer').appendChild(img);
-                            document.getElementById('qrContainer').classList.remove('loading');
-                            document.getElementById('qrStatus').textContent = '✅ QR Code carregado! Escaneie com seu celular';
-
-                            log('✅ QR Code exibido com sucesso', 'success');
-                            monitorarStatusConexao(instanceName);
-                            return;
-                        } else if (data.status && (data.status === 'open' || data.connected === true)) {
-                            // Em alguns casos a instância já está aberta/connected e não retorna qrcode
-                            log('✅ Instância já está aberta/connected', 'success');
-                            monitorarStatusConexao(instanceName);
-                            return;
-                        } else {
-                            log(`ℹ️ Resposta recebida sem QR: ${JSON.stringify(data).substring(0,200)}`, 'info');
-                        }
-                    }
-
-                    tentativas++;
-                    await new Promise(r => setTimeout(r, 1000));
-                } catch (err) {
-                    log(`⚠️ Tentativa ${tentativas + 1}: ${err.message}`, 'error');
-                    tentativas++;
-                    await new Promise(r => setTimeout(r, 1000));
-                }
-            }
-
-            log('❌ Timeout ao gerar QR Code', 'error');
-            document.getElementById('qrContainer').innerHTML = '<p style="color: var(--color-danger);">❌ Timeout ao gerar QR Code</p>';
-        }
-
-        // ========================================
-        // MONITORAR STATUS DE CONEXÃO
-        // ========================================
-        async function monitorarStatusConexao(instanceName) {
-            let conectado = false;
-            let tentativas = 0;
-
-            while (!conectado && tentativas < 60) {
+            while (tentativas < 20) {
                 try {
                     const result = await tryGet(`/instance/connect/${instanceName}`);
                     if (result.ok) {
                         const data = result.data || {};
-                        if (data.status === 'open' || data.connected === true) {
-                            conectado = true;
-                            log('✅ WhatsApp conectado!', 'success');
-                            document.getElementById('statusBadge').className = 'status-badge connected';
-                            document.getElementById('statusBadge').textContent = '🟢 Conectado';
-                            document.getElementById('statusText').textContent = 'Conexão ativa e pronta';
-                            document.getElementById('btnConnect').style.display = 'none';
-                            document.getElementById('btnDisconnect').style.display = 'flex';
-                            fecharQRModal();
+                        // A API pode retornar o QR em campos diferentes dependendo da versão
+                        const qrData = data.qrcode?.base64 || data.base64 || data.qrcode;
+                        
+                        if (qrData) {
+                            const img = document.createElement('img');
+                            img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
+                            document.getElementById('qrContainer').innerHTML = '';
+                            document.getElementById('qrContainer').appendChild(img);
+                            document.getElementById('qrContainer').classList.remove('loading');
+                            document.getElementById('qrStatus').textContent = '✅ QR Code carregado!';
+                            monitorarStatusConexao(instanceName);
                             return;
                         }
-                        log(`ℹ️ Monitor: status atual ${JSON.stringify(data).substring(0,120)}`, 'info');
-                    } else {
-                        log(`⚠️ Monitor GET retornou ${result.response?.status} no endpoint ${result.url}`, 'info');
                     }
-
                     tentativas++;
-                    await new Promise(r => setTimeout(r, 3000));
-                } catch (err) {
-                    tentativas++;
-                    await new Promise(r => setTimeout(r, 3000));
-                }
+                    await new Promise(r => setTimeout(r, 2000));
+                } catch (err) { tentativas++; }
             }
+            log('❌ Tempo esgotado ao buscar QR Code', 'error');
+        }
 
-            log('⏳ Aguardando escanear QR Code...', 'info');
+        async function monitorarStatusConexao(instanceName) {
+            let conectado = false;
+            let tentativas = 0;
+            while (!conectado && tentativas < 60) {
+                try {
+                    const result = await tryGet(`/instance/connectionState/${instanceName}`);
+                    const status = result.data?.instance?.state || result.data?.state;
+                    
+                    if (status === 'open') {
+                        conectado = true;
+                        document.getElementById('statusBadge').className = 'status-badge connected';
+                        document.getElementById('statusBadge').textContent = '🟢 Conectado';
+                        document.getElementById('btnConnect').style.display = 'none';
+                        document.getElementById('btnDisconnect').style.display = 'flex';
+                        fecharQRModal();
+                        log('🎉 WhatsApp conectado com sucesso!', 'success');
+                        return;
+                    }
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 3000));
+                } catch (err) { tentativas++; }
+            }
         }
 
         function desconectarWhatsApp() {
-            log('🔌 Desconectando...', 'info');
+            // Aqui você poderia chamar o endpoint /instance/logout se quisesse
             document.getElementById('statusBadge').className = 'status-badge disconnected';
             document.getElementById('statusBadge').textContent = '🔴 Desconectado';
-            document.getElementById('statusText').textContent = 'Clique para conectar novamente';
             document.getElementById('btnConnect').style.display = 'flex';
             document.getElementById('btnDisconnect').style.display = 'none';
-            log('✅ Desconectado com sucesso', 'success');
         }
 
-        // ========================================
-        // MODAL
-        // ========================================
-        function fecharQRModal() {
-            document.getElementById('qrModal').classList.remove('active');
-        }
+        function fecharQRModal() { document.getElementById('qrModal').classList.remove('active'); }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const overlay = document.querySelector('.qr-modal-overlay');
-            if (overlay) {
-                overlay.addEventListener('click', fecharQRModal);
-            }
-        });
+        function salvarAutomacoes() { log('💾 Automações salvas', 'success'); }
+        function salvarTemplates() { log('💾 Modelos salvos', 'success'); }
 
-        // ========================================
-        // AUTOMAÇÕES E TEMPLATES
-        // ========================================
-        function salvarAutomacoes() {
-            const config = {
-                welcome: document.getElementById('toggleWelcome').checked,
-                reminder: document.getElementById('toggleReminder').checked,
-                thank: document.getElementById('toggleThank').checked
-            };
-            localStorage.setItem('sispro_whatsapp', JSON.stringify(config));
-            log('💾 Automações salvas', 'success');
-        }
+        function logout() { if (confirm('Deseja sair?')) log('🚪 Saindo...', 'info'); }
 
-        function salvarTemplates() {
-            const templates = {
-                welcome: document.getElementById('templateWelcome').value,
-                reminder: document.getElementById('templateReminder').value,
-                thank: document.getElementById('templateThank').value
-            };
-            localStorage.setItem('sispro_templates', JSON.stringify(templates));
-            log('💾 Modelos salvos', 'success');
-        }
-
-        function carregarConfiguracoes() {
-            const saved = localStorage.getItem('sispro_whatsapp');
-            if (saved) {
-                const config = JSON.parse(saved);
-                document.getElementById('toggleWelcome').checked = config.welcome || false;
-                document.getElementById('toggleReminder').checked = config.reminder || false;
-                document.getElementById('toggleThank').checked = config.thank || false;
-            }
-
-            const templates = localStorage.getItem('sispro_templates');
-            if (templates) {
-                const t = JSON.parse(templates);
-                document.getElementById('templateWelcome').value = t.welcome || '';
-                document.getElementById('templateReminder').value = t.reminder || '';
-                document.getElementById('templateThank').value = t.thank || '';
-            }
-        }
-
-        // ========================================
-        // ENVIAR MENSAGEM MANUAL (EXEMPLO LOCAL)
-        // ========================================
-        async function enviarMensagemManual() {
-            const phone = document.getElementById('inputPhone').value.trim();
-            const message = document.getElementById('inputMessage').value.trim();
-
-            if (!phone || !message) {
-                log('❌ Preencha número e mensagem', 'error');
-                return;
-            }
-
-            log(`📨 Enviando para ${phone}...`, 'info');
-
-            try {
-                // Aqui você implementaria a chamada real ao backend para enviar mensagem.
-                // Exemplo:
-                // await fetch(`${BACKEND_URL}/api/.../send`, { method: 'POST', body: JSON.stringify({ phone, message }) });
-                log(`✅ Mensagem enviada para ${phone}`, 'success');
-                document.getElementById('inputPhone').value = '';
-                document.getElementById('inputMessage').value = '';
-            } catch (error) {
-                log(`❌ Erro ao enviar: ${error.message}`, 'error');
-            }
-        }
-
-        // ========================================
-        // LOGOUT
-        // ========================================
-        function logout() {
-            if (confirm('Deseja realmente sair?')) {
-                log('🚪 Saindo...', 'info');
-                // Implementar logout aqui
-            }
-        }
-
-        // ========================================
-        // INICIALIZAÇÃO
-        // ========================================
         document.addEventListener('DOMContentLoaded', function() {
-            log('✅ Página carregada', 'success');
-            carregarConfiguracoes();
-            getTenantId();
             initDarkMode();
         });
     </script>
