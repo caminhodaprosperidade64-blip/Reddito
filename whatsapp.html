@@ -950,12 +950,12 @@
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                // Payload atualizado para teste: sem campo "integration"
+                // Payload atualizado para incluir o campo "integration" com valor correto para v2.2.1
                 const payload = {
                     instanceName: instanceName,
                     token: id,            // usando tenantId como token por enquanto
-                    qrcode: true
-                    // intentionally removed 'integration' for test
+                    qrcode: true,
+                    integration: "BAILEYS" // campo obrigatório para v2.2.1
                 };
 
                 log(`📦 Payload: ${JSON.stringify(payload)}`, 'info');
