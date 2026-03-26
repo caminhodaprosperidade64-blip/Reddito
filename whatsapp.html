@@ -931,7 +931,7 @@
         }
 
         // ========================================
-        // CONECTAR WHATSAPP
+        // CONECTAR WHATSAPP - VERSÃO MULTI-TENTATIVA (v2.2.1)
         // ========================================
         async function conectarWhatsApp() {
             try {
@@ -950,25 +950,69 @@
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                // Payload atualizado para incluir o campo "integration" com valor correto para v2.2.1
-                const payload = {
-                    instanceName: instanceName,
-                    token: id,            // usando tenantId como token por enquanto
-                    qrcode: true,
-                    integration: "BAILEYS" // campo obrigatório para v2.2.1
-                };
+                // Recupera integração salva (se houver) para tentar primeiro
+                const savedIntegration = localStorage.getItem('evolutionIntegration') || '';
 
-                log(`📦 Payload: ${JSON.stringify(payload)}`, 'info');
+                // Lista de possíveis valores para "integration" que a v2.2.1 pode exigir
+                let integracoesParaTestar = [
+                    savedIntegration,
+                    "BAILEYS", "baileys", "Baileys",
+                    "evolution", "EVOLUTION",
+                    "whatsapp", "WHATSAPP"
+                ];
 
-                // Tentamos criar a instância com fallback entre prefixos
-                const result = await tryPost('/instance/create', payload);
+                // Normaliza: remove vazios e duplicados, mantém ordem (savedIntegration primeiro)
+                integracoesParaTestar = integracoesParaTestar
+                    .map(s => (s || '').toString())
+                    .filter((v, i, arr) => v && arr.indexOf(v) === i);
 
-                if (!result.ok) {
-                    const dataMsg = result.data ? JSON.stringify(result.data) : `HTTP ${result.response?.status}`;
-                    throw new Error(dataMsg || 'Erro desconhecido ao criar instância');
+                log(`🧭 Formatos de integração a testar: ${JSON.stringify(integracoesParaTestar)}`, 'info');
+
+                let sucesso = false;
+                let ultimoErro = "";
+                let integrationThatWorked = null;
+
+                for (const valorInt of integracoesParaTestar) {
+                    try {
+                        log(`🧪 Testando integração: "${valorInt}"...`, 'info');
+
+                        const payload = {
+                            instanceName: instanceName,
+                            token: id,
+                            qrcode: true,
+                            integration: valorInt
+                        };
+
+                        log(`📦 Payload: ${JSON.stringify(payload)}`, 'info');
+
+                        const result = await tryPost('/instance/create', payload);
+
+                        if (result.ok) {
+                            log(`✅ Sucesso com integração: "${valorInt}"! Endpoint: ${result.url}`, 'success');
+                            sucesso = true;
+                            integrationThatWorked = valorInt;
+                            // Salva a integração com sucesso para tentativas futuras
+                            try { localStorage.setItem('evolutionIntegration', valorInt); } catch(e){}
+                            break;
+                        } else {
+                            ultimoErro = result.data ? JSON.stringify(result.data) : `HTTP ${result.response?.status}`;
+                            log(`⚠️ Falha com "${valorInt}": ${ultimoErro}`, 'warning');
+                        }
+
+                    } catch (e) {
+                        ultimoErro = e.message || String(e);
+                        log(`⚠️ Erro ao testar "${valorInt}": ${ultimoErro}`, 'error');
+                    }
+
+                    // Pequena espera entre tentativas para evitar rate-limit ou concorrência
+                    await new Promise(r => setTimeout(r, 700));
                 }
 
-                log(`✅ Instância criada (ou já existente). Endpoint: ${result.url}`, 'success');
+                if (!sucesso) {
+                    throw new Error(`A API rejeitou todos os formatos de integração. Último erro: ${ultimoErro}`);
+                }
+
+                log(`✅ Instância criada (ou já existente). Nome: ${instanceName} (integration=${integrationThatWorked})`, 'success');
 
                 // Aguardar e obter o QR Code
                 await aguardarQRCode(instanceName);
