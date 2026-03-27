@@ -1230,6 +1230,35 @@
         }
 
         // ========================================
+        // AGUARDAR SUPABASE ESTAR PRONTO
+        // ========================================
+        function aguardarSupabase(timeoutMs = 10000) {
+            return new Promise((resolve) => {
+                console.log('[aguardarSupabase] Verificando Supabase...');
+
+                // Se já está pronto
+                if (window.isSupabaseReady && window.isSupabaseReady()) {
+                    console.log('[aguardarSupabase] ✅ Supabase já está pronto!');
+                    resolve(true);
+                    return;
+                }
+
+                // Senão, aguarda o evento
+                console.log('[aguardarSupabase] ⏳ Aguardando evento supabaseReady...');
+                const timeout = setTimeout(() => {
+                    console.warn('[aguardarSupabase] ⚠️ Timeout - Supabase não ficou pronto em tempo');
+                    resolve(false);
+                }, timeoutMs);
+
+                window.addEventListener('supabaseReady', () => {
+                    clearTimeout(timeout);
+                    console.log('[aguardarSupabase] ✅ Evento supabaseReady recebido!');
+                    resolve(true);
+                }, { once: true });
+            });
+        }
+
+        // ========================================
         // INICIALIZAR PÁGINA
         // ========================================
         document.addEventListener('DOMContentLoaded', async function() {
@@ -1237,72 +1266,76 @@
             initDarkMode();
             log('✅ Página WhatsApp carregada', 'success');
 
-            // Aguarda um pouco para Supabase estar pronto
-            console.log('[DOMContentLoaded] Aguardando Supabase ficar pronto...');
-            await new Promise(resolve => {
-                if (window.isSupabaseReady && window.isSupabaseReady()) {
-                    console.log('[DOMContentLoaded] Supabase já está pronto');
-                    resolve();
-                } else {
-                    const timeout = setTimeout(() => {
-                        console.warn('[DOMContentLoaded] Timeout aguardando Supabase');
-                        resolve();
-                    }, 3000);
+            // PASSO 1: Aguardar Supabase estar pronto
+            console.log('[DOMContentLoaded] PASSO 1: Aguardando Supabase...');
+            const supabaseOk = await aguardarSupabase(10000);
 
-                    window.addEventListener('supabaseReady', () => {
-                        clearTimeout(timeout);
-                        console.log('[DOMContentLoaded] Evento supabaseReady disparado');
-                        resolve();
-                    });
-                }
-            });
+            if (!supabaseOk) {
+                log('❌ Supabase não foi inicializado. Recarregue a página.', 'error');
+                return;
+            }
 
-            // Obtém tenant_id para usar nas requisições
-            console.log('[DOMContentLoaded] Obtendo tenant_id...');
+            console.log('[DOMContentLoaded] ✅ Supabase está pronto!');
+            log('✅ Supabase inicializado', 'success');
+
+            // PASSO 2: Obter tenant_id do Supabase
+            console.log('[DOMContentLoaded] PASSO 2: Obtendo tenant_id...');
             const tenantId = await getTenantIdFromFrontend(5000);
 
-            if (tenantId) {
-                log(`✅ tenant_id obtido: ${tenantId}`, 'success');
-                localStorage.setItem('tenantId', tenantId);
-
-                // Verifica status inicial da conexão
-                console.log('[DOMContentLoaded] Verificando status inicial da conexão...');
-                requisicaoBackend('/api/whatsapp/status', 'GET').then(res => {
-                    if (res.ok && res.data.status === 'conectado') {
-                        document.getElementById('statusBadge').className = 'status-badge connected';
-                        document.getElementById('statusBadge').textContent = '🟢 Conectado';
-                        document.getElementById('btnConnect').style.display = 'none';
-                        document.getElementById('btnDisconnect').style.display = 'flex';
-                        document.getElementById('statusText').textContent = 'Seu WhatsApp está conectado!';
-                        log('✅ WhatsApp conectado', 'success');
-                    } else {
-                        log('ℹ️ WhatsApp desconectado', 'info');
-                    }
-                });
-
-                // Carrega automações salvas
-                console.log('[DOMContentLoaded] Carregando automações...');
-                requisicaoBackend('/api/whatsapp/automacoes', 'GET').then(res => {
-                    if (res.ok && res.data) {
-                        document.getElementById('toggleWelcome').checked = res.data.welcome || false;
-                        document.getElementById('toggleReminder').checked = res.data.reminder || false;
-                        document.getElementById('toggleThank').checked = res.data.thank || false;
-                    }
-                });
-
-                // Carrega templates salvos
-                console.log('[DOMContentLoaded] Carregando templates...');
-                requisicaoBackend('/api/whatsapp/templates', 'GET').then(res => {
-                    if (res.ok && res.data) {
-                        document.getElementById('templateWelcome').value = res.data.welcome || 'Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?';
-                        document.getElementById('templateReminder').value = res.data.reminder || 'Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?';
-                        document.getElementById('templateThank').value = res.data.thank || 'Obrigado {cliente}! Sua experiência é importante. Nos avalie!';
-                    }
-                });
-            } else {
-                log('❌ tenant_id não foi obtido. Certifique-se de estar logado.', 'error');
+            if (!tenantId) {
+                log('❌ Não foi possível obter o tenant_id. Verifique se está logado.', 'error');
                 console.error('[DOMContentLoaded] FALHA ao obter tenant_id');
+                return;
             }
+
+            log(`✅ tenant_id obtido: ${tenantId}`, 'success');
+            localStorage.setItem('tenantId', tenantId);
+            console.log('[DOMContentLoaded] ✅ tenant_id salvo no localStorage');
+
+            // PASSO 3: Verifica status inicial da conexão
+            console.log('[DOMContentLoaded] PASSO 3: Verificando status da conexão...');
+            requisicaoBackend('/api/whatsapp/status', 'GET').then(res => {
+                if (res.ok && res.data.status === 'conectado') {
+                    document.getElementById('statusBadge').className = 'status-badge connected';
+                    document.getElementById('statusBadge').textContent = '🟢 Conectado';
+                    document.getElementById('btnConnect').style.display = 'none';
+                    document.getElementById('btnDisconnect').style.display = 'flex';
+                    document.getElementById('statusText').textContent = 'Seu WhatsApp está conectado!';
+                    log('✅ WhatsApp conectado', 'success');
+                } else {
+                    log('ℹ️ WhatsApp desconectado', 'info');
+                }
+            }).catch(err => {
+                console.error('[DOMContentLoaded] Erro ao verificar status:', err);
+            });
+
+            // PASSO 4: Carrega automações salvas
+            console.log('[DOMContentLoaded] PASSO 4: Carregando automações...');
+            requisicaoBackend('/api/whatsapp/automacoes', 'GET').then(res => {
+                if (res.ok && res.data) {
+                    document.getElementById('toggleWelcome').checked = res.data.welcome || false;
+                    document.getElementById('toggleReminder').checked = res.data.reminder || false;
+                    document.getElementById('toggleThank').checked = res.data.thank || false;
+                    console.log('[DOMContentLoaded] ✅ Automações carregadas');
+                }
+            }).catch(err => {
+                console.error('[DOMContentLoaded] Erro ao carregar automações:', err);
+            });
+
+            // PASSO 5: Carrega templates salvos
+            console.log('[DOMContentLoaded] PASSO 5: Carregando templates...');
+            requisicaoBackend('/api/whatsapp/templates', 'GET').then(res => {
+                if (res.ok && res.data) {
+                    document.getElementById('templateWelcome').value = res.data.welcome || 'Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?';
+                    document.getElementById('templateReminder').value = res.data.reminder || 'Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?';
+                    document.getElementById('templateThank').value = res.data.thank || 'Obrigado {cliente}! Sua experiência é importante. Nos avalie!';
+                    console.log('[DOMContentLoaded] ✅ Templates carregados');
+                }
+            }).catch(err => {
+                console.error('[DOMContentLoaded] Erro ao carregar templates:', err);
+            });
+
+            console.log('[DOMContentLoaded] ✅ Inicialização concluída!');
         });
     </script>
 </body>
