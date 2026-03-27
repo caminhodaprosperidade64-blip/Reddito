@@ -817,22 +817,24 @@
         }
 
         // ========================================
-        // OBTER TENANT_ID DO SUPABASE
+        // OBTER TENANT_ID DO SUPABASE - VERSÃO CORRIGIDA
         // ========================================
         async function getTenantIdFromFrontend(timeoutMs = 5000) {
-            // Tenta variável global window.perfil (compatibilidade)
+            console.log('[getTenantId] 🔍 Iniciando busca por tenant_id...');
+
+            // ─ ESTRATÉGIA 1: Variável global window.perfil (compatibilidade)
             if (window.perfil && (window.perfil.tenant_id || window.perfil.id)) {
-                console.log('[WhatsApp] tenant_id encontrado em window.perfil:', window.perfil.tenant_id || window.perfil.id);
+                console.log('[getTenantId] ✅ tenant_id encontrado em window.perfil:', window.perfil.tenant_id || window.perfil.id);
                 return window.perfil.tenant_id || window.perfil.id;
             }
 
-            // Tenta variável local já recebida
+            // ─ ESTRATÉGIA 2: Variável local já recebida
             if (perfilLocal && (perfilLocal.tenant_id || perfilLocal.id)) {
-                console.log('[WhatsApp] tenant_id encontrado em perfilLocal:', perfilLocal.tenant_id || perfilLocal.id);
+                console.log('[getTenantId] ✅ tenant_id encontrado em perfilLocal:', perfilLocal.tenant_id || perfilLocal.id);
                 return perfilLocal.tenant_id || perfilLocal.id;
             }
 
-            // Se tiver função getTenantId definida no frontend (compatibilidade)
+            // ─ ESTRATÉGIA 3: Se tiver função getTenantId definida no frontend (compatibilidade)
             if (typeof getTenantId === 'function') {
                 try {
                     const val = await Promise.race([
@@ -840,84 +842,92 @@
                         new Promise((_, rej) => setTimeout(() => rej(new Error('timeout_getTenantId')), timeoutMs))
                     ]);
                     if (val) {
-                        console.log('[WhatsApp] tenant_id obtido de getTenantId():', val);
+                        console.log('[getTenantId] ✅ tenant_id obtido de getTenantId():', val);
                         return val;
                     }
                 } catch (e) {
-                    console.warn('[WhatsApp] getTenantId() falhou:', e.message);
+                    console.warn('[getTenantId] ⚠️ getTenantId() falhou:', e.message);
                 }
             }
 
-            // Aguarda evento perfilCarregado até timeout
+            // ─ ESTRATÉGIA 4: Aguarda evento perfilCarregado até timeout
             try {
-                console.log('[WhatsApp] Aguardando evento perfilCarregado...');
+                console.log('[getTenantId] ⏳ Aguardando evento perfilCarregado...');
                 const p = perfilPromise || new Promise((resolve) => { perfilPromiseResolve = resolve; });
                 const val = await Promise.race([
                     p,
                     new Promise((_, rej) => setTimeout(() => rej(new Error('timeout_perfil')), timeoutMs))
                 ]);
                 if (val && (val.tenant_id || val.id)) {
-                    console.log('[WhatsApp] tenant_id obtido do evento:', val.tenant_id || val.id);
+                    console.log('[getTenantId] ✅ tenant_id obtido do evento:', val.tenant_id || val.id);
                     return val.tenant_id || val.id;
                 }
             } catch (e) {
-                console.warn('[WhatsApp] Timeout ou erro ao aguardar perfil:', e.message);
+                console.warn('[getTenantId] ⚠️ Timeout ou erro ao aguardar perfil:', e.message);
             }
 
-            // NOVO: Tenta buscar do Supabase se nada acima funcionou
+            // ─ ESTRATÉGIA 5: Buscar diretamente do Supabase (NOVO)
             try {
-                console.log('[WhatsApp] Tentando buscar tenant_id do Supabase...');
-                
+                console.log('[getTenantId] 🔄 Tentando buscar tenant_id do Supabase...');
+
                 // Verifica se Supabase está pronto
                 if (!window.isSupabaseReady || !window.isSupabaseReady()) {
-                    console.warn('[WhatsApp] Supabase não está pronto ainda');
+                    console.warn('[getTenantId] ⚠️ Supabase não está pronto ainda');
                     return null;
                 }
 
+                console.log('[getTenantId] ✅ Supabase está pronto, obtendo cliente...');
                 const supabase = window.getSupabase();
-                console.log('[WhatsApp] Obtendo usuário autenticado...');
-                
+
+                console.log('[getTenantId] 🔐 Obtendo usuário autenticado...');
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
-                
+
                 if (userError) {
-                    console.error('[WhatsApp] Erro ao obter usuário:', userError.message);
+                    console.error('[getTenantId] ❌ Erro ao obter usuário:', userError.message);
                     return null;
                 }
 
                 if (!user) {
-                    console.warn('[WhatsApp] Nenhum usuário autenticado');
+                    console.warn('[getTenantId] ❌ Nenhum usuário autenticado');
                     return null;
                 }
 
-                console.log('[WhatsApp] Usuário encontrado:', user.id);
-                console.log('[WhatsApp] Buscando tenant_id na tabela perfis...');
+                console.log('[getTenantId] ✅ Usuário encontrado, ID:', user.id);
+                console.log('[getTenantId] 🔍 Buscando tenant_id na tabela perfis onde user_id =', user.id);
 
                 const { data: perfil, error: perfilError } = await supabase
                     .from('perfis')
                     .select('tenant_id')
-                    .eq('user_id', user.id)
+                    .eq('id', user.id)
                     .single();
 
                 if (perfilError) {
-                    console.error('[WhatsApp] Erro ao buscar perfil:', perfilError.message);
+                    console.error('[getTenantId] ❌ Erro ao buscar perfil:', perfilError.message);
+                    console.error('[getTenantId] Detalhes do erro:', perfilError);
                     return null;
                 }
 
-                if (perfil && perfil.tenant_id) {
-                    console.log('[WhatsApp] ✅ tenant_id obtido do Supabase:', perfil.tenant_id);
-                    localStorage.setItem('tenantId', perfil.tenant_id);
-                    return perfil.tenant_id;
-                } else {
-                    console.warn('[WhatsApp] Perfil encontrado mas sem tenant_id');
+                if (!perfil) {
+                    console.warn('[getTenantId] ❌ Perfil não encontrado para user_id:', user.id);
                     return null;
                 }
+
+                if (!perfil.tenant_id) {
+                    console.warn('[getTenantId] ❌ Perfil encontrado mas sem tenant_id');
+                    console.log('[getTenantId] Dados do perfil:', perfil);
+                    return null;
+                }
+
+                console.log('[getTenantId] 🎉 tenant_id obtido do Supabase com SUCESSO:', perfil.tenant_id);
+                localStorage.setItem('tenantId', perfil.tenant_id);
+                return perfil.tenant_id;
 
             } catch (e) {
-                console.error('[WhatsApp] ❌ Erro ao buscar do Supabase:', e.message);
-                console.error('[WhatsApp] Stack:', e);
+                console.error('[getTenantId] ❌ Erro ao buscar do Supabase:', e.message);
+                console.error('[getTenantId] Stack trace:', e);
             }
 
-            console.error('[WhatsApp] ❌ Não conseguiu obter tenant_id por nenhum meio');
+            console.error('[getTenantId] ❌ FALHA: Não conseguiu obter tenant_id por nenhum meio');
             return null;
         }
 
@@ -927,7 +937,7 @@
         async function requisicaoBackend(endpoint, method = 'GET', body = null) {
             const url = `${BACKEND_URL}${endpoint}`;
             const token = localStorage.getItem('authToken');
-            
+
             const options = {
                 method,
                 headers: {
@@ -945,18 +955,25 @@
 
             try {
                 log(`📤 ${method} ${endpoint}`, 'info');
+                console.log('[requisicaoBackend] URL completa:', url);
+                console.log('[requisicaoBackend] Body:', body);
+
                 const resp = await fetch(url, options);
                 const data = await resp.json();
-                
+
+                console.log('[requisicaoBackend] Resposta HTTP:', resp.status);
+                console.log('[requisicaoBackend] Dados:', data);
+
                 if ([200, 201, 204].includes(resp.status)) {
                     log(`✅ ${resp.status} - Sucesso`, 'success');
                     return { ok: true, status: resp.status, data };
                 }
-                
+
                 log(`❌ ${resp.status} - ${data?.message || 'Erro'}`, 'error');
                 return { ok: false, status: resp.status, data };
             } catch (err) {
                 log(`⚠️ Erro de rede: ${err.message}`, 'error');
+                console.error('[requisicaoBackend] Erro completo:', err);
                 return { ok: false, error: err.message };
             }
         }
@@ -970,7 +987,7 @@
             img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
             img.style.maxWidth = '100%';
             img.style.height = 'auto';
-            
+
             container.innerHTML = '';
             container.appendChild(img);
             container.classList.remove('loading');
@@ -989,8 +1006,9 @@
                 document.getElementById('qrContainer').classList.add('loading');
 
                 // Obtém tenant_id
+                console.log('[conectarWhatsApp] Chamando getTenantIdFromFrontend...');
                 const tenantId = await getTenantIdFromFrontend(5000);
-                
+
                 if (!tenantId) {
                     throw new Error('Não foi possível obter o tenant_id. Certifique-se de estar logado.');
                 }
@@ -998,6 +1016,7 @@
                 log(`✅ tenant_id obtido: ${tenantId}`, 'success');
 
                 // Chama backend para gerar QR Code
+                console.log('[conectarWhatsApp] Chamando backend para gerar QR...');
                 const res = await requisicaoBackend('/api/whatsapp/gerar-qrcode', 'POST', {
                     tenantId: tenantId
                 });
@@ -1005,7 +1024,7 @@
                 if (res.ok && res.data.qrcode) {
                     log('✅ QR Code gerado com sucesso', 'success');
                     renderizarQR(res.data.qrcode);
-                    
+
                     // Inicia monitoramento do status
                     monitorarStatusConexao(tenantId);
                 } else {
@@ -1014,6 +1033,7 @@
 
             } catch (error) {
                 log(`❌ Erro: ${error.message}`, 'error');
+                console.error('[conectarWhatsApp] Erro completo:', error);
                 document.getElementById('qrContainer').innerHTML = `<p style="color:red;">❌ ${error.message}</p>`;
             }
         }
@@ -1030,17 +1050,18 @@
 
             while (!conectado && tentativas < maxTentativas) {
                 try {
+                    console.log('[monitorarStatusConexao] Tentativa', tentativas + 1, 'de', maxTentativas);
                     const res = await requisicaoBackend('/api/whatsapp/status', 'GET');
 
                     if (res.ok && res.data.status === 'conectado') {
                         conectado = true;
-                        
+
                         document.getElementById('statusBadge').className = 'status-badge connected';
                         document.getElementById('statusBadge').textContent = '🟢 Conectado';
                         document.getElementById('btnConnect').style.display = 'none';
                         document.getElementById('btnDisconnect').style.display = 'flex';
                         document.getElementById('statusText').textContent = 'Seu WhatsApp está conectado e pronto para receber mensagens!';
-                        
+
                         fecharQRModal();
                         log('🎉 WhatsApp conectado com sucesso!', 'success');
                         return;
@@ -1049,6 +1070,7 @@
                     tentativas++;
                     await new Promise(r => setTimeout(r, 5000));
                 } catch (err) {
+                    console.error('[monitorarStatusConexao] Erro:', err);
                     tentativas++;
                     await new Promise(r => setTimeout(r, 5000));
                 }
@@ -1065,7 +1087,7 @@
 
             try {
                 const tenantId = await getTenantIdFromFrontend(5000);
-                
+
                 if (!tenantId) {
                     throw new Error('Não foi possível obter o tenant_id');
                 }
@@ -1095,7 +1117,7 @@
         async function salvarAutomacoes() {
             try {
                 const tenantId = await getTenantIdFromFrontend(5000);
-                
+
                 if (!tenantId) {
                     log('❌ tenant_id não encontrado', 'error');
                     return;
@@ -1109,7 +1131,7 @@
                 };
 
                 const res = await requisicaoBackend('/api/whatsapp/automacoes', 'POST', automacoes);
-                
+
                 if (res.ok) {
                     log('✅ Automações salvas', 'success');
                 } else {
@@ -1126,7 +1148,7 @@
         async function salvarTemplates() {
             try {
                 const tenantId = await getTenantIdFromFrontend(5000);
-                
+
                 if (!tenantId) {
                     log('❌ tenant_id não encontrado', 'error');
                     return;
@@ -1140,7 +1162,7 @@
                 };
 
                 const res = await requisicaoBackend('/api/whatsapp/templates', 'POST', templates);
-                
+
                 if (res.ok) {
                     log('✅ Templates salvos', 'success');
                 } else {
@@ -1170,7 +1192,7 @@
                 }
 
                 const tenantId = await getTenantIdFromFrontend(5000);
-                
+
                 if (!tenantId) {
                     throw new Error('Não foi possível obter o tenant_id');
                 }
@@ -1211,17 +1233,40 @@
         // INICIALIZAR PÁGINA
         // ========================================
         document.addEventListener('DOMContentLoaded', async function() {
+            console.log('[DOMContentLoaded] Página WhatsApp carregando...');
             initDarkMode();
             log('✅ Página WhatsApp carregada', 'success');
-            
+
+            // Aguarda um pouco para Supabase estar pronto
+            console.log('[DOMContentLoaded] Aguardando Supabase ficar pronto...');
+            await new Promise(resolve => {
+                if (window.isSupabaseReady && window.isSupabaseReady()) {
+                    console.log('[DOMContentLoaded] Supabase já está pronto');
+                    resolve();
+                } else {
+                    const timeout = setTimeout(() => {
+                        console.warn('[DOMContentLoaded] Timeout aguardando Supabase');
+                        resolve();
+                    }, 3000);
+
+                    window.addEventListener('supabaseReady', () => {
+                        clearTimeout(timeout);
+                        console.log('[DOMContentLoaded] Evento supabaseReady disparado');
+                        resolve();
+                    });
+                }
+            });
+
             // Obtém tenant_id para usar nas requisições
+            console.log('[DOMContentLoaded] Obtendo tenant_id...');
             const tenantId = await getTenantIdFromFrontend(5000);
-            
+
             if (tenantId) {
                 log(`✅ tenant_id obtido: ${tenantId}`, 'success');
                 localStorage.setItem('tenantId', tenantId);
-                
+
                 // Verifica status inicial da conexão
+                console.log('[DOMContentLoaded] Verificando status inicial da conexão...');
                 requisicaoBackend('/api/whatsapp/status', 'GET').then(res => {
                     if (res.ok && res.data.status === 'conectado') {
                         document.getElementById('statusBadge').className = 'status-badge connected';
@@ -1236,6 +1281,7 @@
                 });
 
                 // Carrega automações salvas
+                console.log('[DOMContentLoaded] Carregando automações...');
                 requisicaoBackend('/api/whatsapp/automacoes', 'GET').then(res => {
                     if (res.ok && res.data) {
                         document.getElementById('toggleWelcome').checked = res.data.welcome || false;
@@ -1245,6 +1291,7 @@
                 });
 
                 // Carrega templates salvos
+                console.log('[DOMContentLoaded] Carregando templates...');
                 requisicaoBackend('/api/whatsapp/templates', 'GET').then(res => {
                     if (res.ok && res.data) {
                         document.getElementById('templateWelcome').value = res.data.welcome || 'Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?';
@@ -1254,6 +1301,7 @@
                 });
             } else {
                 log('❌ tenant_id não foi obtido. Certifique-se de estar logado.', 'error');
+                console.error('[DOMContentLoaded] FALHA ao obter tenant_id');
             }
         });
     </script>
