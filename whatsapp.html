@@ -886,7 +886,7 @@
         // ========================================
         async function conectarWhatsApp() {
             try {
-                log('🔄 Solicitando nova instância...', 'info');
+                log('🔄 Solicitando instância...', 'info');
                 const id = await getTenantId();
                 const instanceName = `reddito-${id.substring(0, 4)}`.toLowerCase();
 
@@ -904,9 +904,7 @@
                 let res = await tryPost('/instance/create', payload);
 
                 if (res.ok) {
-                    // Tenta pegar o QR imediato se a API já mandou
                     const qrImediato = res.data?.qrcode?.base64 || res.data?.base64 || res.data?.qrcode;
-                    
                     if (qrImediato && qrImediato !== "undefined" && typeof qrImediato === 'string') {
                         log('⚡ QR Code recebido instantaneamente!', 'success');
                         renderizarQR(qrImediato);
@@ -916,7 +914,13 @@
                         await aguardarQRCode(instanceName);
                     }
                 } else {
-                    throw new Error(res.data?.response?.message || "Erro na API");
+                    if (res.data && typeof res.data === 'object' && res.data.response && res.data.response.message && res.data.response.message.includes('already in use')) {
+                        log('ℹ️ Instância já existe, buscando QR Code e status...', 'info');
+                        await aguardarQRCode(instanceName);
+                        monitorarStatusConexao(instanceName);
+                    } else {
+                        throw new Error(res.data?.response?.message || "Erro na API");
+                    }
                 }
 
             } catch (error) {
@@ -933,7 +937,6 @@
 
             while (tentativas < maxTentativas) {
                 try {
-                    // Endpoint fetchQrCode é o mais estável para v2 Lite
                     const result = await tryGet(`/instance/fetchQrCode/${instanceName}`);
                     
                     if (result.ok) {
