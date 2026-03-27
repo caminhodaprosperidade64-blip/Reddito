@@ -813,7 +813,7 @@
 
             const headers = { 
                 'Content-Type': 'application/json',
-                'apikey': AUTH_KEY // Enviando a chave correta
+                'apikey': AUTH_KEY 
             };
 
             try {
@@ -830,7 +830,6 @@
                     return { ok: true, data };
                 }
                 
-                // Caso a instância já exista, tratamos como sucesso para prosseguir para o QR Code
                 if (resp.status === 400 && JSON.stringify(data).toLowerCase().includes('already exists')) {
                     log('ℹ️ Instância já existe, prosseguindo...', 'info');
                     return { ok: true, data };
@@ -858,11 +857,27 @@
         }
 
         // ========================================
+        // RENDERIZAR QR CODE NA TELA
+        // ========================================
+        function renderizarQR(qrData) {
+            const container = document.getElementById('qrContainer');
+            const img = document.createElement('img');
+            img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
+            img.style.maxWidth = '100%';
+            
+            container.innerHTML = '';
+            container.appendChild(img);
+            container.classList.remove('loading');
+            document.getElementById('qrStatus').textContent = '✅ QR Code pronto! Escaneie agora.';
+            log('🖼️ QR Code exibido na tela', 'success');
+        }
+
+        // ========================================
         // OBTER TENANT ID
         // ========================================
         async function getTenantId() {
             if (tenantId) return tenantId;
-            tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e'; // Valor padrão
+            tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e'; 
             return tenantId;
         }
 
@@ -871,7 +886,7 @@
         // ========================================
         async function conectarWhatsApp() {
             try {
-                log('🔄 Iniciando conexão WhatsApp...', 'info');
+                log('🔄 Solicitando nova instância...', 'info');
                 const id = await getTenantId();
                 const instanceName = `reddito-${id.substring(0, 4)}`.toLowerCase();
 
@@ -879,7 +894,6 @@
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                // PAYLOAD CORRIGIDO COM WHATSAPP-BAILEYS
                 const payload = {
                     instanceName: instanceName,
                     token: id,
@@ -890,44 +904,60 @@
                 let res = await tryPost('/instance/create', payload);
 
                 if (res.ok) {
-                    log('✅ Instância pronta! Aguardando QR Code...', 'success');
-                    await aguardarQRCode(instanceName);
+                    // Tenta pegar o QR imediato se a API já mandou
+                    const qrImediato = res.data?.qrcode?.base64 || res.data?.base64 || res.data?.qrcode;
+                    
+                    if (qrImediato && qrImediato !== "undefined" && typeof qrImediato === 'string') {
+                        log('⚡ QR Code recebido instantaneamente!', 'success');
+                        renderizarQR(qrImediato);
+                        monitorarStatusConexao(instanceName);
+                    } else {
+                        log('Wait... Buscando QR Code no buffer...', 'info');
+                        await aguardarQRCode(instanceName);
+                    }
                 } else {
-                    throw new Error(res.data?.response?.message || "Erro ao criar instância");
+                    throw new Error(res.data?.response?.message || "Erro na API");
                 }
 
             } catch (error) {
                 log(`❌ Erro: ${error.message}`, 'error');
-                document.getElementById('qrContainer').innerHTML = `<p style="color: var(--color-danger); font-size: 12px;">❌ ${error.message}</p>`;
+                document.getElementById('qrContainer').innerHTML = `<p style="color:red;">${error.message}</p>`;
             }
         }
 
         async function aguardarQRCode(instanceName) {
             let tentativas = 0;
-            while (tentativas < 20) {
+            const maxTentativas = 30; 
+            
+            log('⏳ Aguardando processamento do WhatsApp...', 'info');
+
+            while (tentativas < maxTentativas) {
                 try {
-                    const result = await tryGet(`/instance/connect/${instanceName}`);
+                    // Endpoint fetchQrCode é o mais estável para v2 Lite
+                    const result = await tryGet(`/instance/fetchQrCode/${instanceName}`);
+                    
                     if (result.ok) {
-                        const data = result.data || {};
-                        // A API pode retornar o QR em campos diferentes dependendo da versão
-                        const qrData = data.qrcode?.base64 || data.base64 || data.qrcode;
+                        const qrData = result.data?.base64 || result.data?.qrcode?.base64 || result.data?.qrcode;
                         
-                        if (qrData) {
-                            const img = document.createElement('img');
-                            img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
-                            document.getElementById('qrContainer').innerHTML = '';
-                            document.getElementById('qrContainer').appendChild(img);
-                            document.getElementById('qrContainer').classList.remove('loading');
-                            document.getElementById('qrStatus').textContent = '✅ QR Code carregado!';
+                        if (qrData && qrData !== "undefined" && typeof qrData === 'string') {
+                            log('✅ QR Code capturado com sucesso!', 'success');
+                            renderizarQR(qrData);
                             monitorarStatusConexao(instanceName);
                             return;
                         }
                     }
+                    
+                    tentativas++;
+                    if (tentativas % 5 === 0) log(`...ainda processando (tentativa ${tentativas}/30)`, 'info');
+                    await new Promise(r => setTimeout(r, 2000)); 
+                } catch (err) { 
                     tentativas++;
                     await new Promise(r => setTimeout(r, 2000));
-                } catch (err) { tentativas++; }
+                }
             }
-            log('❌ Tempo esgotado ao buscar QR Code', 'error');
+            
+            log('❌ O WhatsApp demorou muito para responder.', 'error');
+            document.getElementById('qrContainer').innerHTML = '<p style="color:red;">Tempo esgotado. Tente novamente.</p>';
         }
 
         async function monitorarStatusConexao(instanceName) {
@@ -955,7 +985,6 @@
         }
 
         function desconectarWhatsApp() {
-            // Aqui você poderia chamar o endpoint /instance/logout se quisesse
             document.getElementById('statusBadge').className = 'status-badge disconnected';
             document.getElementById('statusBadge').textContent = '🔴 Desconectado';
             document.getElementById('btnConnect').style.display = 'flex';
