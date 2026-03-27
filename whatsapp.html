@@ -650,7 +650,7 @@
                         <button id="btnConnect" class="pro-btn pro-btn-primary" onclick="conectarWhatsApp()" style="margin-right: 8px;">
                             <i class="fas fa-link"></i> Conectar WhatsApp
                         </button>
-                        <button id="btnDisconnect" class="pro-btn" style="display:none; background-color: var(--color-danger);" onclick="desconectarWhatsApp()">
+                        <button id="btnDisconnect" class="pro-btn" style="display:none; background-color: var(--color-danger); color: white;" onclick="desconectarWhatsApp()">
                             <i class="fas fa-unlink"></i> Desconectar
                         </button>
                     </div>
@@ -760,11 +760,10 @@
 
     <script>
         // ========================================
-        // CONFIGURAÇÃO - ATUALIZADA COM SEUS DADOS
+        // CONFIGURAÇÃO - URLs E AUTENTICAÇÃO
         // ========================================
-        const BACKEND_URL = 'https://evolution-api-lite-production-0747.up.railway.app';
-        const AUTH_KEY = 'SUA_CHAVE_AQUI'; // <--- COLOQUE SUA CHAVE AQUI
-        const INSTANCE_NAME = 'reddito-f9fc';
+        const BACKEND_URL = 'https://seu-app-production-xxxx.up.railway.app'; // ATUALIZE COM SUA URL
+        const INSTANCE_PREFIX = 'cliente_';
 
         // ========================================
         // DARK MODE
@@ -799,31 +798,38 @@
         }
 
         // ========================================
-        // HELPER: Tenta POST/GET
+        // REQUISIÇÕES PARA BACKEND
         // ========================================
-        async function tryPost(path, body) {
-            const url = `${BACKEND_URL}${path}`;
-            log(`📤 Enviando POST para ${url}`, 'info');
-
-            const headers = { 
-                'Content-Type': 'application/json',
-                'apikey': AUTH_KEY 
+        async function requisicaoBackend(endpoint, method = 'GET', body = null) {
+            const url = `${BACKEND_URL}${endpoint}`;
+            const token = localStorage.getItem('authToken');
+            
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             };
 
-            try {
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(body)
-                });
-                
-                const data = await resp.json();
-                log(`  → HTTP ${resp.status} recebido`, 'info');
+            if (token) {
+                options.headers['Authorization'] = `Bearer ${token}`;
+            }
 
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            try {
+                log(`📤 ${method} ${endpoint}`, 'info');
+                const resp = await fetch(url, options);
+                const data = await resp.json();
+                
                 if ([200, 201, 204].includes(resp.status)) {
+                    log(`✅ ${resp.status} - Sucesso`, 'success');
                     return { ok: true, status: resp.status, data };
                 }
                 
+                log(`❌ ${resp.status} - ${data?.message || 'Erro'}`, 'error');
                 return { ok: false, status: resp.status, data };
             } catch (err) {
                 log(`⚠️ Erro de rede: ${err.message}`, 'error');
@@ -831,34 +837,21 @@
             }
         }
 
-        async function tryGet(path) {
-            const url = `${BACKEND_URL}${path}`;
-            try {
-                const resp = await fetch(url, {
-                    headers: { 'apikey': AUTH_KEY }
-                });
-                const data = await resp.json();
-                if (resp.status === 200) return { ok: true, data };
-                return { ok: false, data };
-            } catch (err) {
-                return { ok: false, error: err.message };
-            }
-        }
-
         // ========================================
-        // RENDERIZAR QR CODE NA TELA
+        // RENDERIZAR QR CODE
         // ========================================
         function renderizarQR(qrData) {
             const container = document.getElementById('qrContainer');
             const img = document.createElement('img');
             img.src = qrData.startsWith('data:') ? qrData : `data:image/png;base64,${qrData}`;
             img.style.maxWidth = '100%';
+            img.style.height = 'auto';
             
             container.innerHTML = '';
             container.appendChild(img);
             container.classList.remove('loading');
-            document.getElementById('qrStatus').textContent = '✅ QR Code pronto! Escaneie agora.';
-            log('🖼️ QR Code exibido na tela', 'success');
+            document.getElementById('qrStatus').textContent = '✅ QR Code pronto! Escaneie com seu celular.';
+            log('🖼️ QR Code exibido com sucesso', 'success');
         }
 
         // ========================================
@@ -868,94 +861,220 @@
             try {
                 log('🔄 Iniciando conexão WhatsApp...', 'info');
                 document.getElementById('qrModal').classList.add('active');
-                document.getElementById('qrContainer').innerHTML = '<p>⏳ Processando instância...</p>';
+                document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                const payload = {
-                    instanceName: INSTANCE_NAME,
-                    qrcode: true,
-                    integration: "WHATSAPP-BAILEYS"
-                };
+                // Chama backend para gerar QR Code
+                const res = await requisicaoBackend('/api/whatsapp/gerar-qrcode', 'POST', {
+                    tenantId: localStorage.getItem('tenantId')
+                });
 
-                let res = await tryPost('/instance/create', payload);
-
-                // Detecção de "já existe" mesmo em array ou erro 403
-                const errorMsg = JSON.stringify(res.data).toLowerCase();
-                const jaExiste = errorMsg.includes('already in use') || res.status === 403;
-
-                if (res.ok || jaExiste) {
-                    if (jaExiste) log('ℹ️ Instância já ativa no servidor. Buscando QR...', 'info');
+                if (res.ok && res.data.qrcode) {
+                    log('✅ QR Code gerado com sucesso', 'success');
+                    renderizarQR(res.data.qrcode);
                     
-                    const qrImediato = res.data?.qrcode?.base64 || res.data?.base64;
-                    if (qrImediato) {
-                        renderizarQR(qrImediato);
-                    } else {
-                        await aguardarQRCode(INSTANCE_NAME);
-                    }
-                    monitorarStatusConexao(INSTANCE_NAME);
+                    // Inicia monitoramento do status
+                    monitorarStatusConexao();
                 } else {
-                    throw new Error(res.data?.response?.message || "Erro na API");
+                    throw new Error(res.data?.message || 'Erro ao gerar QR Code');
                 }
 
             } catch (error) {
                 log(`❌ Erro: ${error.message}`, 'error');
-                document.getElementById('qrContainer').innerHTML = `<p style="color:red;">${error.message}</p>`;
+                document.getElementById('qrContainer').innerHTML = `<p style="color:red;">❌ ${error.message}</p>`;
             }
         }
 
-        async function aguardarQRCode(instanceName) {
-            let tentativas = 0;
-            const maxTentativas = 30; 
-            log('⏳ Aguardando processamento do WhatsApp...', 'info');
-
-            while (tentativas < maxTentativas) {
-                try {
-                    const result = await tryGet(`/instance/fetchQrCode/${instanceName}`);
-                    const qrData = result.data?.base64 || result.data?.qrcode?.base64;
-                    
-                    if (qrData) {
-                        log('✅ QR Code capturado!', 'success');
-                        renderizarQR(qrData);
-                        return;
-                    }
-                    
-                    tentativas++;
-                    await new Promise(r => setTimeout(r, 2000)); 
-                } catch (err) { 
-                    tentativas++;
-                    await new Promise(r => setTimeout(r, 2000));
-                }
-            }
-            log('❌ Tempo esgotado ao buscar QR.', 'error');
-        }
-
-        async function monitorarStatusConexao(instanceName) {
+        // ========================================
+        // MONITORAR STATUS DE CONEXÃO
+        // ========================================
+        async function monitorarStatusConexao() {
             let conectado = false;
-            while (!conectado) {
+            let tentativas = 0;
+            const maxTentativas = 60; // 5 minutos
+
+            log('⏳ Monitorando conexão...', 'info');
+
+            while (!conectado && tentativas < maxTentativas) {
                 try {
-                    const result = await tryGet(`/instance/connectionState/${instanceName}`);
-                    const status = result.data?.instance?.state || result.data?.state;
-                    
-                    if (status === 'open') {
+                    const res = await requisicaoBackend('/api/whatsapp/status', 'GET');
+
+                    if (res.ok && res.data.status === 'conectado') {
                         conectado = true;
+                        
+                        // Atualiza UI
                         document.getElementById('statusBadge').className = 'status-badge connected';
                         document.getElementById('statusBadge').textContent = '🟢 Conectado';
                         document.getElementById('btnConnect').style.display = 'none';
                         document.getElementById('btnDisconnect').style.display = 'flex';
+                        document.getElementById('statusText').textContent = 'Seu WhatsApp está conectado e pronto para receber mensagens!';
+                        
                         fecharQRModal();
-                        log('🎉 WhatsApp conectado!', 'success');
+                        log('🎉 WhatsApp conectado com sucesso!', 'success');
                         return;
                     }
-                    await new Promise(r => setTimeout(r, 3000));
-                } catch (err) { await new Promise(r => setTimeout(r, 3000)); }
+
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 5000)); // Verifica a cada 5 segundos
+                } catch (err) {
+                    tentativas++;
+                    await new Promise(r => setTimeout(r, 5000));
+                }
+            }
+
+            log('⚠️ Tempo esgotado. Verifique se escaneou corretamente.', 'warning');
+        }
+
+        // ========================================
+        // DESCONECTAR WHATSAPP
+        // ========================================
+        async function desconectarWhatsApp() {
+            if (!confirm('Desconectar WhatsApp? Esta ação é irreversível.')) return;
+
+            try {
+                const res = await requisicaoBackend('/api/whatsapp/desconectar', 'POST', {
+                    tenantId: localStorage.getItem('tenantId')
+                });
+
+                if (res.ok) {
+                    document.getElementById('statusBadge').className = 'status-badge disconnected';
+                    document.getElementById('statusBadge').textContent = '🔴 Desconectado';
+                    document.getElementById('btnConnect').style.display = 'flex';
+                    document.getElementById('btnDisconnect').style.display = 'none';
+                    document.getElementById('statusText').textContent = 'Clique em "Conectar WhatsApp" para iniciar';
+                    log('✅ Desconectado com sucesso', 'success');
+                } else {
+                    throw new Error(res.data?.message || 'Erro ao desconectar');
+                }
+            } catch (error) {
+                log(`❌ Erro ao desconectar: ${error.message}`, 'error');
             }
         }
 
-        function fecharQRModal() { document.getElementById('qrModal').classList.remove('active'); }
-        function logout() { if (confirm('Deseja sair?')) log('🚪 Saindo...', 'info'); }
+        // ========================================
+        // SALVAR AUTOMAÇÕES
+        // ========================================
+        async function salvarAutomacoes() {
+            const automacoes = {
+                tenantId: localStorage.getItem('tenantId'),
+                welcome: document.getElementById('toggleWelcome').checked,
+                reminder: document.getElementById('toggleReminder').checked,
+                thank: document.getElementById('toggleThank').checked
+            };
 
+            const res = await requisicaoBackend('/api/whatsapp/automacoes', 'POST', automacoes);
+            
+            if (res.ok) {
+                log('✅ Automações salvas', 'success');
+            } else {
+                log('❌ Erro ao salvar automações', 'error');
+            }
+        }
+
+        // ========================================
+        // SALVAR TEMPLATES
+        // ========================================
+        async function salvarTemplates() {
+            const templates = {
+                tenantId: localStorage.getItem('tenantId'),
+                welcome: document.getElementById('templateWelcome').value,
+                reminder: document.getElementById('templateReminder').value,
+                thank: document.getElementById('templateThank').value
+            };
+
+            const res = await requisicaoBackend('/api/whatsapp/templates', 'POST', templates);
+            
+            if (res.ok) {
+                log('✅ Templates salvos', 'success');
+            } else {
+                log('❌ Erro ao salvar templates', 'error');
+            }
+        }
+
+        // ========================================
+        // ENVIAR MENSAGEM MANUAL
+        // ========================================
+        async function enviarMensagemManual() {
+            const phone = document.getElementById('inputPhone').value;
+            const message = document.getElementById('inputMessage').value;
+
+            if (!phone || !message) {
+                alert('Preencha o telefone e a mensagem');
+                return;
+            }
+
+            if (!phone.match(/^\d{10,15}$/)) {
+                alert('Telefone inválido. Use apenas números.');
+                return;
+            }
+
+            const res = await requisicaoBackend('/api/whatsapp/enviar-manual', 'POST', {
+                tenantId: localStorage.getItem('tenantId'),
+                phone: phone,
+                message: message
+            });
+
+            if (res.ok) {
+                log('✅ Mensagem enviada com sucesso', 'success');
+                document.getElementById('inputPhone').value = '';
+                document.getElementById('inputMessage').value = '';
+            } else {
+                log(`❌ Erro: ${res.data?.message || 'Erro desconhecido'}`, 'error');
+            }
+        }
+
+        // ========================================
+        // MODAL FUNCTIONS
+        // ========================================
+        function fecharQRModal() {
+            document.getElementById('qrModal').classList.remove('active');
+        }
+
+        function logout() {
+            if (confirm('Deseja sair da aplicação?')) {
+                localStorage.clear();
+                window.location.href = '/login';
+            }
+        }
+
+        // ========================================
+        // INICIALIZAR PÁGINA
+        // ========================================
         document.addEventListener('DOMContentLoaded', function() {
             initDarkMode();
+            log('✅ Página WhatsApp carregada', 'success');
+            
+            // Verifica status inicial da conexão
+            requisicaoBackend('/api/whatsapp/status', 'GET').then(res => {
+                if (res.ok && res.data.status === 'conectado') {
+                    document.getElementById('statusBadge').className = 'status-badge connected';
+                    document.getElementById('statusBadge').textContent = '🟢 Conectado';
+                    document.getElementById('btnConnect').style.display = 'none';
+                    document.getElementById('btnDisconnect').style.display = 'flex';
+                    document.getElementById('statusText').textContent = 'Seu WhatsApp está conectado!';
+                    log('✅ WhatsApp conectado', 'success');
+                } else {
+                    log('ℹ️ WhatsApp desconectado', 'info');
+                }
+            });
+
+            // Carrega automações salvas
+            requisicaoBackend('/api/whatsapp/automacoes', 'GET').then(res => {
+                if (res.ok && res.data) {
+                    document.getElementById('toggleWelcome').checked = res.data.welcome || false;
+                    document.getElementById('toggleReminder').checked = res.data.reminder || false;
+                    document.getElementById('toggleThank').checked = res.data.thank || false;
+                }
+            });
+
+            // Carrega templates salvos
+            requisicaoBackend('/api/whatsapp/templates', 'GET').then(res => {
+                if (res.ok && res.data) {
+                    document.getElementById('templateWelcome').value = res.data.welcome || 'Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?';
+                    document.getElementById('templateReminder').value = res.data.reminder || 'Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?';
+                    document.getElementById('templateThank').value = res.data.thank || 'Obrigado {cliente}! Sua experiência é importante. Nos avalie!';
+                }
+            });
         });
     </script>
 </body>
