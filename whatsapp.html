@@ -762,8 +762,27 @@
         // ========================================
         // CONFIGURAÇÃO - URLs E AUTENTICAÇÃO
         // ========================================
-        const BACKEND_URL = 'https://reddito-production-52a3.up.railway.app'; // ATUALIZE COM SUA URL
+        const BACKEND_URL = 'https://reddito-production-52a3.up.railway.app';
         const INSTANCE_PREFIX = 'cliente_';
+
+        // Variáveis para armazenar o perfil
+        let perfilLocal = null;
+        let perfilPromiseResolve = null;
+        let perfilPromise = new Promise((resolve) => { perfilPromiseResolve = resolve; });
+
+        // Escuta o evento global disparado por auth-guard.js
+        window.addEventListener("perfilCarregado", (e) => {
+            try {
+                perfilLocal = e?.detail || null;
+                console.log("✅ [WhatsApp] perfilCarregado recebido:", perfilLocal);
+            } catch (err) {
+                perfilLocal = null;
+            }
+            if (perfilPromiseResolve) {
+                perfilPromiseResolve(perfilLocal);
+                perfilPromiseResolve = null;
+            }
+        });
 
         // ========================================
         // DARK MODE
@@ -795,6 +814,111 @@
             logBox.appendChild(entry);
             logBox.scrollTop = logBox.scrollHeight;
             console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // ========================================
+        // OBTER TENANT_ID DO SUPABASE
+        // ========================================
+        async function getTenantIdFromFrontend(timeoutMs = 5000) {
+            // Tenta variável global window.perfil (compatibilidade)
+            if (window.perfil && (window.perfil.tenant_id || window.perfil.id)) {
+                console.log('[WhatsApp] tenant_id encontrado em window.perfil:', window.perfil.tenant_id || window.perfil.id);
+                return window.perfil.tenant_id || window.perfil.id;
+            }
+
+            // Tenta variável local já recebida
+            if (perfilLocal && (perfilLocal.tenant_id || perfilLocal.id)) {
+                console.log('[WhatsApp] tenant_id encontrado em perfilLocal:', perfilLocal.tenant_id || perfilLocal.id);
+                return perfilLocal.tenant_id || perfilLocal.id;
+            }
+
+            // Se tiver função getTenantId definida no frontend (compatibilidade)
+            if (typeof getTenantId === 'function') {
+                try {
+                    const val = await Promise.race([
+                        getTenantId(),
+                        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout_getTenantId')), timeoutMs))
+                    ]);
+                    if (val) {
+                        console.log('[WhatsApp] tenant_id obtido de getTenantId():', val);
+                        return val;
+                    }
+                } catch (e) {
+                    console.warn('[WhatsApp] getTenantId() falhou:', e.message);
+                }
+            }
+
+            // Aguarda evento perfilCarregado até timeout
+            try {
+                console.log('[WhatsApp] Aguardando evento perfilCarregado...');
+                const p = perfilPromise || new Promise((resolve) => { perfilPromiseResolve = resolve; });
+                const val = await Promise.race([
+                    p,
+                    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout_perfil')), timeoutMs))
+                ]);
+                if (val && (val.tenant_id || val.id)) {
+                    console.log('[WhatsApp] tenant_id obtido do evento:', val.tenant_id || val.id);
+                    return val.tenant_id || val.id;
+                }
+            } catch (e) {
+                console.warn('[WhatsApp] Timeout ou erro ao aguardar perfil:', e.message);
+            }
+
+            // NOVO: Tenta buscar do Supabase se nada acima funcionou
+            try {
+                console.log('[WhatsApp] Tentando buscar tenant_id do Supabase...');
+                
+                // Verifica se Supabase está pronto
+                if (!window.isSupabaseReady || !window.isSupabaseReady()) {
+                    console.warn('[WhatsApp] Supabase não está pronto ainda');
+                    return null;
+                }
+
+                const supabase = window.getSupabase();
+                console.log('[WhatsApp] Obtendo usuário autenticado...');
+                
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                
+                if (userError) {
+                    console.error('[WhatsApp] Erro ao obter usuário:', userError.message);
+                    return null;
+                }
+
+                if (!user) {
+                    console.warn('[WhatsApp] Nenhum usuário autenticado');
+                    return null;
+                }
+
+                console.log('[WhatsApp] Usuário encontrado:', user.id);
+                console.log('[WhatsApp] Buscando tenant_id na tabela perfis...');
+
+                const { data: perfil, error: perfilError } = await supabase
+                    .from('perfis')
+                    .select('tenant_id')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (perfilError) {
+                    console.error('[WhatsApp] Erro ao buscar perfil:', perfilError.message);
+                    return null;
+                }
+
+                if (perfil && perfil.tenant_id) {
+                    console.log('[WhatsApp] ✅ tenant_id obtido do Supabase:', perfil.tenant_id);
+                    localStorage.setItem('tenantId', perfil.tenant_id);
+                    return perfil.tenant_id;
+                } else {
+                    console.warn('[WhatsApp] Perfil encontrado mas sem tenant_id');
+                    return null;
+                }
+
+            } catch (e) {
+                console.error('[WhatsApp] ❌ Erro ao buscar do Supabase:', e.message);
+                console.error('[WhatsApp] Stack:', e);
+            }
+
+            console.error('[WhatsApp] ❌ Não conseguiu obter tenant_id por nenhum meio');
+            return null;
         }
 
         // ========================================
@@ -864,9 +988,18 @@
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
+                // Obtém tenant_id
+                const tenantId = await getTenantIdFromFrontend(5000);
+                
+                if (!tenantId) {
+                    throw new Error('Não foi possível obter o tenant_id. Certifique-se de estar logado.');
+                }
+
+                log(`✅ tenant_id obtido: ${tenantId}`, 'success');
+
                 // Chama backend para gerar QR Code
                 const res = await requisicaoBackend('/api/whatsapp/gerar-qrcode', 'POST', {
-                    tenantId: localStorage.getItem('tenantId')
+                    tenantId: tenantId
                 });
 
                 if (res.ok && res.data.qrcode) {
@@ -874,7 +1007,7 @@
                     renderizarQR(res.data.qrcode);
                     
                     // Inicia monitoramento do status
-                    monitorarStatusConexao();
+                    monitorarStatusConexao(tenantId);
                 } else {
                     throw new Error(res.data?.message || 'Erro ao gerar QR Code');
                 }
@@ -888,10 +1021,10 @@
         // ========================================
         // MONITORAR STATUS DE CONEXÃO
         // ========================================
-        async function monitorarStatusConexao() {
+        async function monitorarStatusConexao(tenantId) {
             let conectado = false;
             let tentativas = 0;
-            const maxTentativas = 60; // 5 minutos
+            const maxTentativas = 60;
 
             log('⏳ Monitorando conexão...', 'info');
 
@@ -902,7 +1035,6 @@
                     if (res.ok && res.data.status === 'conectado') {
                         conectado = true;
                         
-                        // Atualiza UI
                         document.getElementById('statusBadge').className = 'status-badge connected';
                         document.getElementById('statusBadge').textContent = '🟢 Conectado';
                         document.getElementById('btnConnect').style.display = 'none';
@@ -915,7 +1047,7 @@
                     }
 
                     tentativas++;
-                    await new Promise(r => setTimeout(r, 5000)); // Verifica a cada 5 segundos
+                    await new Promise(r => setTimeout(r, 5000));
                 } catch (err) {
                     tentativas++;
                     await new Promise(r => setTimeout(r, 5000));
@@ -932,8 +1064,14 @@
             if (!confirm('Desconectar WhatsApp? Esta ação é irreversível.')) return;
 
             try {
+                const tenantId = await getTenantIdFromFrontend(5000);
+                
+                if (!tenantId) {
+                    throw new Error('Não foi possível obter o tenant_id');
+                }
+
                 const res = await requisicaoBackend('/api/whatsapp/desconectar', 'POST', {
-                    tenantId: localStorage.getItem('tenantId')
+                    tenantId: tenantId
                 });
 
                 if (res.ok) {
@@ -955,19 +1093,30 @@
         // SALVAR AUTOMAÇÕES
         // ========================================
         async function salvarAutomacoes() {
-            const automacoes = {
-                tenantId: localStorage.getItem('tenantId'),
-                welcome: document.getElementById('toggleWelcome').checked,
-                reminder: document.getElementById('toggleReminder').checked,
-                thank: document.getElementById('toggleThank').checked
-            };
+            try {
+                const tenantId = await getTenantIdFromFrontend(5000);
+                
+                if (!tenantId) {
+                    log('❌ tenant_id não encontrado', 'error');
+                    return;
+                }
 
-            const res = await requisicaoBackend('/api/whatsapp/automacoes', 'POST', automacoes);
-            
-            if (res.ok) {
-                log('✅ Automações salvas', 'success');
-            } else {
-                log('❌ Erro ao salvar automações', 'error');
+                const automacoes = {
+                    tenantId: tenantId,
+                    welcome: document.getElementById('toggleWelcome').checked,
+                    reminder: document.getElementById('toggleReminder').checked,
+                    thank: document.getElementById('toggleThank').checked
+                };
+
+                const res = await requisicaoBackend('/api/whatsapp/automacoes', 'POST', automacoes);
+                
+                if (res.ok) {
+                    log('✅ Automações salvas', 'success');
+                } else {
+                    log('❌ Erro ao salvar automações', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
             }
         }
 
@@ -975,19 +1124,30 @@
         // SALVAR TEMPLATES
         // ========================================
         async function salvarTemplates() {
-            const templates = {
-                tenantId: localStorage.getItem('tenantId'),
-                welcome: document.getElementById('templateWelcome').value,
-                reminder: document.getElementById('templateReminder').value,
-                thank: document.getElementById('templateThank').value
-            };
+            try {
+                const tenantId = await getTenantIdFromFrontend(5000);
+                
+                if (!tenantId) {
+                    log('❌ tenant_id não encontrado', 'error');
+                    return;
+                }
 
-            const res = await requisicaoBackend('/api/whatsapp/templates', 'POST', templates);
-            
-            if (res.ok) {
-                log('✅ Templates salvos', 'success');
-            } else {
-                log('❌ Erro ao salvar templates', 'error');
+                const templates = {
+                    tenantId: tenantId,
+                    welcome: document.getElementById('templateWelcome').value,
+                    reminder: document.getElementById('templateReminder').value,
+                    thank: document.getElementById('templateThank').value
+                };
+
+                const res = await requisicaoBackend('/api/whatsapp/templates', 'POST', templates);
+                
+                if (res.ok) {
+                    log('✅ Templates salvos', 'success');
+                } else {
+                    log('❌ Erro ao salvar templates', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
             }
         }
 
@@ -995,31 +1155,41 @@
         // ENVIAR MENSAGEM MANUAL
         // ========================================
         async function enviarMensagemManual() {
-            const phone = document.getElementById('inputPhone').value;
-            const message = document.getElementById('inputMessage').value;
+            try {
+                const phone = document.getElementById('inputPhone').value;
+                const message = document.getElementById('inputMessage').value;
 
-            if (!phone || !message) {
-                alert('Preencha o telefone e a mensagem');
-                return;
-            }
+                if (!phone || !message) {
+                    alert('Preencha o telefone e a mensagem');
+                    return;
+                }
 
-            if (!phone.match(/^\d{10,15}$/)) {
-                alert('Telefone inválido. Use apenas números.');
-                return;
-            }
+                if (!phone.match(/^\d{10,15}$/)) {
+                    alert('Telefone inválido. Use apenas números.');
+                    return;
+                }
 
-            const res = await requisicaoBackend('/api/whatsapp/enviar-manual', 'POST', {
-                tenantId: localStorage.getItem('tenantId'),
-                phone: phone,
-                message: message
-            });
+                const tenantId = await getTenantIdFromFrontend(5000);
+                
+                if (!tenantId) {
+                    throw new Error('Não foi possível obter o tenant_id');
+                }
 
-            if (res.ok) {
-                log('✅ Mensagem enviada com sucesso', 'success');
-                document.getElementById('inputPhone').value = '';
-                document.getElementById('inputMessage').value = '';
-            } else {
-                log(`❌ Erro: ${res.data?.message || 'Erro desconhecido'}`, 'error');
+                const res = await requisicaoBackend('/api/whatsapp/enviar-manual', 'POST', {
+                    tenantId: tenantId,
+                    phone: phone,
+                    message: message
+                });
+
+                if (res.ok) {
+                    log('✅ Mensagem enviada com sucesso', 'success');
+                    document.getElementById('inputPhone').value = '';
+                    document.getElementById('inputMessage').value = '';
+                } else {
+                    log(`❌ Erro: ${res.data?.message || 'Erro desconhecido'}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
             }
         }
 
@@ -1040,41 +1210,51 @@
         // ========================================
         // INICIALIZAR PÁGINA
         // ========================================
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             initDarkMode();
             log('✅ Página WhatsApp carregada', 'success');
             
-            // Verifica status inicial da conexão
-            requisicaoBackend('/api/whatsapp/status', 'GET').then(res => {
-                if (res.ok && res.data.status === 'conectado') {
-                    document.getElementById('statusBadge').className = 'status-badge connected';
-                    document.getElementById('statusBadge').textContent = '🟢 Conectado';
-                    document.getElementById('btnConnect').style.display = 'none';
-                    document.getElementById('btnDisconnect').style.display = 'flex';
-                    document.getElementById('statusText').textContent = 'Seu WhatsApp está conectado!';
-                    log('✅ WhatsApp conectado', 'success');
-                } else {
-                    log('ℹ️ WhatsApp desconectado', 'info');
-                }
-            });
+            // Obtém tenant_id para usar nas requisições
+            const tenantId = await getTenantIdFromFrontend(5000);
+            
+            if (tenantId) {
+                log(`✅ tenant_id obtido: ${tenantId}`, 'success');
+                localStorage.setItem('tenantId', tenantId);
+                
+                // Verifica status inicial da conexão
+                requisicaoBackend('/api/whatsapp/status', 'GET').then(res => {
+                    if (res.ok && res.data.status === 'conectado') {
+                        document.getElementById('statusBadge').className = 'status-badge connected';
+                        document.getElementById('statusBadge').textContent = '🟢 Conectado';
+                        document.getElementById('btnConnect').style.display = 'none';
+                        document.getElementById('btnDisconnect').style.display = 'flex';
+                        document.getElementById('statusText').textContent = 'Seu WhatsApp está conectado!';
+                        log('✅ WhatsApp conectado', 'success');
+                    } else {
+                        log('ℹ️ WhatsApp desconectado', 'info');
+                    }
+                });
 
-            // Carrega automações salvas
-            requisicaoBackend('/api/whatsapp/automacoes', 'GET').then(res => {
-                if (res.ok && res.data) {
-                    document.getElementById('toggleWelcome').checked = res.data.welcome || false;
-                    document.getElementById('toggleReminder').checked = res.data.reminder || false;
-                    document.getElementById('toggleThank').checked = res.data.thank || false;
-                }
-            });
+                // Carrega automações salvas
+                requisicaoBackend('/api/whatsapp/automacoes', 'GET').then(res => {
+                    if (res.ok && res.data) {
+                        document.getElementById('toggleWelcome').checked = res.data.welcome || false;
+                        document.getElementById('toggleReminder').checked = res.data.reminder || false;
+                        document.getElementById('toggleThank').checked = res.data.thank || false;
+                    }
+                });
 
-            // Carrega templates salvos
-            requisicaoBackend('/api/whatsapp/templates', 'GET').then(res => {
-                if (res.ok && res.data) {
-                    document.getElementById('templateWelcome').value = res.data.welcome || 'Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?';
-                    document.getElementById('templateReminder').value = res.data.reminder || 'Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?';
-                    document.getElementById('templateThank').value = res.data.thank || 'Obrigado {cliente}! Sua experiência é importante. Nos avalie!';
-                }
-            });
+                // Carrega templates salvos
+                requisicaoBackend('/api/whatsapp/templates', 'GET').then(res => {
+                    if (res.ok && res.data) {
+                        document.getElementById('templateWelcome').value = res.data.welcome || 'Olá {cliente}! Bem-vindo ao Reddito. Como posso ajudá-lo?';
+                        document.getElementById('templateReminder').value = res.data.reminder || 'Olá {cliente}, lembrete: você tem um agendamento em {data}. Confirmar presença?';
+                        document.getElementById('templateThank').value = res.data.thank || 'Obrigado {cliente}! Sua experiência é importante. Nos avalie!';
+                    }
+                });
+            } else {
+                log('❌ tenant_id não foi obtido. Certifique-se de estar logado.', 'error');
+            }
         });
     </script>
 </body>
