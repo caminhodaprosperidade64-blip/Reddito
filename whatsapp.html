@@ -693,7 +693,7 @@
         }
 
         // ========================================
-        // CONECTAR WHATSAPP - VERSÃO CORRIGIDA
+        // CONECTAR WHATSAPP - VERSÃO ATUALIZADA (COM NOME ÚNICO)
         // ========================================
         async function conectarWhatsApp() {
             try {
@@ -703,22 +703,25 @@
                 document.getElementById('qrContainer').innerHTML = '<p>⏳ Criando instância e gerando QR Code...</p>';
                 document.getElementById('qrContainer').classList.add('loading');
 
-                const tenantId = 'f9fceec6-f25f-4a93-8888-4577a75c316e'; // temporário
-                const instanceName = `wa-${tenantId.replace(/-/g, '').substring(0, 8)}`;
+                // Gera um nome único toda vez para evitar erro "already in use"
+                const instanceName = "reddito-wa-" + Date.now();
+
+                log(`📌 Usando instanceName: ${instanceName}`, 'info');
 
                 const payload = {
                     instanceName: instanceName,
-                    tenantId: tenantId
+                    qrcode: true
                 };
 
                 let res = await apiPost('/api/evolution/instance/create', payload);
 
                 if (res.ok) {
                     log('✅ Instância criada com sucesso!', 'success');
-                    // Por enquanto só mostramos mensagem (melhoraremos no próximo passo)
-                    document.getElementById('qrContainer').innerHTML = `<p style="color:green;">Instância ${instanceName} criada!<br>Aguardando QR Code da Evolution API...</p>`;
+                    document.getElementById('qrContainer').innerHTML = 
+                        `<p style="color:green;">Instância ${instanceName} criada com sucesso!<br>Aguardando QR Code da Evolution API...</p>`;
                 } else {
-                    throw new Error(res.data?.message || "Erro ao criar instância");
+                    const errorMsg = res.data?.message || res.data?.error || res.data?.response?.message || "Erro ao criar instância";
+                    throw new Error(errorMsg);
                 }
             } catch (error) {
                 log(`❌ Erro: ${error.message}`, 'error');
@@ -737,12 +740,12 @@
             document.getElementById('btnDisconnect').style.display = 'none';
         }
 
-        function salvarAutomacoes() { 
-            log('💾 Automações salvas', 'success'); 
+        function salvarAutomacoes() {
+            log('💾 Automações salvas', 'success');
         }
 
-        function salvarTemplates() { 
-            log('💾 Modelos salvos', 'success'); 
+        function salvarTemplates() {
+            log('💾 Modelos salvos', 'success');
         }
 
         function enviarMensagemManual() {
@@ -755,6 +758,7 @@
             }
         }
 
+        // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
             initDarkMode();
             log('✅ WhatsApp page carregada - versão completa', 'success');
